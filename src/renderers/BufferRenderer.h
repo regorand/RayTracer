@@ -4,9 +4,10 @@
 
 
 #include "HostBuffer.h"
-#include "glWrappers/Shader.h"
+#include "glWrappers/shaders/Shader.h"
 #include "glWrappers/VertexArray.h"
 #include "glWrappers/ArrayBuffer.h"
+#include "glWrappers/Texture.h"
 #include <memory>
 
 class BufferRenderer {
@@ -25,6 +26,7 @@ public:
     void reloadShaders();
 
     void render(HostBuffer *buffer);
+    void render(Texture *texture);
 
 };
 

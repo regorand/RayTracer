@@ -4,13 +4,10 @@
 #include <string>
 #include <fstream>
 #include <filesystem>
+#include <iostream>
 
 static std::string read_file(const std::string_view path)
 {
-
-    std::filesystem::path cwd = std::filesystem::current_path();
-    std::cout << cwd << std::endl;
-
     constexpr auto read_size = std::size_t(4096);
     auto stream = std::ifstream(path.data());
     stream.exceptions(std::ios_base::badbit);

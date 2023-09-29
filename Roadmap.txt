@@ -1,0 +1,3 @@
+- Read tutorial on compute shaders
+- Maybe: Read tutorial how to design and implement ray-/pathtracer usign compute shaders
+- Implement 0 bounce ray tracing using GPU buffers and 

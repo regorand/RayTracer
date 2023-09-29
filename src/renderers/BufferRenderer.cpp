@@ -3,7 +3,7 @@
 #include "BufferRenderer.h"
 #include "glWrappers/VertexArray.h"
 #include "glWrappers/ArrayBuffer.h"
-#include "glWrappers/Shader.h"
+#include "glWrappers/shaders/Shader.h"
 #include "glWrappers/TextureBuffer.h"
 #include "glWrappers/Texture.h"
 
@@ -29,7 +29,7 @@ void BufferRenderer::render(HostBuffer *buffer) {
     mVerts->bind();
 
     mShader.bind();
-    texture.Bind(0);
+    texture.bind(0);
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
@@ -40,4 +40,18 @@ void BufferRenderer::render(HostBuffer *buffer) {
 
 void BufferRenderer::reloadShaders() {
     mShader.reloadShader();
+}
+
+void BufferRenderer::render(Texture *texture) {
+    mVa->bind();
+    mVerts->bind();
+
+    mShader.bind();
+    texture->bind(0);
+
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    mVa->unbind();
+    mVerts->unbind();
+    mShader.unbind();
 }

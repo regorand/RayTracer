@@ -6,9 +6,15 @@
 #include "temp/PerlinNoise.hpp"
 #include "RayTracer.h"
 #include "glm/gtc/type_ptr.hpp"
+#include "glWrappers/shaders/ComputeShader.h"
+#include "renderers/ComputeRender.h"
 #include <imgui.h>
 
 Application::Application() { }
+
+
+
+
 
 int Application::run() {
 
@@ -68,62 +74,23 @@ int Application::run() {
     const siv::PerlinNoise perlinG{seedG };
     const siv::PerlinNoise perlinB{seedB };
 
-    /*
-    for (int x = 0; x < displayWidth; x++) {
-        for (int y = 0; y < displayHeight; y++) {
-            float factor = 50;
-
-            float x_fac = factor * static_cast<float>(x) / displayWidth;
-            float y_fac = factor * static_cast<float>(y) / displayHeight;
-
-            float noiseR = perlinR.normalizedOctave2D_01(x_fac, y_fac, 4, 0.9) ;
-            float noiseG = perlinG.normalizedOctave2D_01(x_fac, y_fac, 4, 0.9) ;
-
-            if (noiseG < 0.75) noiseG = 0;
-
-            float noiseB = perlinB.normalizedOctave2D_01(x_fac, y_fac, 4, 0.9) ;
-
-            // glm::vec3 color = glm::vec3(noiseR);
-
-            float facR = 235.0 / 255.0;
-            float facG = 187.0 / 255.0;
-            float facB = 171.0 / 255.0;
-
-            glm::vec3 color = glm::vec3(noiseR * facR, noiseR * facG, noiseR * facB);
-            float threshold = 0.3;
-            float upperThreshold = 0.68;
-            if (noiseR > threshold) {
-                float t = 0;
-                if (noiseR > upperThreshold) {
-                    t = 0;
-                } else {
-                    t = (1 - upperThreshold) / (1 - upperThreshold);
-                }
-
-
-                color = t * color + (1 - t) * glm::vec3(noiseR);
-            }
-
-
-            buffer.setPixel(x, y, color);
-
-            /*
-            float val1 = static_cast<float>(std::rand()) / RAND_MAX;
-            float val2 = static_cast<float>(std::rand()) / RAND_MAX;
-            float val3 = static_cast<float>(std::rand()) / RAND_MAX;
-
-            buffer.setPixel(x, y, glm::vec3(val1, val2, val3));
-
-        }
-
-    };
-      */
 
     RayTracer rayTracer;
     Scene scene;
+    Texture texture(&buffer);
+
+    /*
     rayTracer.setScene(&scene);
     rayTracer.setHostBuffer(&buffer);
     rayTracer.render();
+    texture.updateTexture(buffer.getData());
+    */
+
+    ComputeShader computeShader("res/shaders/compute/computeNoBounces.comp");
+
+    computeSimple(&texture, &computeShader);
+
+    bool alwaysRenderNew = false;
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
@@ -135,16 +102,16 @@ int Application::run() {
         {
             ImGui::Begin("Hello, world!");
 
-            if (ImGui::Button("Reload shaders"))
+            if (ImGui::Button("Reload display shaders"))
                 br.reloadShaders();
+            ImGui::SameLine();
+            if (ImGui::Button("Reload compute shaders"))
+                computeShader.reloadShader();
 
-            if (ImGui::Button("Render"))
-                rayTracer.render();
-
-            ImGui::SliderFloat3("Camera pos", glm::value_ptr(scene.getCamera().getLocation()), -100.0, 100.0);
-            glm::vec3 dir = scene.getCamera().getViewDir();
-            ImGui::SliderFloat3("Camera dir", glm::value_ptr(dir), 0, 1);
-            scene.getCamera().setViewDir(glm::normalize(dir));
+            ImGui::Checkbox("Always render new", &alwaysRenderNew);
+            if (alwaysRenderNew || ImGui::Button("Render")) {
+                computeSimple(&texture, &computeShader);
+            }
 
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
             ImGui::End();
@@ -156,8 +123,7 @@ int Application::run() {
         glClear(GL_COLOR_BUFFER_BIT);
 
 
-
-        br.render(&buffer);
+        br.render(&texture);
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 

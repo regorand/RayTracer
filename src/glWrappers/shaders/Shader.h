@@ -13,12 +13,12 @@ typedef struct Shader_Definition_s {
 class Shader
 {
 private:
-	unsigned int m_GlId;
+	unsigned int mGLid;
 	std::string vertPath = "";
 	std::string fragPath = "";
 	ShaderDefinition m_ShaderDef;
 
-	bool valid = false;
+	bool mIsValid = false;
 public:
 	Shader(std::string vertPath, std::string fragPath);
 
@@ -40,12 +40,11 @@ public:
 	bool setUniform3fv(const std::string& name, const unsigned int count, const glm::vec3* data);
 
 	void reloadShader();
-	bool isValid() { return valid; }
+	bool isValid() { return mIsValid; }
 private:
 	unsigned int getUniformLocation(const std::string name);
 	void printUniformNotFound(std::string name);
 
 	void createShader(const std::string& vertexShader, const std::string& fragmentShader);
-	unsigned int compileShader(unsigned int type, const std::string& source);
 };
 

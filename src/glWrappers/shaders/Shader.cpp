@@ -3,6 +3,7 @@
 #include "utils/glewIncludeUtils.h"
 #include "glm/gtc/type_ptr.hpp"
 #include "utils/fileUtils.hpp"
+#include "ShaderUtils.hpp"
 
 #include <vector>
 
@@ -22,13 +23,13 @@ Shader::Shader(ShaderDefinition shaderDef)
 
 Shader::~Shader()
 {
-	glDeleteProgram(m_GlId);
+	glDeleteProgram(mGLid);
 }
 
 unsigned int Shader::getUniformLocation(const std::string name)
 {
 	auto name_c_str = name.c_str();
-	unsigned int res = glGetUniformLocation(m_GlId, name_c_str);
+	unsigned int res = glGetUniformLocation(mGLid, name_c_str);
 	return res;
 }
 
@@ -42,59 +43,44 @@ void Shader::reloadShader()
 	std::string vertSrc = read_file(m_ShaderDef.vertex_path);
 	std::string fragSrc = read_file(m_ShaderDef.fragment_path);
 	createShader(vertSrc, fragSrc);
-	if (valid) {
-		glUseProgram(m_GlId);
+	if (mIsValid) {
+		glUseProgram(mGLid);
 	}
 	unbind();
 }
 
 void Shader::createShader(const std::string& vertexShader, const std::string& fragmentShader)
 {
-	m_GlId = glCreateProgram();
+    mGLid = glCreateProgram();
 	unsigned int vs = compileShader(GL_VERTEX_SHADER, vertexShader);
 	unsigned int fs = compileShader(GL_FRAGMENT_SHADER, fragmentShader);
 
 	if (vs == 0 || fs == 0) {
-		valid = false;
+        mIsValid = false;
 		return;
 	}
 
-	glAttachShader(m_GlId, vs);
-	glAttachShader(m_GlId, fs);
+	glAttachShader(mGLid, vs);
+	glAttachShader(mGLid, fs);
 
-	glLinkProgram(m_GlId);
+	glLinkProgram(mGLid);
 
-	GLint isLinked = 0;
-	glGetProgramiv(m_GlId, GL_LINK_STATUS, &isLinked);
-	if (!isLinked) {
-		GLint maxLength = 0;
-		glGetProgramiv(m_GlId, GL_INFO_LOG_LENGTH, &maxLength);
 
-		// The maxLength includes the NULL character
-		std::vector<GLchar> infoLog(maxLength);
-		glGetProgramInfoLog(m_GlId, maxLength, &maxLength, &infoLog[0]);
-
-		std::string s(infoLog.begin(), infoLog.end());
-		std::cout << "Info Log: " << s << std::endl;
-
-		// The program is useless now. So delete it.
-		glDeleteProgram(m_GlId);
-
-		valid = false;
-	}
-	else {
-		glValidateProgram(m_GlId);
-		valid = true;
-	}
+    if (checkLinkStatus(mGLid)) {
+        glValidateProgram(mGLid);
+        mIsValid = true;
+    } else {
+        glDeleteProgram(mGLid);
+        mIsValid = false;
+    }
 
 	glDeleteShader(vs);
-
 	glDeleteShader(fs);
 }
 
 void Shader::bind()
 {
-	glUseProgram(m_GlId);
+	glUseProgram(mGLid);
 }
 
 void Shader::unbind()
@@ -105,7 +91,7 @@ void Shader::unbind()
 bool Shader::setUniform1i(const std::string& name, const unsigned int value)
 {
 	GLint isLinked = 0;
-	glGetProgramiv(m_GlId, GL_LINK_STATUS, &isLinked);
+	glGetProgramiv(mGLid, GL_LINK_STATUS, &isLinked);
 	int uniformId = getUniformLocation(name);
 	if (uniformId == -1) {
 		printUniformNotFound(name);
@@ -185,34 +171,4 @@ bool Shader::setUniform3fv(const std::string& name, const unsigned int count, co
 	}
 	glUniform3fv(uniformId, count * 3, raw_data.data());
 	return true;
-}
-
-unsigned int Shader::compileShader(unsigned int type, const std::string& source)
-{
-	unsigned int id = glCreateShader(type);
-	const char* src = source.c_str();
-	glShaderSource(id, 1, &src, nullptr);
-	glCompileShader(id);
-
-	int res;
-	glGetShaderiv(id, GL_COMPILE_STATUS, &res);
-	if (res == GL_FALSE) {
-		int length;
-		glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
-
-		char* message = (char*) malloc(length * sizeof(char));
-
-		glGetShaderInfoLog(id, length, &length, message);
-
-		std::cout << "Failed to compile " << (type == GL_VERTEX_SHADER ? "vertex" : "fragment") << std::endl;
-		std::cout << message << std::endl;
-
-		glDeleteShader(id);
-		
-		free(message);
-
-		return 0;
-	}
-
-	return id;
 }
