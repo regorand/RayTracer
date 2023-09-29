@@ -86,11 +86,11 @@ int Application::run() {
     texture.updateTexture(buffer.getData());
     */
 
-    ComputeShader computeShader("res/shaders/compute/computeNoBounces.comp");
+    ComputeShader computeShader("res/shaders/compute/computeRayTracer.comp");
 
     computeSimple(&texture, &computeShader);
 
-    bool alwaysRenderNew = false;
+    bool alwaysRenderNew = true;
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
