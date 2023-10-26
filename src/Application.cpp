@@ -8,6 +8,7 @@
 #include "glm/gtc/type_ptr.hpp"
 #include "glWrappers/shaders/ComputeShader.h"
 #include "renderers/ComputeRender.h"
+#include "glWrappers/shaders/ShaderLoad.h"
 #include <imgui.h>
 
 Application::Application() { }
@@ -87,10 +88,14 @@ int Application::run() {
     */
 
     ComputeShader computeShader("res/shaders/compute/computeRayTracer.comp");
+    // ComputeShader computeShader("res/shaders/includeTest/includeMain.comp");
+    // ComputeShader computeShader("res/shaders/compute/computeNoBounces.comp");
 
     computeSimple(&texture, &computeShader);
 
-    bool alwaysRenderNew = true;
+    bool alwaysRenderNew = false;
+    bool showDebugWindow = false;
+    bool resolve = false;
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
@@ -100,7 +105,7 @@ int Application::run() {
         ImGui::NewFrame();
 
         {
-            ImGui::Begin("Hello, world!");
+            ImGui::Begin("Control Panel");
 
             if (ImGui::Button("Reload display shaders"))
                 br.reloadShaders();
@@ -114,7 +119,24 @@ int Application::run() {
             }
 
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+            std::string debugButtonString = std::string(showDebugWindow ? "Hide " : "Show ") + "debug window";
+            if (ImGui::Button(debugButtonString.c_str())) {
+                showDebugWindow = !showDebugWindow;
+            }
             ImGui::End();
+
+            if (showDebugWindow) {
+                ImGui::Begin("Debug");
+                ImGui::Checkbox("Resolve Custom Symbols", &resolve);
+
+                if (ImGui::Button("Test Shader Include Module")) {
+                    std::string testSrc = loadShaderSource("res/shaders/includeTest/includeMain.comp", resolve);
+                    std::cout << testSrc << std::endl;
+                }
+
+                ImGui::End();
+            }
+
         }
 
         ImGui::Render();

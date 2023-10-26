@@ -8,7 +8,7 @@
 #include "glWrappers/Texture.h"
 
 BufferRenderer::BufferRenderer()
-    : mShader(Shader("res/shaders/fullscreen.vert", "res/shaders/fullscreen.frag")),
+    : mShader(Shader("res/shaders/raster/fullscreen.vert", "res/shaders/raster/fullscreen.frag")),
         mVa(std::make_shared<VertexArray>()),
         mVerts(std::make_shared<ArrayBuffer>((void *) VERTICES, 4 * 3 * sizeof(float), true))
 {

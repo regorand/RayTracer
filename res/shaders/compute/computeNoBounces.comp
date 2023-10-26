@@ -164,7 +164,7 @@ void main() {
 
     vec2 shiftedScaled = (texelCoord - halfSizes) / halfSizes;
     Ray ray;
-    ray.origin = vec3(0, 0, 15);
+    ray.origin = vec3(0, 0, 35);
     ray.direction = normalize(camDir + upDist * shiftedScaled.y * upDir + sideDist * shiftedScaled.x * tanDir);
 
     // Sphere spheres[5] = getSampleScene();

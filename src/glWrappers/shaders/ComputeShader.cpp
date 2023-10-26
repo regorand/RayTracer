@@ -2,6 +2,7 @@
 #include "ComputeShader.h"
 #include "utils/fileUtils.hpp"
 #include "ShaderUtils.hpp"
+#include "ShaderLoad.h"
 
 ComputeShader::ComputeShader(std::string path)
         : mSourcePath(path), mIsValid(false) {
@@ -20,7 +21,7 @@ void ComputeShader::unbind()
 
 void ComputeShader::reloadShader() {
 
-    std::string src = read_file(mSourcePath);
+    std::string src = loadShaderSource(mSourcePath, true);
     createShader(src);
     if (mIsValid) {
         glUseProgram(mGLid);
@@ -50,4 +51,34 @@ void ComputeShader::createShader(const std::string &shaderSource) {
     }
 
     glDeleteShader(shaderId);
+}
+
+bool ComputeShader::setUniform2f(const std::string &name, const glm::vec2 &value) {
+    int uniformId = getUniformLocation(name);
+    if (uniformId == -1) {
+        printUniformNotFound(name);
+        return false;
+    }
+    glUniform2f(uniformId, value.x, value.y);
+    return true;
+}
+
+int ComputeShader::getUniformLocation(const std::string name) {
+    auto name_c_str = name.c_str();
+    int res = glGetUniformLocation(mGLid, name_c_str);
+    return res;
+}
+
+void ComputeShader::printUniformNotFound(std::string name) {
+    std::cout << "Could not find Uniform with name \"" << name << "\"" << std::endl;
+}
+
+bool ComputeShader::setUniform1i(const std::string &name, const int value) {
+    int uniformId = getUniformLocation(name);
+    if (uniformId == -1) {
+        printUniformNotFound(name);
+        return false;
+    }
+    glUniform1i(uniformId, value);
+    return true;
 }

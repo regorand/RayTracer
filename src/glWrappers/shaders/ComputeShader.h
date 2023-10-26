@@ -5,6 +5,7 @@
 
 #include <string>
 #include "GL/glew.h"
+#include "glm/vec2.hpp"
 
 class ComputeShader {
 
@@ -23,6 +24,14 @@ public:
     void reloadShader();
     void createShader(const std::string &shaderSource);
 
+    bool setUniform1i(const std::string& name, const int value);
+
+    bool setUniform2f(const std::string& name, const glm::vec2& value);
+
+private:
+    int getUniformLocation(const std::string name);
+
+    void printUniformNotFound(std::string name);
 };
 
 

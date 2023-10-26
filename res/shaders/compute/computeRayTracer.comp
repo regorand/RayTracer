@@ -6,150 +6,28 @@ layout(rgba32f, binding = 0) uniform image2D imgOutput;
 
 const float PI = 3.14159;
 
-struct Material {
-    vec3 color;
-    float diffuse; // 1 - diffuse is specular term
-};
+uniform vec2 frameSeed;
 
-struct Sphere {
-    vec3 center;
-    float radius;
-    Material mat;
-};
+const vec3 lightPos = vec3(15, 15, 5);
+const vec3 lightIntensity = 10 * vec3(100, 100, 100);
 
-struct Ray {
-    vec3 origin;
-    vec3 direction;
-};
+const int MAX_BOUNCES = 2;
 
-const int MAX_BOUNCES = 1;
-const int NUM_SPHERES = 5;
-
-const Sphere spheres[NUM_SPHERES] = Sphere[NUM_SPHERES](
-    Sphere(vec3(0, 0, -10), 4, Material(vec3(1, 0, 1), 1)),
-    Sphere(vec3(0, 5, -15), 5, Material(vec3(1, 1, 0), 1)),
-    Sphere(vec3(16, -6, -8), 2, Material(vec3(0, 0, 1), 0.8)),
-    Sphere(vec3(-10, 10, -26), 8, Material(vec3(0, 1, 0), 0)),
-    Sphere(vec3(0, -1000, -30), 990, Material(vec3(0, 1, 1), 1))
-);
-
-const vec3 lightPos = vec3(15, 15, -15);
-const vec3 lightIntensity = 100 * vec3(100, 100, 100);
-
-bool intersectSphere(Ray ray, Sphere sphere, out float dist) {
-    vec3 centerMinusOrigin = ray.origin - sphere.center;
-
-    float a = dot(ray.direction, ray.direction);
-    float b = 2 * dot(ray.direction, centerMinusOrigin);
-    float c = dot(centerMinusOrigin, centerMinusOrigin) - sphere.radius * sphere.radius;
-
-    float discriminant = b * b - (4 * a * c);
-    if (discriminant < 0) return false;
-    float discrRoot = sqrt(discriminant);
-
-    float t1 = (-b + discrRoot) / (2 * a);
-    float t2 = (-b - discrRoot) / (2 * a);
-
-    float t_near = min(t1, t2);
-    float t_far = max(t1, t2);
-    if (t_near >= 0) {
-        dist = t_near;
-        return true;
-    }
-    if (t_far < 0) return false;
-    dist = t2;
-    return true;
-}
-
-bool castShadowRay(vec3 point, vec3 lightPos) {
-    Ray ray;
-    vec3 unnormToLight = lightPos - point;
-    float distToLight = length(unnormToLight);
-    ray.direction = unnormToLight / distToLight;
-    float eps = 1e-1;
-    ray.origin = point + eps * ray.direction;
-
-    for (int i = 0; i < 5; i++) {
-        float dist;
-        bool hit = intersectSphere(ray, spheres[i], dist);
-        if (hit && dist < distToLight) return true;
-    }
-    return false;
-}
-
-vec3 getLightContrib(vec3 pos) {
-    float dist = distance(pos, lightPos);
-    float shadowFac = castShadowRay(pos, lightPos) ? 0 : 1;
-    return shadowFac * lightIntensity / (dist * dist);
-}
-
-bool getClosestHit(Ray ray, out Sphere closestSphere, out float dist) {
-    float closest = 1000000;
-    bool anyHit = false;
-    int closestIndex = -1;
-
-    for (int i = 0; i < 5; i++) {
-        float dist;
-        bool hit = intersectSphere(ray, spheres[i], dist);
-        if (hit && dist > 0) {
-            anyHit = true;
-            if (dist < closest) {
-                closest = dist;
-                closestIndex = i;
-            }
-        }
-    }
-    if (anyHit) {
-        closestSphere = spheres[closestIndex];
-        dist = closest;
-    }
-    return anyHit;
-}
-
-vec3 raytrace(Ray ray) {
-    Sphere hitSphere;
-
-    float dists[MAX_BOUNCES];
-    Sphere hitSpheres[MAX_BOUNCES];
-    vec3 normals[MAX_BOUNCES];
-    Ray rays[MAX_BOUNCES + 1]; // 1 extra direction to prevent branching
-    int lastHit = -1;
-    rays[0] = ray;
-    for (int i = 0; i < MAX_BOUNCES; i++) {
-        bool hit = getClosestHit(rays[i], hitSpheres[i], dists[i]);
-
-        if (!hit) break;
-        lastHit = i;
-
-        rays[i+1].origin = rays[i].origin + dists[i] * rays[i].direction;
-        normals[i] = normalize(rays[i].origin - hitSpheres[i].center);
-        rays[i+1].direction = reflect(rays[0].direction, normals[i]);
-    }
-
-    if (lastHit == -1) return vec3(0);
-
-    vec3 cumulutiveLight = getLightContrib(rays[lastHit + 1].origin);
-    rays[lastHit+1].direction = normalize(lightPos - rays[lastHit+1].origin);
-
-    for (int i = lastHit; i >= 0; i--) {
-        vec3 hitPos = rays[i].origin + dists[i] * rays[i].direction;
-        vec3 N = normalize(hitPos - hitSpheres[i].center);
-
-        vec3 lightContrib = getLightContrib(rays[i].origin);
-        vec3 L = normalize(lightPos - rays[i].origin);
-
-        float vertexDist = distance(rays[i].origin, rays[i+1].origin);
-
-        float diffuse = hitSpheres[i].mat.diffuse;
-        cumulutiveLight = diffuse * dot(N, L) * hitSpheres[i].mat.color * lightContrib +
-                            (1 - diffuse) * hitSpheres[i].mat.color * cumulutiveLight / vertexDist;
-
-    }
-
-    return cumulutiveLight;
-}
+#include "res/shaders/utils/sampleSceneDescr.glsl"
+#include "res/shaders/utils/samplingUtils.glsl"
+#include "res/shaders/utils/rayTraceUtils.glsl"
 
 void main() {
+    vec2 texelCoord = vec2(gl_GlobalInvocationID.xy);
+    vec2 halfSizes = vec2(gl_NumWorkGroups.xy / 2);
+
+    vec2 seed = frameSeed + gl_GlobalInvocationID.xy;
+    vec3 val = sampleHemisphereUniform(seed);
+
+    // imageStore(imgOutput, ivec2(texelCoord), vec4(vec3(length(val) * 0.5), 1));
+    // return;
+
+
     float fov = PI / 2;
     float aspect = 9.0/16.0;
 
@@ -159,9 +37,6 @@ void main() {
     const vec3 camDir = vec3(0, 0, -1);
     const vec3 upDir = vec3(0, 1, 0);
     const vec3 tanDir = cross(camDir, upDir);
-
-    vec2 texelCoord = vec2(gl_GlobalInvocationID.xy);
-    vec2 halfSizes = vec2(gl_NumWorkGroups.xy / 2);
 
     vec2 shiftedScaled = (texelCoord - halfSizes) / halfSizes;
     Ray ray;

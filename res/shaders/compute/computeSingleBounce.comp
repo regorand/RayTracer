@@ -1,0 +1,37 @@
+#include "res"
+
+int main() {
+
+
+}
+
+/*
+Goal:
+1. If needed create a new Ray
+2. Else: read ray from buffer
+3. Compute 1 bounce including next direction
+    3.3 -> If doing NEE, do it now
+    3.5 -> Emissive Materials: See below
+4. Compute relevant multipliers
+5. Multiply relevant multipliers into buffer
+6. Store pos + bounce dir into buffer
+7. determine if ray terminates -> see below
+
+Emissive Materials:
+Check which applies:
+    1. Calculate Contribution using buffer multipliers right there, add into colorbuffer
+    2. Don't actually computer contribution of indirect bounce when using NEE ?
+
+Ray Termination
+Either:
+    1. Use constant path length (and accept bias for simplicity)
+    2. Russian Roulette -> May lead to different SPPs per pixel -> if I want constant, will waste some ressources
+
+
+Buffer contents needed:
+1. vec3 pos
+2. vec3 direction
+3. vec3 colorMultiplier -> Can I run into numerical problems with this ?
+
+
+*/
