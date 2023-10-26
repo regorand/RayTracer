@@ -50,8 +50,18 @@ mix(sample3, sample2, sx), mix(sample1, sample0, sx)
 , sy);
 }
 
+void applyGammaCorrection(inout vec3 value) {
+    value = pow(value, vec3(1 / 2.2));
+}
+
+void applyReinhardToneMapping(inout vec3 value) {
+    value = value / (value + 1);
+}
+
 void main() {
-    outColor = texture(tex, uv);
-    // outColor = textureBicubic(tex, uv);
-    // outColor = vec4(uv.x, uv.y, 0, 1);
+    vec3 color = texture(tex, uv).xyz;
+    applyGammaCorrection(color);
+    // applyReinhardToneMapping(color);
+
+    outColor = vec4(color, 1);
 }

@@ -80,13 +80,6 @@ int Application::run() {
     Scene scene;
     Texture texture(&buffer);
 
-    /*
-    rayTracer.setScene(&scene);
-    rayTracer.setHostBuffer(&buffer);
-    rayTracer.render();
-    texture.updateTexture(buffer.getData());
-    */
-
     ComputeShader computeShader("res/shaders/compute/computeRayTracer.comp");
     // ComputeShader computeShader("res/shaders/includeTest/includeMain.comp");
     // ComputeShader computeShader("res/shaders/compute/computeNoBounces.comp");
