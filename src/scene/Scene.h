@@ -4,7 +4,7 @@
 
 #include <vector>
 #include "glm/vec3.hpp"
-#include "Camera.h"
+#include "scene/Camera.h"
 #include "geometry/Objects.h"
 
 

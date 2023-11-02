@@ -4,12 +4,9 @@
 #include "imgui_impl_opengl3.h"
 #include "renderers/BufferRenderer.h"
 #include "temp/PerlinNoise.hpp"
-#include "RayTracer.h"
-#include "glWrappers/shaders/ComputeShader.h"
-#include "renderers/ComputeRender.h"
-#include "glWrappers/shaders/ShaderLoad.h"
 #include "renderers/SingleBounceRenderer.h"
 #include "ImguiUtils.h"
+#include "scene/Scene.h"
 #include <imgui.h>
 
 Application::Application() { }
@@ -77,15 +74,9 @@ int Application::run() {
     const siv::PerlinNoise perlinB{seedB };
 
 
-    RayTracer rayTracer;
     Scene scene;
     Texture texture(&buffer);
     texture.setAccessType(GL_READ_WRITE);
-
-    // ComputeShader computeShader("res/shaders/compute/computeRayTracer.comp");
-    // ComputeShader computeShader("res/shaders/compute/computeSingleBounce.comp");
-    // ComputeShader computeShader("res/shaders/includeTest/includeMain.comp");
-    // ComputeShader computeShader("res/shaders/compute/computeNoBounces.comp");
 
     SingleBounceRenderer singleBounceRenderer(displayWidth, displayHeight);
     singleBounceRenderer.clearTarget(&texture);
@@ -94,15 +85,9 @@ int Application::run() {
 
     singleBounceRenderer.render(&texture, renderSettings);
 
-    // computeSimple(&texture, &computeShader);
-
     int sppCounter = 0;
 
     bool alwaysRenderNew = false;
-    bool showDebugWindow = false;
-    bool resolve = false;
-
-    int pathLength = 1;
 
     ImGuiMenuSettings menuSettings;
 
