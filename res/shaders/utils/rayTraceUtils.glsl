@@ -1,7 +1,11 @@
-#include "res/shaders/utils/types.glsl"
+#include "res/shaders/utils/typesAndValues.glsl"
 #include "res/shaders/utils/intersectUtils.glsl"
 
+const int MAX_BOUNCES = 2;
+
+/*
 bool castShadowRay(vec3 point, vec3 lightPos) {
+    bool enteringMaterial;
     Ray ray;
     vec3 unnormToLight = lightPos - point;
     float distToLight = length(unnormToLight);
@@ -11,7 +15,7 @@ bool castShadowRay(vec3 point, vec3 lightPos) {
 
     for (int i = 0; i < 5; i++) {
         float dist;
-        bool hit = intersectSphere(ray, spheres[i], dist);
+        bool hit = intersectSphere(ray, spheres[i], dist, enteringMaterial);
         if (hit && dist < distToLight) return true;
     }
     return false;
@@ -22,16 +26,68 @@ vec3 getLightContrib(vec3 pos) {
     float shadowFac = castShadowRay(pos, lightPos) ? 0 : 1;
     return shadowFac * lightIntensity / (dist * dist);
 }
+*/
 
-bool getClosestHit(Ray ray, out Sphere closestSphere, out float dist) {
+bool getClosestHit(Ray ray, out RayHit rayhit) {
+    float closest = 1000000;
+    bool anyHit = false;
+
+    // Spheres
+    for (int i = 0; i < NUM_SPHERES; i++) {
+        float dist;
+        bool tmpEM;
+        Sphere sphere = spheres[i];
+        bool hit = intersectSphere(ray, sphere, dist, tmpEM);
+        if (hit && dist > 0) {
+            anyHit = true;
+            if (dist < closest) {
+                closest = dist;
+                rayhit.dist = dist;
+                rayhit.mat = sphere.mat;
+                rayhit.position = ray.origin + ray.direction * dist;
+                rayhit.normal = normalize(rayhit.position - sphere.center);
+                rayhit.enteringMat = tmpEM;
+            }
+        }
+    }
+
+    // Triangles
+    for (int i = 0; i < NUM_TRIANGLES; i++) {
+        float dist;
+        bool tmpEM;
+        Triangle triangle = triangles[i];
+        bool hit = intersectTriangle(ray, triangle, dist, tmpEM);
+        if (hit && dist > 0) {
+            anyHit = true;
+            if (dist < closest) {
+                closest = dist;
+                rayhit.dist = dist;
+                rayhit.mat = triangle.mat;
+                rayhit.position = ray.origin + ray.direction * dist;
+                rayhit.normal = normalize(cross(triangle.P0 - triangle.P1, triangle.P0 - triangle.P2));
+                rayhit.enteringMat = tmpEM;
+            }
+        }
+    }
+
+
+    return anyHit;
+}
+
+
+
+bool getClosestHit(Ray ray, out Sphere closestSphere, out float dist, out bool enteringMaterial) {
     float closest = 1000000;
     bool anyHit = false;
     int closestIndex = -1;
 
+    // Spheres
     for (int i = 0; i < 5; i++) {
         float dist;
-        bool hit = intersectSphere(ray, spheres[i], dist);
+        bool tmpEM;
+        bool hit = intersectSphere(ray, spheres[i], dist, tmpEM);
         if (hit && dist > 0) {
+            enteringMaterial = tmpEM;
             anyHit = true;
             if (dist < closest) {
                 closest = dist;
@@ -39,6 +95,29 @@ bool getClosestHit(Ray ray, out Sphere closestSphere, out float dist) {
             }
         }
     }
+
+    /*
+
+    Triangle triangle;
+    Material mat;
+    mat.color = vec3(1, 0, 0);
+    mat.diffuse = true;
+    mat.emissive = false;
+    mat.transmissive = false;
+    mat.IOR = 1.0f;
+    triangle.P0 = vec3(10, -10, -15);
+    triangle.P1 = vec3(-10, 10, -15);
+    triangle.P2 = vec3(-10, -10, -15);
+    triangle.mat;
+    float dist;
+    bool tmpEM;
+    intersectTriangle(ray, triangle, dist, tmpEM);
+    if (hit && dist < closest) {
+        closest = dist;
+    }
+*/
+
+
     if (anyHit) {
         closestSphere = spheres[closestIndex];
         dist = closest;
@@ -46,49 +125,12 @@ bool getClosestHit(Ray ray, out Sphere closestSphere, out float dist) {
     return anyHit;
 }
 
-vec3 raytrace(Ray ray) {
-    vec2 seed = frameSeed + gl_GlobalInvocationID.xy;
+vec3 sampleNEETarget(vec2 seed, out Triangle triangle) {
+    // terrible name, but it indexes into the array of indices
+    int sampledIndexIndex = int(max(rand(seed) * LIGHT_SOURCE_COUNT - 1e-5, 0.0f)); // complicated to make 100% sure index can not be the same as LIGHT_SOURCE_COUNT
 
-    Sphere hitSphere;
+    int primitiveIndex = LIHGT_INDICES[sampledIndexIndex];
 
-    float dists[MAX_BOUNCES];
-    Sphere hitSpheres[MAX_BOUNCES];
-    vec3 normals[MAX_BOUNCES];
-    Ray rays[MAX_BOUNCES + 1]; // 1 extra direction to prevent branching
-    int lastHit = -1;
-    rays[0] = ray;
-    for (int i = 0; i < MAX_BOUNCES; i++) {
-        bool hit = getClosestHit(rays[i], hitSpheres[i], dists[i]);
-
-        if (!hit) break;
-        lastHit = i;
-
-        rays[i+1].origin = rays[i].origin + dists[i] * rays[i].direction;
-        normals[i] = normalize(rays[i].origin - hitSpheres[i].center);
-
-        float diffuse = hitSpheres[i].mat.diffuse;
-
-        rays[i+1].direction = diffuse * getNewDirection(seed, normals[i]) + (1 - diffuse) * reflect(rays[i].direction, normals[i]);
-    }
-
-    if (lastHit == -1) return vec3(0);
-
-    vec3 cumulutiveLight = hitSpheres[lastHit].mat.diffuse * getLightContrib(rays[lastHit + 1].origin);
-    rays[lastHit+1].direction = normalize(lightPos - rays[lastHit+1].origin);
-
-    for (int i = lastHit; i >= 0; i--) {
-        vec3 hitPos = rays[i].origin + dists[i] * rays[i].direction;
-        vec3 N = normalize(hitPos - hitSpheres[i].center);
-
-        float vertexDist = distance(rays[i].origin, rays[i+1].origin);
-
-        float diffuse = hitSpheres[i].mat.diffuse;
-
-        cumulutiveLight = diffuse * hitSpheres[i].mat.color * cumulutiveLight + (1 - diffuse) * cumulutiveLight;
-        // cumulutiveLight = diffuse * dot(N, L) * hitSpheres[i].mat.color * lightContrib +
-        //                   (1 - diffuse) * hitSpheres[i].mat.color * cumulutiveLight / vertexDist;
-
-    }
-
-    return cumulutiveLight;
+    triangle = triangles[primitiveIndex];
+    return sampleTrianglePos(triangle, seed);
 }

@@ -1,33 +1,45 @@
+#include <iostream>
 #include "Texture.h"
 #include "GL/glew.h"
 
+Texture::Texture(int width, int height)
+        : mGlId(),
+          mFilePath(""),
+          mLoadedFromFile(false),
+          m_bytesPerPixel(0),
+          mWidth(width),
+          mHeight(height),
+          mFormat(GL_RGB),
+          mInternalFormat(GL_RGBA32F),
+          mType(GL_FLOAT),
+          mAccessType(GL_READ_WRITE) {
+
+}
 
 Texture::Texture(HostBuffer *buffer)
-    : mGlId(),
-      mFilePath(""),
-      mLoadedFromFile(false),
-      m_bytesPerPixel(0),
-      mHeight(buffer->getHeight()),
-      mWidth(buffer->getWidth()),
-      mFormat(GL_RGB),
-      mInternalFormat(GL_RGBA32F),
-      mType(GL_FLOAT)
-{
+        : mGlId(),
+          mFilePath(""),
+          mLoadedFromFile(false),
+          m_bytesPerPixel(0),
+          mWidth(buffer->getWidth()),
+          mHeight(buffer->getHeight()),
+          mFormat(GL_RGB),
+          mInternalFormat(GL_RGBA32F),
+          mType(GL_FLOAT),
+          mAccessType(GL_READ_WRITE) {
     createTexture(mInternalFormat, mWidth, mHeight, mFormat, mType, buffer->getData());
 }
 
-Texture::~Texture()
-{
+Texture::~Texture() {
     glDeleteTextures(1, &mGlId);
 }
-void Texture::bind(unsigned int textureSlot)
-{
+
+void Texture::bind(unsigned int textureSlot) {
     glActiveTexture(GL_TEXTURE0 + textureSlot);
     glBindTexture(GL_TEXTURE_2D, mGlId);
 }
 
-void Texture::unbind()
-{
+void Texture::unbind() {
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
@@ -61,7 +73,7 @@ void Texture::updateTexture(GLint xOffset, GLint yOffset, GLsizei width, GLsizei
 }
 
 void Texture::bindAsImage(unsigned int imageSlot) {
-    glBindImageTexture(imageSlot, mGlId, 0, GL_FALSE, 0, GL_WRITE_ONLY, mInternalFormat);
+    glBindImageTexture(imageSlot, mGlId, 0, GL_FALSE, 0, mAccessType, mInternalFormat);
 }
 
 unsigned int Texture::getWidth() {
@@ -70,4 +82,16 @@ unsigned int Texture::getWidth() {
 
 unsigned int Texture::getHeight() {
     return (unsigned int) mHeight;
+}
+
+void Texture::setAccessType(GLenum newType) {
+    if (newType != GL_READ_WRITE && newType != GL_READ_ONLY && newType != GL_WRITE_ONLY) {
+        std::cerr << "Trying to set access type of texture buffer to invalid value " << newType << std::endl;
+        return;
+    }
+    mAccessType = newType;
+}
+
+GLenum Texture::getAccessType() {
+    return mAccessType;
 }

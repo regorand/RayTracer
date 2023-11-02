@@ -17,3 +17,5 @@ inline void computeSimple(Texture *texture, ComputeShader *shader) {
     glDispatchCompute(texture->getWidth(), texture->getHeight(), 1);
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 }
+
+// inline void computeSingleBounceShader(SingleBounceRessources *res, ComputeShader *shader);

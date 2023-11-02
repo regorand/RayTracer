@@ -17,8 +17,14 @@ private:
     GLint mInternalFormat;
     GLenum mType;
 
+    /*
+     * Access Type when the texture is bound as a buffer object
+     */
+    GLenum mAccessType;
+
     unsigned char* m_Buf;
 public:
+    Texture(int mWidth, int mHeight);
     Texture(const std::string& path);
     Texture(HostBuffer *buffer);
     ~Texture();
@@ -28,6 +34,9 @@ public:
 
     unsigned int getWidth();
     unsigned int getHeight();
+
+    void setAccessType(GLenum newType);
+    GLenum getAccessType();
 
     void bind(unsigned int textureSlot = 0);
     void unbind();

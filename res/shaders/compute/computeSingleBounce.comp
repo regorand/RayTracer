@@ -1,13 +1,154 @@
-#include "res"
+#version 430 core
 
-int main() {
+layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
+layout (rgba32f, binding = 0) uniform image2D imgOutput;
+
+layout (rgba32f, binding = 1) uniform image2D posBuffer;
+layout (rgba32f, binding = 2) uniform image2D dirBuffer;
+layout (rgba32f, binding = 3) uniform image2D mulBuffer;
+
+uniform vec2 frameSeed;
+
+// #include "res/shaders/scenes/sampleSceneDescr.glsl"
+#include "res/shaders/scenes/cornell.glsl"
+#include "res/shaders/utils/samplingUtils.glsl"
+#include "res/shaders/utils/rayTraceUtils.glsl"
+
+void main() {
+    vec2 texelCoord = vec2(gl_GlobalInvocationID.xy);
+    ivec2 bufferCoords = ivec2(texelCoord);
+
+    const float eps = 1e-4;
+
+    vec3 mul = imageLoad(mulBuffer, bufferCoords).xyz;
+    if (length(mul) < eps) {
+        return;
+    }
+
+    vec3 pos = imageLoad(posBuffer, bufferCoords).xyz;
+    vec3 dir = imageLoad(dirBuffer, bufferCoords).xyz;
+
+    Ray ray = Ray(pos, dir);
+    float dist;
+    Sphere hitSphere;
+
+    bool enteringMaterial;
+    RayHit rayHit;
+    bool hit = getClosestHit(ray, rayHit);
+    vec3 newPos = rayHit.position;
+
+    vec3 N = hit ? rayHit.normal : vec3(0);
+    bool transmissive = rayHit.mat.transmissive;
+
+    vec3 newDir = vec3(0);
+    if (transmissive) {
+        float IOR = rayHit.mat.IOR;
+        // refraction calculation from https://stackoverflow.com/questions/29758545/how-to-find-refraction-vector-from-incoming-vector-and-surface-normal#:~:text=Let%20n%20be%20the%20normalized,c%20%3D%20%2Dn%20dot%20V_incedence.
+
+        float r = rayHit.enteringMat ? 1 / IOR : IOR;
+        // N = rayHit.enteringMat ? N : -N;
+        float c = dot(-N, dir);
+
+        if (hit) {
+            newDir = r * dir + N * (r * c - sqrt(1.0f - pow(r, 2.0f) * (1.0f - c * c)));
+        }
+        mul *= float(hit);
+
+        newPos += eps * newDir;
+
+        imageStore(posBuffer, bufferCoords, newPos.xyzz);
+        imageStore(dirBuffer, bufferCoords, newDir.xyzz);
+        imageStore(mulBuffer, bufferCoords, mul.xyzz);
+        return;
+    }
+
+    const vec3 LIGHT_INTENSITY = vec3(80);
+    bool emissive = rayHit.mat.emissive;
+    vec3 emission = int(emissive) * LIGHT_INTENSITY;
+
+    // I think this is correct
+    // I directly sample outgoing direction, not by area of some light or similar, thus I have a ray from point to point
+    // in a vacuum, which has no falloff
+    float attenuation = 1; // dist * dist;
+
+    // mul *= hitSphere.mat.color;
+    bool diffuseBSDF = hit && rayHit.mat.diffuse;
+    vec3 usedColor = emissive || !diffuseBSDF ? vec3(1) : rayHit.mat.color;
+    mul *= int(hit) * usedColor / attenuation;
+
+    vec3 color = int(hit) * mul * emission;
+
+
+    vec2 seed = frameSeed + gl_GlobalInvocationID.xy;
+
+
+    if (diffuseBSDF) {
+        vec3 newTangentDir = sampleHemisphereUniform(seed);
+
+        // construct some tangent space around the normal of the surface
+        // T and B don't matter as long they are orthogonal to N and each other, as BSDF (currently lambert diffuse) is isotropic
+        vec3 T = vec3(N.y, N.z, -N.x);
+        vec3 B = cross(N, T);
+
+        // vec3 newDir = newTangentDir;
+        newDir = int(hit) * normalize(mat3(T, B, N) * newTangentDir);
+
+        /*
+        // NEE
+        Triangle targetLightTri;
+        vec3 sampledLightPos = sampleNEETarget(seed, targetLightTri);
+
+
+
+        vec3 lightVec = sampledLightPos - newPos;
+        float targetDist = length(lightVec);
+        Ray shadowRay = Ray(newPos, lightVec / targetDist);
+
+
+        vec3 edge1 = targetLightTri.P1 - targetLightTri.P0;
+        vec3 edge2 = targetLightTri.P2 - targetLightTri.P0;
+        float pdf = pow(targetDist, 2.0f) * 2.0f / (length(edge1) * length(edge2));
+
+        RayHit shadowHit;
+        bool shadowHasHit = getClosestHit(shadowRay, shadowHit);
+        if (!(shadowHasHit && shadowHit.dist < targetDist)) {
+            color += mul * LIGHT_INTENSITY * pdf;
+        }
+        // color = vec3(pdf);
+        // 1. get NEE Direction
+        // 2. cast Shadow ray
+        // 3. apply light or don't
+        */
+    } else {
+        newDir = int(hit) * reflect(dir, N);
+    }
+
+    float newDirLambert = int(hit) * max(0.0f, dot(N, newDir));
+    mul *= newDirLambert;
+
+    vec4 outVal = vec4(color, 1);
+    vec4 prevBufferContent = imageLoad(imgOutput, bufferCoords);
+
+    float pdfNorm = diffuseBSDF ? 1 / (4 * PI) : 1;
+
+
+    vec4 newValue = prevBufferContent + outVal * vec4(vec3(pdfNorm), 1);
+    // vec3 debugColor = vec3(diffuseBSDF);
+    vec3 debugColor = newPos;
+    // newValue = int(hit) * vec4(debugColor, 1);
+    imageStore(imgOutput, bufferCoords, newValue);
+
+    newPos += eps * newDir;
+    imageStore(posBuffer, bufferCoords, (1 - int(emissive)) * newPos.xyzz);
+    imageStore(dirBuffer, bufferCoords, (1 - int(emissive)) * newDir.xyzz);
+    imageStore(mulBuffer, bufferCoords, (1 - int(emissive)) * mul.xyzz);
 
 }
 
 /*
 Goal:
-1. If needed create a new Ray
+1. If needed create a new Ray -> Not when needed, when CPU says to through Uniform
 2. Else: read ray from buffer
 3. Compute 1 bounce including next direction
     3.3 -> If doing NEE, do it now
@@ -32,6 +173,19 @@ Buffer contents needed:
 1. vec3 pos
 2. vec3 direction
 3. vec3 colorMultiplier -> Can I run into numerical problems with this ?
+
+
+Code saving:
+
+    // Do NEE (not sure if correctly yet, but something)
+
+    bool shadow = castShadowRay(newPos, lightPos);
+    vec3 lightVec = lightPos - newPos;
+    float lightDist = length(lightVec);
+
+    float lightLambert = max(0.0f, dot(N, normalize(lightVec)));
+
+
 
 
 */

@@ -5,10 +5,10 @@
 #include "renderers/BufferRenderer.h"
 #include "temp/PerlinNoise.hpp"
 #include "RayTracer.h"
-#include "glm/gtc/type_ptr.hpp"
 #include "glWrappers/shaders/ComputeShader.h"
 #include "renderers/ComputeRender.h"
 #include "glWrappers/shaders/ShaderLoad.h"
+#include "renderers/SingleBounceRenderer.h"
 #include <imgui.h>
 
 Application::Application() { }
@@ -79,16 +79,26 @@ int Application::run() {
     RayTracer rayTracer;
     Scene scene;
     Texture texture(&buffer);
+    texture.setAccessType(GL_READ_WRITE);
 
-    ComputeShader computeShader("res/shaders/compute/computeRayTracer.comp");
+    // ComputeShader computeShader("res/shaders/compute/computeRayTracer.comp");
+    // ComputeShader computeShader("res/shaders/compute/computeSingleBounce.comp");
     // ComputeShader computeShader("res/shaders/includeTest/includeMain.comp");
     // ComputeShader computeShader("res/shaders/compute/computeNoBounces.comp");
 
-    computeSimple(&texture, &computeShader);
+    SingleBounceRenderer singleBounceRenderer(displayWidth, displayHeight);
+    singleBounceRenderer.clearTarget(&texture);
+    singleBounceRenderer.render(&texture, 1);
+
+    // computeSimple(&texture, &computeShader);
+
+    int sppCounter = 0;
 
     bool alwaysRenderNew = false;
     bool showDebugWindow = false;
     bool resolve = false;
+
+    int pathLength = 1;
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
@@ -103,12 +113,24 @@ int Application::run() {
             if (ImGui::Button("Reload display shaders"))
                 br.reloadShaders();
             ImGui::SameLine();
-            if (ImGui::Button("Reload compute shaders"))
-                computeShader.reloadShader();
+            if (ImGui::Button("Reload compute shaders")) {
+                singleBounceRenderer.reloadShader();
+            }
+
+            ImGui::SliderInt("Path length", &pathLength, 1, 10);
+            std::string sppString = "SPP of current image: " + std::to_string(sppCounter);
+            ImGui::Text(sppString.c_str());
 
             ImGui::Checkbox("Always render new", &alwaysRenderNew);
             if (alwaysRenderNew || ImGui::Button("Render")) {
-                computeSimple(&texture, &computeShader);
+                singleBounceRenderer.render(&texture, pathLength);
+                sppCounter++;
+            }
+
+            ImGui::SameLine();
+            if (ImGui::Button("Clear Color Buffer")) {
+                singleBounceRenderer.clearTarget(&texture);
+                sppCounter = 0;
             }
 
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
@@ -136,7 +158,6 @@ int Application::run() {
 
         glViewport(0, 0, displayWidth, displayHeight);
         glClear(GL_COLOR_BUFFER_BIT);
-
 
         br.render(&texture);
 

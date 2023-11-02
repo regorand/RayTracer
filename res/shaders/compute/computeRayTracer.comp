@@ -4,14 +4,8 @@ layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 layout(rgba32f, binding = 0) uniform image2D imgOutput;
 
-const float PI = 3.14159;
-
 uniform vec2 frameSeed;
 
-const vec3 lightPos = vec3(15, 15, 5);
-const vec3 lightIntensity = 10 * vec3(100, 100, 100);
-
-const int MAX_BOUNCES = 2;
 
 #include "res/shaders/utils/sampleSceneDescr.glsl"
 #include "res/shaders/utils/samplingUtils.glsl"
@@ -19,29 +13,8 @@ const int MAX_BOUNCES = 2;
 
 void main() {
     vec2 texelCoord = vec2(gl_GlobalInvocationID.xy);
-    vec2 halfSizes = vec2(gl_NumWorkGroups.xy / 2);
 
-    vec2 seed = frameSeed + gl_GlobalInvocationID.xy;
-    vec3 val = sampleHemisphereUniform(seed);
-
-    // imageStore(imgOutput, ivec2(texelCoord), vec4(vec3(length(val) * 0.5), 1));
-    // return;
-
-
-    float fov = PI / 2;
-    float aspect = 9.0/16.0;
-
-    float sideDist = tan(fov / 2);
-    float upDist = sideDist * aspect;
-
-    const vec3 camDir = vec3(0, 0, -1);
-    const vec3 upDir = vec3(0, 1, 0);
-    const vec3 tanDir = cross(camDir, upDir);
-
-    vec2 shiftedScaled = (texelCoord - halfSizes) / halfSizes;
-    Ray ray;
-    ray.origin = vec3(0, 0, 35);
-    ray.direction = normalize(camDir + upDist * shiftedScaled.y * upDir + sideDist * shiftedScaled.x * tanDir);
+    Ray ray = samplePathStart(texelCoord);
 
     vec3 color = raytrace(ray);
     vec4 outVal = vec4(color, 1);

@@ -59,9 +59,10 @@ void applyReinhardToneMapping(inout vec3 value) {
 }
 
 void main() {
-    vec3 color = texture(tex, uv).xyz;
+    vec4 bufferColor = texture(tex, uv);
+    vec3 color = bufferColor.rgb / bufferColor.a;
     applyGammaCorrection(color);
-    // applyReinhardToneMapping(color);
+    applyReinhardToneMapping(color);
 
     outColor = vec4(color, 1);
 }

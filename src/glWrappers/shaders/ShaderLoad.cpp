@@ -2,6 +2,8 @@
 #include <sstream>
 #include <filesystem>
 #include <iostream>
+#include <algorithm>
+#include <string>
 
 #include "ShaderLoad.h"
 
@@ -45,12 +47,19 @@ std::string loadShaderSource_impl(std::string path, bool resolveCustomSymbols, s
         }
     }
 
+    inStream.close();
+
     return outBuffer.str();
 }
 
 std::string loadShaderSource(std::string path, bool resolveCustomSymbols) {
     std::vector<std::string> includedFiles;
-    return loadShaderSource_impl(path, resolveCustomSymbols, includedFiles);
+    std::string combined = loadShaderSource_impl(path, resolveCustomSymbols, includedFiles);
+    std::replace(path.begin(), path.end(), '/', '-');
+    std::ofstream out(DEBUG_OUT_DIR + path);
+    out << combined;
+    out.close();
+    return combined;
 
     /*
     if (!std::filesystem::exists(path)) {

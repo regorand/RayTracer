@@ -2,17 +2,12 @@
 #include "utils/glewIncludeUtils.h"
 
 
-TextureBuffer::TextureBuffer(void* data, unsigned int size, unsigned int texture_target, size_t data_type, bool dynamic)
+TextureBuffer::TextureBuffer(void* data, unsigned int size, unsigned int texture_target, size_t data_type, GLenum usageHint)
         : m_target(0), m_texture_target(texture_target), m_datatype(data_type)
 {
     glGenBuffers(1, &m_bufObjGlId);
     glBindBuffer(GL_TEXTURE_BUFFER, m_bufObjGlId);
-    if (dynamic) {
-        glBufferData(GL_TEXTURE_BUFFER, size, data, GL_DYNAMIC_DRAW);
-    }
-    else {
-        glBufferData(GL_TEXTURE_BUFFER, size, data, GL_STATIC_DRAW);
-    }
+    glBufferData(GL_TEXTURE_BUFFER, size, data, usageHint);
 
     glGenTextures(1, &m_texBufGlId);
     glBindTexture(GL_TEXTURE_BUFFER, m_texBufGlId);

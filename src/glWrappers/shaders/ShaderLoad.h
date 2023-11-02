@@ -6,6 +6,8 @@
 static const std::string INCLUDE_PATTERN("#include");
 static const size_t INCLUDE_PATTERN_LENGTH = INCLUDE_PATTERN.size();
 
+static const std::string DEBUG_OUT_DIR = "res/shaders/debug_out/";
+
 
 // system needed more work -> The problems below ~should~ work now \\
     1. It can not deal with circular includes -> keep vector of already included files, ignore if file already in vector is included again \\
