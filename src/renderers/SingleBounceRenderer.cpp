@@ -2,25 +2,25 @@
 #include <random>
 #include <ctime>
 #include "SingleBounceRenderer.h"
+#include "imgui.h"
 
 SingleBounceRenderer::SingleBounceRenderer(int width, int height)
-    :   mWidth(width),
-        mHeight(height),
+        : mWidth(width),
+          mHeight(height),
         // mPosBuffer(TextureBuffer(nullptr, mWidth * mHeight * sizeof(float) * 4, POS_BUFFER_TARGET, POS_BUFFER_FORMAT, GL_DYNAMIC_COPY)),
         // mDirBuffer(TextureBuffer(nullptr, mWidth * mHeight * sizeof(float) * 4, DIR_BUFFER_TARGET, DIR_BUFFER_FORMAT, GL_DYNAMIC_COPY)),
         // mMultiplierBuffer(TextureBuffer(nullptr, mWidth * mHeight * sizeof(float) * 4, MULT_BUFFER_TARGET, MULT_BUFFER_FORMAT, GL_DYNAMIC_COPY)),
-        mPosBuffer(Texture(new HostBuffer(mWidth, mHeight))),
-        mDirBuffer(Texture(new HostBuffer(mWidth, mHeight))),
-        mMultiplierBuffer(Texture(new HostBuffer(mWidth, mHeight))),
+          mPosBuffer(Texture(new HostBuffer(mWidth, mHeight))),
+          mDirBuffer(Texture(new HostBuffer(mWidth, mHeight))),
+          mMultiplierBuffer(Texture(new HostBuffer(mWidth, mHeight))),
 
-        mShader(ComputeShader("res/shaders/compute/computeSingleBounce.comp")),
-        mNewPathShader(ComputeShader("res/shaders/compute/CreateNewPath.comp")),
-        mClearTargetShader(ComputeShader("res/shaders/compute/clearColorBuffer.comp"))
-{
+          mShader(ComputeShader("res/shaders/compute/computeSingleBounce.comp")),
+          mNewPathShader(ComputeShader("res/shaders/compute/CreateNewPath.comp")),
+          mClearTargetShader(ComputeShader("res/shaders/compute/clearColorBuffer.comp")) {
     newPath();
 }
 
-void SingleBounceRenderer::render(Texture *target, int pathLength) {
+void SingleBounceRenderer::render(Texture *target, RenderSettings renderSettings) {
     newPath();
 
     target->bindAsImage(TARGET_BUFFER_TARGET);
@@ -31,8 +31,14 @@ void SingleBounceRenderer::render(Texture *target, int pathLength) {
 
     mShader.bind();
 
-    for (int i = 0; i < pathLength; i++) {
-        renderSinglePass();
+    if (renderSettings.russianRoulette) {
+        while (dist.sampleFloat() < renderSettings.alphaRR) {
+            renderSinglePass();
+        }
+    } else {
+        for (int i = 0; i < renderSettings.constantPathLength; i++) {
+            renderSinglePass();
+        }
     }
 }
 
@@ -43,10 +49,7 @@ void SingleBounceRenderer::reloadShader() {
 }
 
 void SingleBounceRenderer::renderSinglePass() {
-    std::mt19937 mt(time(nullptr));
-    std::uniform_real_distribution<> dis(0.0, 1.0);
-
-    glm::vec2 seed(dis(mt), dis(mt));
+    glm::vec2 seed = dist.sampleVec2();
 
     mShader.setUniform2f("frameSeed", seed);
 
@@ -55,10 +58,8 @@ void SingleBounceRenderer::renderSinglePass() {
 }
 
 void SingleBounceRenderer::newPath() {
-    std::mt19937 mt(time(nullptr));
-    std::uniform_real_distribution<> dis(0.0, 1.0);
 
-    glm::vec2 seed(dis(mt), dis(mt));
+    glm::vec2 seed = dist.sampleVec2();
 
     mPosBuffer.bindAsImage(POS_BUFFER_TARGET);
     mDirBuffer.bindAsImage(DIR_BUFFER_TARGET);

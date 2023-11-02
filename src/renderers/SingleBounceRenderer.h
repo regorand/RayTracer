@@ -6,6 +6,21 @@
 #include "glWrappers/Texture.h"
 #include "glWrappers/shaders/ComputeShader.h"
 #include "glWrappers/TextureBuffer.h"
+#include "ImguiUtils.h"
+#include "utils/UniformDistribution.h"
+
+typedef struct RenderSettings_s {
+    // Path length Params
+    bool russianRoulette;
+    int constantPathLength;
+    float alphaRR; // survival rate for russian roulette path length
+
+    RenderSettings_s() {
+        russianRoulette = false;
+        constantPathLength = 1;
+        alphaRR = 0.9;
+    }
+} RenderSettings;
 
 class SingleBounceRenderer {
 
@@ -32,14 +47,17 @@ private:
     ComputeShader mNewPathShader;
     ComputeShader mClearTargetShader;
 
+    UniformDistribution dist;
+
 public:
     SingleBounceRenderer(int width, int height);
 
-    void render(Texture *target, int pathLength);
+    void render(Texture *target, RenderSettings renderSettings);
 
     void reloadShader();
 
     void clearTarget(Texture *target);
+
 private:
 
     void renderSinglePass();

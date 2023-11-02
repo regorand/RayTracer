@@ -9,6 +9,7 @@
 #include "renderers/ComputeRender.h"
 #include "glWrappers/shaders/ShaderLoad.h"
 #include "renderers/SingleBounceRenderer.h"
+#include "ImguiUtils.h"
 #include <imgui.h>
 
 Application::Application() { }
@@ -88,7 +89,10 @@ int Application::run() {
 
     SingleBounceRenderer singleBounceRenderer(displayWidth, displayHeight);
     singleBounceRenderer.clearTarget(&texture);
-    singleBounceRenderer.render(&texture, 1);
+
+    RenderSettings renderSettings;
+
+    singleBounceRenderer.render(&texture, renderSettings);
 
     // computeSimple(&texture, &computeShader);
 
@@ -100,6 +104,8 @@ int Application::run() {
 
     int pathLength = 1;
 
+    ImGuiMenuSettings menuSettings;
+
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
@@ -107,9 +113,15 @@ int Application::run() {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        {
-            ImGui::Begin("Control Panel");
+        buildImguiMenu(menuSettings);
 
+        if (menuSettings.showStatsWindow) {
+            buildImguiAppStats(menuSettings);
+        }
+
+        if (menuSettings.showGeneralControlPanel) {
+
+            ImGui::Begin("Control Panel", &menuSettings.showGeneralControlPanel);
             if (ImGui::Button("Reload display shaders"))
                 br.reloadShaders();
             ImGui::SameLine();
@@ -117,13 +129,9 @@ int Application::run() {
                 singleBounceRenderer.reloadShader();
             }
 
-            ImGui::SliderInt("Path length", &pathLength, 1, 10);
-            std::string sppString = "SPP of current image: " + std::to_string(sppCounter);
-            ImGui::Text(sppString.c_str());
-
             ImGui::Checkbox("Always render new", &alwaysRenderNew);
             if (alwaysRenderNew || ImGui::Button("Render")) {
-                singleBounceRenderer.render(&texture, pathLength);
+                singleBounceRenderer.render(&texture, renderSettings);
                 sppCounter++;
             }
 
@@ -132,26 +140,20 @@ int Application::run() {
                 singleBounceRenderer.clearTarget(&texture);
                 sppCounter = 0;
             }
-
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-            std::string debugButtonString = std::string(showDebugWindow ? "Hide " : "Show ") + "debug window";
-            if (ImGui::Button(debugButtonString.c_str())) {
-                showDebugWindow = !showDebugWindow;
-            }
             ImGui::End();
+        }
 
-            if (showDebugWindow) {
-                ImGui::Begin("Debug");
-                ImGui::Checkbox("Resolve Custom Symbols", &resolve);
-
-                if (ImGui::Button("Test Shader Include Module")) {
-                    std::string testSrc = loadShaderSource("res/shaders/includeTest/includeMain.comp", resolve);
-                    std::cout << testSrc << std::endl;
-                }
-
-                ImGui::End();
+        if (menuSettings.showPTControlPanel) {
+            ImGui::Begin("Pathtracer", &menuSettings.showPTControlPanel);
+            ImGui::Checkbox("Russian Roulette", &renderSettings.russianRoulette);
+            if (renderSettings.russianRoulette) {
+                ImGui::SliderFloat("Alpha", &renderSettings.alphaRR, 0.1, 0.9);
+            } else {
+                ImGui::SliderInt("Path length", &renderSettings.constantPathLength, 1, 10);
             }
-
+            std::string sppString = "SPP of current image: " + std::to_string(sppCounter);
+            ImGui::Text(sppString.c_str());
+            ImGui::End();
         }
 
         ImGui::Render();

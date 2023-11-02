@@ -9,7 +9,7 @@ const vec3 WHITE = vec3(1);
 
 const Sphere spheres[NUM_SPHERES] = Sphere[NUM_SPHERES](
     Sphere(vec3(0, 0, -10), 10, Material(RED, true, false, false, 1.52f)),
-    Sphere(vec3(5, -10, 5), 5, Material(BLUE, true, false, true, 1.1f))
+    Sphere(vec3(-8, -6, 5), 5, Material(BLUE, true, false, true, 1.52f))
 );
 
 
