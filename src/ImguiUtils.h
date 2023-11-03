@@ -1,16 +1,18 @@
 #pragma once
 
+#include "imgui.h"
+
 typedef struct ImGuiMenuSettings_s{
     bool showStatsWindow;
-    bool showGeneralControlPanel;
-    bool showPTControlPanel;
-    bool showSceneControlPanel;
+    bool showControlPanel;
+
+    ImVec2 menuBarSize;
 
     ImGuiMenuSettings_s() {
         showStatsWindow = true;
-        showGeneralControlPanel = false;
-        showPTControlPanel = false;
-        showSceneControlPanel = false;
+        showControlPanel = true;
+
+        menuBarSize = ImVec2(0, 0);
     }
 } ImGuiMenuSettings;
 

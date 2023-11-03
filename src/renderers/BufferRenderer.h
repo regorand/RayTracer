@@ -28,6 +28,8 @@ public:
     void render(HostBuffer *buffer);
     void render(Texture *texture);
 
+    void buildImGuiWindow();
+
 };
 
 

@@ -4,6 +4,7 @@
 
 void buildImguiMenu(ImGuiMenuSettings &settings) {
     if (ImGui::BeginMainMenuBar()) {
+        settings.menuBarSize = ImGui::GetWindowSize();
         if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("TODO: Load Scene"));
             if (ImGui::MenuItem("TODO: Save Image"));
@@ -17,13 +18,7 @@ void buildImguiMenu(ImGuiMenuSettings &settings) {
                 settings.showStatsWindow = true;
             }
             if (ImGui::MenuItem("Control Panel")) {
-                settings.showGeneralControlPanel = true;
-            }
-            if (ImGui::MenuItem("Pathtracer Control Panel")) {
-                settings.showPTControlPanel = true;
-            }
-            if (ImGui::MenuItem("Scene Control Panel")) {
-                settings.showSceneControlPanel = true;
+                settings.showControlPanel = true;
             }
             ImGui::EndMenu();
         }

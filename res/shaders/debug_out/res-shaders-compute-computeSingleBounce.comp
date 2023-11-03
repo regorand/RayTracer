@@ -487,7 +487,7 @@ void main() {
         return;
     }
 
-    const vec3 LIGHT_INTENSITY = vec3(80);
+    const vec3 LIGHT_INTENSITY = vec3(150);
     bool emissive = rayHit.mat.emissive;
     vec3 emission = int(emissive) * LIGHT_INTENSITY;
 
@@ -545,7 +545,15 @@ void main() {
         // 3. apply light or don't
         */
     } else {
-        newDir = int(hit) * reflect(dir, N);
+        float x = rand(seed);
+        seed = seed * vec2(x + 0.5, 1);
+        float y = rand(seed);
+        seed = seed * vec2(y + 0.5, x + 0.5);
+        float z = rand(seed);
+        seed = seed * vec2(z + 0.5, y + 0.5);
+
+        newDir = int(hit) * normalize(25 * reflect(dir, N) + vec3(x, y, z));
+        // newDir = int(hit) * reflect(dir, N);
     }
 
     float newDirLambert = int(hit) * max(0.0f, dot(N, newDir));

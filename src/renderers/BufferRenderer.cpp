@@ -6,6 +6,7 @@
 #include "glWrappers/shaders/Shader.h"
 #include "glWrappers/TextureBuffer.h"
 #include "glWrappers/Texture.h"
+#include "imgui.h"
 
 BufferRenderer::BufferRenderer()
     : mShader(Shader("res/shaders/raster/fullscreen.vert", "res/shaders/raster/fullscreen.frag")),
@@ -54,4 +55,17 @@ void BufferRenderer::render(Texture *texture) {
     mVa->unbind();
     mVerts->unbind();
     mShader.unbind();
+}
+
+void BufferRenderer::buildImGuiWindow() {
+    if (ImGui::CollapsingHeader("Texture Renderer Control")) {
+
+        ImVec2 windowSize = ImGui::GetWindowSize();
+        ImVec2 buttonSize = ImVec2(windowSize.x * 0.9, 25);
+
+        if (ImGui::Button("Reload display shaders", buttonSize)) {
+            reloadShaders();
+        }
+    }
+
 }

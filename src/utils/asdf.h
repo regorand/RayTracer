@@ -1,5 +1,0 @@
-
-#ifndef RAYTRACER_ASDF_H
-#define RAYTRACER_ASDF_H
-
-#endif //RAYTRACER_ASDF_H

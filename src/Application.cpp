@@ -3,16 +3,11 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "renderers/BufferRenderer.h"
-#include "temp/PerlinNoise.hpp"
-#include "renderers/SingleBounceRenderer.h"
 #include "ImguiUtils.h"
-#include "scene/Scene.h"
+#include "renderers/PathTracer.h"
 #include <imgui.h>
 
-Application::Application() { }
-
-
-
+Application::Application() {}
 
 
 int Application::run() {
@@ -23,7 +18,7 @@ int Application::run() {
 
     glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
 
-    const char* glsl_version = "#version 130";
+    const char *glsl_version = "#version 130";
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
@@ -41,7 +36,8 @@ int Application::run() {
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    ImGuiIO &io = ImGui::GetIO();
+    (void) io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
@@ -61,38 +57,34 @@ int Application::run() {
 
     BufferRenderer br;
 
-
     HostBuffer buffer(displayWidth, displayHeight);
 
-
-    const siv::PerlinNoise::seed_type seedR = 123456u;
-    const siv::PerlinNoise::seed_type seedG = 654321u;
-    const siv::PerlinNoise::seed_type seedB = 246810u;
-
-    const siv::PerlinNoise perlinR{seedR };
-    const siv::PerlinNoise perlinG{seedG };
-    const siv::PerlinNoise perlinB{seedB };
-
-
-    Scene scene;
     Texture texture(&buffer);
     texture.setAccessType(GL_READ_WRITE);
 
-    SingleBounceRenderer singleBounceRenderer(displayWidth, displayHeight);
-    singleBounceRenderer.clearTarget(&texture);
-
-    RenderSettings renderSettings;
-
-    singleBounceRenderer.render(&texture, renderSettings);
-
-    int sppCounter = 0;
-
-    bool alwaysRenderNew = false;
+    PathTracer pathTracer(displayWidth, displayHeight);
+    pathTracer.setTargetp(&texture);
+    pathTracer.clearTarget();
+    auto tmpSettings = pathTracer.getPathTraceSettings();
+    PathTraceSettings initialSettings;
+    initialSettings.spp = 1;
+    pathTracer.setPathTraceSettings(initialSettings);
+    pathTracer.startRender();
+    RenderState state = pathTracer.getRenderState();
+    while (state != RenderState::IDLE) {
+        state = pathTracer.doRenderStep();
+    }
+    pathTracer.setPathTraceSettings(tmpSettings);
 
     ImGuiMenuSettings menuSettings;
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
+
+        RenderState state = pathTracer.getRenderState();
+        if (state != RenderState::IDLE) {
+            pathTracer.doRenderStep();
+        }
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -104,51 +96,22 @@ int Application::run() {
             buildImguiAppStats(menuSettings);
         }
 
-        if (menuSettings.showGeneralControlPanel) {
-
-            ImGui::Begin("Control Panel", &menuSettings.showGeneralControlPanel);
-            if (ImGui::Button("Reload display shaders"))
-                br.reloadShaders();
-            ImGui::SameLine();
-            if (ImGui::Button("Reload compute shaders")) {
-                singleBounceRenderer.reloadShader();
-            }
-
-            ImGui::Checkbox("Always render new", &alwaysRenderNew);
-            if (alwaysRenderNew || ImGui::Button("Render")) {
-                singleBounceRenderer.render(&texture, renderSettings);
-                sppCounter++;
-            }
-
-            ImGui::SameLine();
-            if (ImGui::Button("Clear Color Buffer")) {
-                singleBounceRenderer.clearTarget(&texture);
-                sppCounter = 0;
-            }
-            ImGui::End();
+        if (menuSettings.showControlPanel) {
+            buildImguiControlSideBar(glm::vec2(displayWidth, displayHeight), menuSettings, pathTracer, br);
         }
 
-        if (menuSettings.showPTControlPanel) {
-            ImGui::Begin("Pathtracer", &menuSettings.showPTControlPanel);
-            ImGui::Checkbox("Russian Roulette", &renderSettings.russianRoulette);
-            if (renderSettings.russianRoulette) {
-                ImGui::SliderFloat("Alpha", &renderSettings.alphaRR, 0.1, 0.9);
-            } else {
-                ImGui::SliderInt("Path length", &renderSettings.constantPathLength, 1, 10);
-            }
-            std::string sppString = "SPP of current image: " + std::to_string(sppCounter);
-            ImGui::Text(sppString.c_str());
-            ImGui::End();
-        }
+        if (state != RenderState::IDLE) pathTracer.buildImGuiProgressBar(glm::vec2(displayWidth, displayHeight));
 
         ImGui::Render();
 
         glViewport(0, 0, displayWidth, displayHeight);
         glClear(GL_COLOR_BUFFER_BIT);
-
         br.render(&texture);
 
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
 
         glfwSwapBuffers(window);
     }
@@ -162,3 +125,36 @@ int Application::run() {
 
     return 0;
 }
+
+void Application::buildImguiControlSideBar(glm::vec2 displaySize, ImGuiMenuSettings menuSettings, PathTracer &pt,
+                                           BufferRenderer &br) {
+    float windowWidth = displaySize.x / 6.0f;
+
+    ImGui::SetNextWindowPos(
+            ImVec2(displaySize.x - windowWidth, menuSettings.menuBarSize.y),
+            ImGuiCond_Once);
+    ImGui::SetNextWindowSize(ImVec2(windowWidth, displaySize.y), ImGuiCond_Once);
+    ImGui::Begin("Control Panel", &menuSettings.showControlPanel,
+                 ImGuiWindowFlags_NoResize
+                 | ImGuiWindowFlags_NoMove);
+
+    ImGui::Indent(8.0f);
+
+    br.buildImGuiWindow();
+
+    ImGui::Unindent(8.0f);
+
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Spacing();
+
+    ImGui::Indent(8.0f);
+
+    pt.buildImGuiWindow();
+
+    ImGui::Unindent(8.0f);
+
+    ImGui::End();
+}
+
+
