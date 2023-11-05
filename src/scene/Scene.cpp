@@ -1,16 +1,28 @@
 
 #include "Scene.h"
+#include "deviceShared/BufferBindings.h"
 
 Scene::Scene():
         mCamera(Camera(glm::vec3(0), glm::vec3(0, 0, -1))) {
-    mSpheres.push_back({glm::vec3(0, 0, -10), 3, glm::vec3(1, 1, 0)});
-    mSpheres.push_back({glm::vec3(15, 0, -25), 7, glm::vec3(0, 1, 1)});
 }
 
-std::vector<Sphere> &Scene::getSpheres() {
-    return mSpheres;
+void Scene::addTriangle(Triangle triangle) {
+    mTriangles.push_back(triangle);
 }
 
-Camera &Scene::getCamera() {
-    return mCamera;
+void Scene::setCamera(Camera camera) {
+    mCamera = camera;
+}
+
+void Scene::createSSBO() {
+    // TODO
+    // 1. rewrite Scene to accept Objects -> Object class (Only Mesh objects or also analytical ones ?)
+    // 2. accept Materials
+    // 3. Ability to make Objects Emissive by index -> nothing happens if invalid index ?
+
+    mSSBO = SSBO(mTriangles.data(), sizeof(Triangle) * mTriangles.size(), GL_STATIC_READ, TRIANGLE_BUFFER_BINDING);
+}
+
+SSBO &Scene::getSSBO() {
+    return mSSBO;
 }

@@ -4,6 +4,7 @@
 #include "glWrappers/Texture.h"
 #include "glWrappers/shaders/ComputeShader.h"
 #include "utils/UniformDistribution.h"
+#include "scene/Scene.h"
 
 typedef struct PathSettings_s {
     // Path length Params
@@ -92,6 +93,8 @@ private:
 
     Texture *mCurrentTarget;
 
+    Scene mScene;
+
 public:
     PathTracer(int width, int height);
 
@@ -107,6 +110,8 @@ public:
     void cancelRender();
 
     void setTargetp(Texture *target);
+
+    void setScene(Scene &scene);
 
     void reloadShaders();
 

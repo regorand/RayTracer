@@ -1,30 +1,10 @@
 #include "res/shaders/utils/typesAndValues.glsl"
 #include "res/shaders/utils/intersectUtils.glsl"
-
-const int MAX_BOUNCES = 2;
+#include "src/deviceShared/BufferBindings.h"
 
 /*
-bool castShadowRay(vec3 point, vec3 lightPos) {
-    bool enteringMaterial;
-    Ray ray;
-    vec3 unnormToLight = lightPos - point;
-    float distToLight = length(unnormToLight);
-    ray.direction = unnormToLight / distToLight;
-    float eps = 1e-1;
-    ray.origin = point + eps * ray.direction;
+bool getClosestHit2(Ray ray, out RayHit rayhit) {
 
-    for (int i = 0; i < 5; i++) {
-        float dist;
-        bool hit = intersectSphere(ray, spheres[i], dist, enteringMaterial);
-        if (hit && dist < distToLight) return true;
-    }
-    return false;
-}
-
-vec3 getLightContrib(vec3 pos) {
-    float dist = distance(pos, lightPos);
-    float shadowFac = castShadowRay(pos, lightPos) ? 0 : 1;
-    return shadowFac * lightIntensity / (dist * dist);
 }
 */
 
@@ -69,7 +49,6 @@ bool getClosestHit(Ray ray, out RayHit rayhit) {
             }
         }
     }
-
 
     return anyHit;
 }

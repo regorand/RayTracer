@@ -303,30 +303,32 @@ bool intersectTriangle(Ray ray, Triangle triangle, out float dist, out bool ente
 
 // End Includeres/shaders/utils/intersectUtils.glsl
 
-const int MAX_BOUNCES = 2;
+// Included from src/deviceShared/BufferBindings.h
+#ifdef __cplusplus
+#pragma once
+using uint = unsigned int;
+#endif
+
+#ifdef __cplusplus  // Descriptor binding helper for C++ and GLSL
+#define START_BINDING(a) enum a {
+#define END_BINDING() }
+#define ALIGN_AS(a) alignas(a)
+#else
+#define START_BINDING(a) const uint
+    #define END_BINDING()
+    #define ALIGN_AS(a)
+#endif
+
+#define TRIANGLE_BUFFER_BINDING 0
+#define OBJECT_BUFFER_BINDING 1
+#define MATERIAL_BUFFER_BINDING 2
+#define EMISSIVE_BUFFER_BINDING 3
+
+// End Includesrc/deviceShared/BufferBindings.h
 
 /*
-bool castShadowRay(vec3 point, vec3 lightPos) {
-    bool enteringMaterial;
-    Ray ray;
-    vec3 unnormToLight = lightPos - point;
-    float distToLight = length(unnormToLight);
-    ray.direction = unnormToLight / distToLight;
-    float eps = 1e-1;
-    ray.origin = point + eps * ray.direction;
+bool getClosestHit2(Ray ray, out RayHit rayhit) {
 
-    for (int i = 0; i < 5; i++) {
-        float dist;
-        bool hit = intersectSphere(ray, spheres[i], dist, enteringMaterial);
-        if (hit && dist < distToLight) return true;
-    }
-    return false;
-}
-
-vec3 getLightContrib(vec3 pos) {
-    float dist = distance(pos, lightPos);
-    float shadowFac = castShadowRay(pos, lightPos) ? 0 : 1;
-    return shadowFac * lightIntensity / (dist * dist);
 }
 */
 
@@ -371,7 +373,6 @@ bool getClosestHit(Ray ray, out RayHit rayhit) {
             }
         }
     }
-
 
     return anyHit;
 }
@@ -565,10 +566,11 @@ void main() {
     float pdfNorm = diffuseBSDF ? 1 / (4 * PI) : 1;
 
 
+    // TODO this is wrong, dont count a single bounce as a sample, instead count a full path as one
     vec4 newValue = prevBufferContent + outVal * vec4(vec3(pdfNorm), 1);
     // vec3 debugColor = vec3(diffuseBSDF);
-    vec3 debugColor = newPos;
-    // newValue = int(hit) * vec4(debugColor, 1);
+    // vec3 debugColor = newDir;
+    // newValue = vec4(debugColor / 20, 1);
     imageStore(imgOutput, bufferCoords, newValue);
 
     newPos += eps * newDir;
@@ -605,19 +607,5 @@ Buffer contents needed:
 1. vec3 pos
 2. vec3 direction
 3. vec3 colorMultiplier -> Can I run into numerical problems with this ?
-
-
-Code saving:
-
-    // Do NEE (not sure if correctly yet, but something)
-
-    bool shadow = castShadowRay(newPos, lightPos);
-    vec3 lightVec = lightPos - newPos;
-    float lightDist = length(lightVec);
-
-    float lightLambert = max(0.0f, dot(N, normalize(lightVec)));
-
-
-
 
 */

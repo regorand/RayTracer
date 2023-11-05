@@ -141,10 +141,11 @@ void main() {
     float pdfNorm = diffuseBSDF ? 1 / (4 * PI) : 1;
 
 
+    // TODO this is wrong, dont count a single bounce as a sample, instead count a full path as one
     vec4 newValue = prevBufferContent + outVal * vec4(vec3(pdfNorm), 1);
     // vec3 debugColor = vec3(diffuseBSDF);
-    vec3 debugColor = newPos;
-    // newValue = int(hit) * vec4(debugColor, 1);
+    // vec3 debugColor = newDir;
+    // newValue = vec4(debugColor / 20, 1);
     imageStore(imgOutput, bufferCoords, newValue);
 
     newPos += eps * newDir;
@@ -181,19 +182,5 @@ Buffer contents needed:
 1. vec3 pos
 2. vec3 direction
 3. vec3 colorMultiplier -> Can I run into numerical problems with this ?
-
-
-Code saving:
-
-    // Do NEE (not sure if correctly yet, but something)
-
-    bool shadow = castShadowRay(newPos, lightPos);
-    vec3 lightVec = lightPos - newPos;
-    float lightDist = length(lightVec);
-
-    float lightLambert = max(0.0f, dot(N, normalize(lightVec)));
-
-
-
 
 */

@@ -11,11 +11,12 @@ typedef struct {
     float aspectRatio;
 } Intrinsics;
 
+static const glm::vec3 UP_VECTOR = glm::vec3(0, 1, 0);
+
 class Camera {
 private:
     glm::vec3 mPosition;
     glm::vec3 mViewDir;
-    const glm::vec3 UP_VECTOR = glm::vec3(0, 1, 0);
 
     Intrinsics mIntrinsics;
 

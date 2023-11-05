@@ -116,47 +116,6 @@ void PathTracer::setPathTraceSettings(PathTraceSettings pathTraceSettings) {
     mPathTraceSettings = pathTraceSettings;
 }
 
-void PathTracer::buildImGuiWindow() {
-    PathSettings &pathSettings = mPathTraceSettings.pathSettings;
-    if (ImGui::CollapsingHeader("Path Tracer Control")) {
-
-        ImVec2 windowSize = ImGui::GetWindowSize();
-        ImVec2 buttonSize = ImVec2(windowSize.x * 0.9, 25);
-
-        if (ImGui::Button("Reload compute shaders", buttonSize)) {
-            reloadShaders();
-        }
-
-        if (ImGui::Button("Render", buttonSize)) {
-            startRender();
-        }
-
-        if (ImGui::Button("Clear Color Buffer", buttonSize)) {
-            clearTarget();
-        }
-
-        if (mRenderStatus.state != RenderState::IDLE && ImGui::Button("Cancel Render", buttonSize)) {
-            cancelRender();
-        }
-
-        ImGui::InputInt("Target SPP per render", &mPathTraceSettings.spp);
-
-        std::string sppString = "SPP of current image: " + std::to_string(mSppCount);
-        ImGui::Text("%s", sppString.c_str());
-
-        if (ImGui::CollapsingHeader("Path Settings")) {
-            ImGui::Indent(8.0f);
-            ImGui::Checkbox("Russian Roulette", &pathSettings.russianRoulette);
-            if (pathSettings.russianRoulette) {
-                ImGui::SliderFloat("Alpha", &pathSettings.alphaRR, 0.1, 0.9);
-            } else {
-                ImGui::SliderInt("Path length", &pathSettings.constantPathLength, 1, 10);
-            }
-            ImGui::Unindent(8.0f);
-        }
-    }
-}
-
 RenderStatus PathTracer::getRenderStatus() {
     return mRenderStatus;
 }
@@ -176,6 +135,8 @@ void PathTracer::bindBounce() {
     mDirBuffer.bindAsImage(DIR_BUFFER_TARGET);
     mMultiplierBuffer.bindAsImage(MULT_BUFFER_TARGET);
 
+    mScene.getSSBO().bind();
+
     mBounceShader.bind();
 
 }
@@ -183,6 +144,7 @@ void PathTracer::bindBounce() {
 void PathTracer::unbindBounce() {
     mBounceShader.unbind();
 
+    mScene.getSSBO().unbind();
 }
 
 bool PathTracer::renderFenceSignalled() {
@@ -226,4 +188,49 @@ void PathTracer::buildImGuiProgressBar(glm::vec2 displaySize) {
     ImGui::ProgressBar(fraction, ImGui::GetContentRegionAvail());
 
     ImGui::End();
+}
+
+void PathTracer::setScene(Scene &scene) {
+    mScene = scene;
+}
+
+void PathTracer::buildImGuiWindow() {
+    PathSettings &pathSettings = mPathTraceSettings.pathSettings;
+    if (ImGui::CollapsingHeader("Path Tracer Control")) {
+
+        ImVec2 windowSize = ImGui::GetWindowSize();
+        ImVec2 buttonSize = ImVec2(windowSize.x * 0.9, 25);
+
+        if (ImGui::Button("Reload compute shaders", buttonSize)) {
+            reloadShaders();
+        }
+
+        if (ImGui::Button("Render", buttonSize)) {
+            startRender();
+        }
+
+        if (ImGui::Button("Clear Color Buffer", buttonSize)) {
+            clearTarget();
+        }
+
+        if (mRenderStatus.state != RenderState::IDLE && ImGui::Button("Cancel Render", buttonSize)) {
+            cancelRender();
+        }
+
+        ImGui::InputInt("Target SPP per render", &mPathTraceSettings.spp);
+
+        std::string sppString = "SPP of current image: " + std::to_string(mSppCount);
+        ImGui::Text("%s", sppString.c_str());
+
+        if (ImGui::CollapsingHeader("Path Settings")) {
+            ImGui::Indent(8.0f);
+            ImGui::Checkbox("Russian Roulette", &pathSettings.russianRoulette);
+            if (pathSettings.russianRoulette) {
+                ImGui::SliderFloat("Alpha", &pathSettings.alphaRR, 0.1, 0.9);
+            } else {
+                ImGui::SliderInt("Path length", &pathSettings.constantPathLength, 1, 10);
+            }
+            ImGui::Unindent(8.0f);
+        }
+    }
 }
