@@ -135,16 +135,19 @@ void PathTracer::bindBounce() {
     mDirBuffer.bindAsImage(DIR_BUFFER_TARGET);
     mMultiplierBuffer.bindAsImage(MULT_BUFFER_TARGET);
 
-    mScene.getSSBO().bind();
+    mScene.bind();
+
+    // TODO get scene counts and bind as uniforms, then add stuff to the scene, try to only render albedo first
 
     mBounceShader.bind();
-
+    mBounceShader.setUniform1ui("objectCount", mScene.getObjectCount());
+    mBounceShader.setUniform1ui("emissiveCount", mScene.getEmissiveCount());
 }
 
 void PathTracer::unbindBounce() {
     mBounceShader.unbind();
 
-    mScene.getSSBO().unbind();
+    mScene.unbind();
 }
 
 bool PathTracer::renderFenceSignalled() {

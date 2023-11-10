@@ -1,45 +1,21 @@
-#include "res/shaders/utils/typesAndValues.glsl"
+#include "res/shaders/utils/MeshTypes.glsl"
+#include "res/shaders/utils/RayTypes.glsl"
+#include "res/shaders/scenes/CPUScene.glsl"
 
-bool intersectSphere(Ray ray, Sphere sphere, out float dist, out bool enteringMaterial) {
-    vec3 centerMinusOrigin = ray.origin - sphere.center;
 
-    float a = dot(ray.direction, ray.direction);
-    float b = 2 * dot(ray.direction, centerMinusOrigin);
-    float c = dot(centerMinusOrigin, centerMinusOrigin) - sphere.radius * sphere.radius;
-
-    float discriminant = b * b - (4 * a * c);
-    if (discriminant < 0) return false;
-    float discrRoot = sqrt(discriminant);
-
-    float t1 = (-b + discrRoot) / (2 * a);
-    float t2 = (-b - discrRoot) / (2 * a);
-
-    float t_near = min(t1, t2);
-    float t_far = max(t1, t2);
-    if (t_near >= 0) {
-        dist = t_near;
-        enteringMaterial = true;
-        return true;
-    }
-    if (t_far < 0) return false;
-    dist = t2;
-    enteringMaterial = false;
-    return true;
-}
-
-bool intersectTriangle(Ray ray, Triangle triangle, out float dist, out bool enteringMaterial) {
+bool intersectTriangle(Ray ray, Triangle triangle, out float dist, out bool hitBackface) {
     // algorithm modified from C++ example on https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
 
     const float eps = 1e-5;
-    vec3 edge1 = triangle.P1 - triangle.P0;
-    vec3 edge2 = triangle.P2 - triangle.P0;
+    vec3 edge1 = triangle.V1.pos.xyz - triangle.V0.pos.xyz;
+    vec3 edge2 = triangle.V2.pos.xyz - triangle.V0.pos.xyz;
     vec3 h = cross(ray.direction, edge2);
     float a = dot(edge1, h);
 
     if (abs(a) < eps) return false;
 
     float f = 1.0f / a;
-    vec3 s = ray.origin - triangle.P0;
+    vec3 s = ray.origin - triangle.V0.pos.xyz;
     float u = f * dot(s, h);
 
     if (u < 0.0 || u > 1.0) return false;
@@ -54,9 +30,45 @@ bool intersectTriangle(Ray ray, Triangle triangle, out float dist, out bool ente
     if (dist > eps) {
         // vec3 N = cross(edge1, edge2);
         vec3 N = normalize(cross(edge1, edge2)); // TODO prob not necessary to normalize for what I want to do
-        enteringMaterial = dot(N, (triangle.P0 - ray.origin)) > 0;
+        // TODO replace with interpolated normal for smooth shading ?
+        hitBackface = dot(N, (ray.origin - triangle.V0.pos.xyz)) > 0;
         return true;
     }
 
     return false;
+}
+
+bool intersectObject(Ray ray, MeshObject object, out RayHit rayhit) {
+    // TODO could try to intersect bounding box first here before looping triangles
+
+    // TODO once objects have transformations, transform the ray into object space and perform intersection there
+        // TODO difficulty with this is, that the t value needs to be transformed somehow (i think)
+
+    uint objectBaseIndex = object.firstTriangleIndex;
+
+    float closest = 1000000;
+    bool anyHit = false;
+
+    for (int i = 0; i < object.triangleCount; i++) {
+        Triangle triangle = triangles[objectBaseIndex + i];
+
+        float dist;
+        bool hitBackface;
+        bool hit = intersectTriangle(ray, triangle, dist, hitBackface);
+        if (hit && dist > 0) {
+            anyHit = true;
+            if (dist < closest) {
+                closest = dist;
+                rayhit.dist = dist;
+                rayhit.mat = triangle.mat;
+                rayhit.position = ray.origin + ray.direction * dist;
+
+                // TODO normal calculation is false for backface normals when not rendering transmissives, needs to be flipped
+                rayhit.normal = normalize(cross(triangle.V0.pos.xyz - triangle.V1.pos.xyz, triangle.V0.pos.xyz - triangle.V2.pos.xyz));
+                rayhit.hitBackface = hitBackface;
+            }
+        }
+    }
+
+    return anyHit;
 }

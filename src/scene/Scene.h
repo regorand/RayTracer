@@ -8,32 +8,36 @@
 #include "deviceShared/Types.h"
 #include "glWrappers/shaders/SSBO.h"
 #include "MeshObject.h"
+#include "SceneBuffers.h"
 
 class Scene {
 
 private:
-    // std::vector<MeshObject> mObjects;
+    std::vector<MeshObject> mObjects;
 
-    std::vector<Triangle> mTriangles;
+    SceneBuffers sceneBuffers;
+
     Camera mCamera;
 
-    SSBO mSSBO;
+    unsigned int mObjectCount;
+    unsigned int mEmissiveCount;
 
 public:
     Scene();
 
     void setCamera(Camera camera);
 
+    void addMeshObject(MeshObject &meshObject);
 
-    void addMeshObject(MeshObject meshObject);
-    void addTriangle(Triangle triangle);
+    void createGPUBuffers();
 
-    void createSSBO();
+    bool hasGPUBuffers() { return sceneBuffers.isValid(); };
 
-    bool hasValidSSBO() { return mSSBO.hasData(); };
+    unsigned int getObjectCount() { return mObjectCount; };
+    unsigned int getEmissiveCount() {return mEmissiveCount; };
 
-    SSBO &getSSBO();
-
+    void bind();
+    void unbind();
 
 };
 

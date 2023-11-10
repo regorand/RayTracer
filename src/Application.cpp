@@ -7,6 +7,7 @@
 #include "renderers/PathTracer.h"
 #include "glWrappers/shaders/ShaderLoad.h"
 #include "scene/Scene.h"
+#include "utils/SceneCreateUtils.h"
 #include <imgui.h>
 
 Application::Application() {}
@@ -64,61 +65,19 @@ int Application::run() {
     Texture texture(&buffer);
     texture.setAccessType(GL_READ_WRITE);
 
-    size_t VS = sizeof(Vertex);
-    size_t TS = sizeof(Triangle);
-
     Scene scene;
     Camera camera(glm::vec3(0, 0, 30), glm::vec3(0, 0, -1));
     scene.setCamera(camera);
-    Vertex V0_0;
-    Vertex V1_0;
-    Vertex V2_0;
 
-    V0_0.pos = glm::vec3(0, 0, 0);
-    V1_0.pos = glm::vec3(0, 0, 0);
-    V2_0.pos = glm::vec3(0, 0, 0);
+    std::vector<MeshObject> objects;
+    createCornellBox(objects);
+    createSampleBoxes(objects);
 
-    V0_0.normal = glm::vec3(0, 0, 0);
-    V1_0.normal = glm::vec3(0, 0, 0);
-    V2_0.normal = glm::vec3(0, 0, 0);
+    for (MeshObject &object: objects) {
+        scene.addMeshObject(object);
+    }
 
-    V0_0.uv = glm::vec2(1, 1);
-    V1_0.uv = glm::vec2(1, 0);
-    V2_0.uv = glm::vec2(0, 1);
-
-
-
-    Triangle tri_0;
-    tri_0.V0 = V0_0;
-    tri_0.V1 = V1_0;
-    tri_0.V2 = V2_0;
-    tri_0.color = glm::vec3(0, 0, 0);
-
-    Vertex V0;
-    Vertex V1;
-    Vertex V2;
-
-    V0.pos = glm::vec3(10, 10, -10);
-    V1.pos = glm::vec3(10, -10, 0);
-    V2.pos = glm::vec3(-10, 10, 0);
-
-    V0.normal = glm::vec3(0, 0, 1);
-    V1.normal = glm::vec3(1, 0, 1);
-    V2.normal = glm::vec3(0, 1, 1);
-
-    V0.uv = glm::vec2(1, 1);
-    V1.uv = glm::vec2(1, 0);
-    V2.uv = glm::vec2(0, 1);
-
-    Triangle tri;
-    tri.V0 = V0;
-    tri.V1 = V1;
-    tri.V2 = V2;
-    tri.color = glm::vec3(1, 0, 0);
-
-    scene.addTriangle(tri);
-    // scene.addTriangle(tri_0);
-    scene.createSSBO();
+    scene.createGPUBuffers();
 
     PathTracer pathTracer(displayWidth, displayHeight);
     pathTracer.setScene(scene);

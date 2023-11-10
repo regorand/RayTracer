@@ -11,23 +11,101 @@ layout (rgba32f, binding = 3) uniform image2D mulBuffer;
 uniform vec2 frameSeed;
 
 // #include "res/shaders/scenes/sampleSceneDescr.glsl"
+// #include "res/shaders/scenes/cornell.glsl"
 
-// Included from res/shaders/scenes/cornell.glsl
 
-// Included from res/shaders/utils/typesAndValues.glsl
-const float PI = 3.14159;
+// Included from res/shaders/scenes/CPUScene.glsl
+
+// Included from res/shaders/utils/MeshTypes.glsl
+struct Vertex {
+    vec4 pos;
+    vec4 normal;
+    vec4 uv;
+};
+
+struct Material {
+    vec4 color;
+    vec4 boolsSpecTransmissiveEmissive; // specular if x comp is 1, transmissive if y comp is 1
+};
+
+struct Triangle {
+    Vertex V0;
+    Vertex V1;
+    Vertex V2;
+
+    Material mat;
+};
+
+struct MeshObject {
+    uint firstTriangleIndex;
+    uint triangleCount;
+    uint emissive; // 1 if emissive, 0 else
+};
+
+// End Includeres/shaders/utils/MeshTypes.glsl
+
+// Included from src/deviceShared/BufferBindings.h
+#ifdef __cplusplus
+#pragma once
+using uint = unsigned int;
+#endif
+
+#ifdef __cplusplus  // Descriptor binding helper for C++ and GLSL
+#define START_BINDING(a) enum a {
+#define END_BINDING() }
+#define ALIGN_AS(a) alignas(a)
+#else
+#define START_BINDING(a) const uint
+    #define END_BINDING()
+    #define ALIGN_AS(a)
+#endif
+
+#define TRIANGLE_BUFFER_BINDING 0
+#define OBJECT_BUFFER_BINDING 1
+#define MATERIAL_BUFFER_BINDING 2
+#define EMISSIVE_BUFFER_BINDING 3
+
+// End Includesrc/deviceShared/BufferBindings.h
+
+uniform uint objectCount;
+uniform uint emissiveCount;
+
+layout(std430, binding = TRIANGLE_BUFFER_BINDING) buffer triangleList
+{
+    Triangle triangles[];
+};
+
+
+layout(std430, binding = OBJECT_BUFFER_BINDING) buffer objectList
+{
+    MeshObject meshObjects[];
+};
+
+
+layout(std430, binding = MATERIAL_BUFFER_BINDING) buffer materialList
+{
+    Material materials[];
+};
+
+
+layout(std430, binding = EMISSIVE_BUFFER_BINDING) buffer emissiveList
+{
+    uint emissiveIndices[];
+};
+
+// End Includeres/shaders/scenes/CPUScene.glsl
+
+// Included from res/shaders/utils/samplingUtils.glsl
+
+// Included from res/shaders/utils/RayTypes.glsl
+
+// Included from res/shaders/utils/MeshTypes.glsl
+// NOT INCLUDED AGAIN
+// End Includeres/shaders/utils/MeshTypes.glsl
 
 struct Ray {
     vec3 origin;
     vec3 direction;
-};
-
-struct Material {
-    vec3 color;
-    bool diffuse; // 1 - diffuse is specular term
-    bool emissive;
-    bool transmissive;
-    float IOR;
 };
 
 struct RayHit {
@@ -35,127 +113,19 @@ struct RayHit {
     vec3 position;
     vec3 normal;
     Material mat;
-    bool enteringMat;
+    bool hitBackface;
 };
 
-struct Sphere {
-    vec3 center;
-    float radius;
-    Material mat;
-};
+// End Includeres/shaders/utils/RayTypes.glsl
 
-struct Triangle {
-    vec3 P0;
-    vec3 P1;
-    vec3 P2;
-    Material mat;
-};
+// Included from res/shaders/utils/Constants.glsl
+const float PI = 3.14159;
 
-// End Includeres/shaders/utils/typesAndValues.glsl
+// End Includeres/shaders/utils/Constants.glsl
 
-const int NUM_SPHERES = 2;
-
-const vec3 RED = vec3(1, 0.1, 0.1);
-const vec3 GREEN = vec3(0.1, 1, 0.1);
-const vec3 BLUE = vec3(0.1, 0.1, 1);
-const vec3 WHITE = vec3(1);
-
-const Sphere spheres[NUM_SPHERES] = Sphere[NUM_SPHERES](
-    Sphere(vec3(0, 0, -10), 10, Material(RED, true, false, false, 1.52f)),
-    Sphere(vec3(-8, -6, 5), 5, Material(BLUE, true, false, true, 1.52f))
-);
-
-
-const float BOX_SIZE = 20; // Half of side length of cube making cornell box
-
-const vec3 V0 = vec3(-BOX_SIZE, -BOX_SIZE, -BOX_SIZE);
-const vec3 V1 = vec3(BOX_SIZE, -BOX_SIZE, -BOX_SIZE);
-const vec3 V2 = vec3(-BOX_SIZE, BOX_SIZE, -BOX_SIZE);
-const vec3 V3 = vec3(BOX_SIZE, BOX_SIZE, -BOX_SIZE);
-
-const vec3 V4 = vec3(-BOX_SIZE, -BOX_SIZE, BOX_SIZE);
-const vec3 V5 = vec3(BOX_SIZE, -BOX_SIZE, BOX_SIZE);
-const vec3 V6 = vec3(-BOX_SIZE, BOX_SIZE, BOX_SIZE);
-const vec3 V7 = vec3(BOX_SIZE, BOX_SIZE, BOX_SIZE);
-
-float scaleFac = 0.8;
-vec3 scaleVec = vec3(scaleFac, 1, scaleFac);
-vec3 displacement = vec3(0, -0.1, 0);
-
-const vec3 V8 = V2 * scaleVec + displacement;
-const vec3 V9 = V3 * scaleVec + displacement;
-const vec3 V10 = V6 * scaleVec + displacement;
-const vec3 V11 = V7 * scaleVec + displacement;
-
-const int NUM_TRIANGLES = 12;
-
-const Triangle triangles[NUM_TRIANGLES] = Triangle[NUM_TRIANGLES](
-// Back Wall
-    Triangle(V0, V1, V2,
-             Material(WHITE, true, false, false, 1.0f)
-    ),
-
-    Triangle(V1, V3, V2,
-             Material(WHITE, true, false, false, 1.0f)
-    ),
-
-// Right Wall
-    Triangle(V1, V5, V7,
-             Material(GREEN, true, false, false, 1.0f)
-    ),
-
-    Triangle(V1, V7, V3,
-             Material(GREEN, true, false, false, 1.0f)
-    ),
-
-// Left Wall
-    Triangle(V0, V2, V6,
-             Material(RED, false, false, false, 1.0f)
-    ),
-
-    Triangle(V0, V6, V4,
-             Material(RED, false, false, false, 1.0f)
-    ),
-
-// Bottom
-    Triangle(V0, V5, V1,
-             Material(BLUE, true, false, false, 1.0f)
-    ),
-
-    Triangle(V0, V4, V5,
-             Material(BLUE, true, false, false, 1.0f)
-    ),
-
-// Top
-    Triangle(V2, V3, V7,
-             Material(WHITE, true, false, false, 1.0f)
-    ),
-
-    Triangle(V2, V7, V6,
-             Material(WHITE, true, false, false, 1.0f)
-    ),
-
-// Light
-    Triangle(V8, V9, V10,
-             Material(WHITE, true, true, false, 1.0f)
-    ),
-
-    Triangle(V9, V11, V10,
-             Material(WHITE, true, true, false, 1.0f)
-    )
-);
-
-const int LIGHT_SOURCE_COUNT = 2;
-
-const int[LIGHT_SOURCE_COUNT] LIHGT_INDICES = int[LIGHT_SOURCE_COUNT](10, 11);
-
-// End Includeres/shaders/scenes/cornell.glsl
-
-// Included from res/shaders/utils/samplingUtils.glsl
-
-// Included from res/shaders/utils/typesAndValues.glsl
+// Included from res/shaders/utils/MeshTypes.glsl
 // NOT INCLUDED AGAIN
-// End Includeres/shaders/utils/typesAndValues.glsl
+// End Includeres/shaders/utils/MeshTypes.glsl
 
 float rand(vec2 co){
     return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
@@ -205,7 +175,7 @@ Ray samplePathStart(vec2 texelCoord, vec2 viewPortSize) {
 
     float pixelSize = 2 * sideDist / viewPortSize.x;
 
-    ray.origin = vec3(0, 0, 35) + vec3(rand(seed) * pixelSize, rand(seed) * pixelSize, 0);
+    ray.origin = vec3(0, 0, 20) + vec3(rand(seed) * pixelSize, rand(seed) * pixelSize, 0);
     ray.direction = normalize(camDir + upDist * shiftedScaled.y * upDir + sideDist * shiftedScaled.x * tanDir);
 
     return ray;
@@ -220,66 +190,44 @@ vec3 sampleTrianglePos(Triangle triangle, vec2 seed) {
         xi2 = 1 - xi2;
     }
 
-    vec3 edge1 = triangle.P1 - triangle.P0;
-    vec3 edge2 = triangle.P2 - triangle.P0;
+    vec3 edge1 = triangle.V1.pos.xyz - triangle.V0.pos.xyz;
+    vec3 edge2 = triangle.V2.pos.xyz - triangle.V0.pos.xyz;
 
-    return triangle.P0 + xi1 * edge1 + xi2 * edge2;
+    return triangle.V0.pos.xyz + xi1 * edge1 + xi2 * edge2;
 }
 
 // End Includeres/shaders/utils/samplingUtils.glsl
 
 // Included from res/shaders/utils/rayTraceUtils.glsl
 
-// Included from res/shaders/utils/typesAndValues.glsl
-// NOT INCLUDED AGAIN
-// End Includeres/shaders/utils/typesAndValues.glsl
-
 // Included from res/shaders/utils/intersectUtils.glsl
 
-// Included from res/shaders/utils/typesAndValues.glsl
+// Included from res/shaders/utils/MeshTypes.glsl
 // NOT INCLUDED AGAIN
-// End Includeres/shaders/utils/typesAndValues.glsl
+// End Includeres/shaders/utils/MeshTypes.glsl
 
-bool intersectSphere(Ray ray, Sphere sphere, out float dist, out bool enteringMaterial) {
-    vec3 centerMinusOrigin = ray.origin - sphere.center;
+// Included from res/shaders/utils/RayTypes.glsl
+// NOT INCLUDED AGAIN
+// End Includeres/shaders/utils/RayTypes.glsl
 
-    float a = dot(ray.direction, ray.direction);
-    float b = 2 * dot(ray.direction, centerMinusOrigin);
-    float c = dot(centerMinusOrigin, centerMinusOrigin) - sphere.radius * sphere.radius;
+// Included from res/shaders/scenes/CPUScene.glsl
+// NOT INCLUDED AGAIN
+// End Includeres/shaders/scenes/CPUScene.glsl
 
-    float discriminant = b * b - (4 * a * c);
-    if (discriminant < 0) return false;
-    float discrRoot = sqrt(discriminant);
 
-    float t1 = (-b + discrRoot) / (2 * a);
-    float t2 = (-b - discrRoot) / (2 * a);
-
-    float t_near = min(t1, t2);
-    float t_far = max(t1, t2);
-    if (t_near >= 0) {
-        dist = t_near;
-        enteringMaterial = true;
-        return true;
-    }
-    if (t_far < 0) return false;
-    dist = t2;
-    enteringMaterial = false;
-    return true;
-}
-
-bool intersectTriangle(Ray ray, Triangle triangle, out float dist, out bool enteringMaterial) {
+bool intersectTriangle(Ray ray, Triangle triangle, out float dist, out bool hitBackface) {
     // algorithm modified from C++ example on https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
 
     const float eps = 1e-5;
-    vec3 edge1 = triangle.P1 - triangle.P0;
-    vec3 edge2 = triangle.P2 - triangle.P0;
+    vec3 edge1 = triangle.V1.pos.xyz - triangle.V0.pos.xyz;
+    vec3 edge2 = triangle.V2.pos.xyz - triangle.V0.pos.xyz;
     vec3 h = cross(ray.direction, edge2);
     float a = dot(edge1, h);
 
     if (abs(a) < eps) return false;
 
     float f = 1.0f / a;
-    vec3 s = ray.origin - triangle.P0;
+    vec3 s = ray.origin - triangle.V0.pos.xyz;
     float u = f * dot(s, h);
 
     if (u < 0.0 || u > 1.0) return false;
@@ -294,73 +242,31 @@ bool intersectTriangle(Ray ray, Triangle triangle, out float dist, out bool ente
     if (dist > eps) {
         // vec3 N = cross(edge1, edge2);
         vec3 N = normalize(cross(edge1, edge2)); // TODO prob not necessary to normalize for what I want to do
-        enteringMaterial = dot(N, (triangle.P0 - ray.origin)) > 0;
+        // TODO replace with interpolated normal for smooth shading ?
+        hitBackface = dot(N, (ray.origin - triangle.V0.pos.xyz)) > 0;
         return true;
     }
 
     return false;
 }
 
-// End Includeres/shaders/utils/intersectUtils.glsl
+bool intersectObject(Ray ray, MeshObject object, out RayHit rayhit) {
+    // TODO could try to intersect bounding box first here before looping triangles
 
-// Included from src/deviceShared/BufferBindings.h
-#ifdef __cplusplus
-#pragma once
-using uint = unsigned int;
-#endif
+    // TODO once objects have transformations, transform the ray into object space and perform intersection there
+        // TODO difficulty with this is, that the t value needs to be transformed somehow (i think)
 
-#ifdef __cplusplus  // Descriptor binding helper for C++ and GLSL
-#define START_BINDING(a) enum a {
-#define END_BINDING() }
-#define ALIGN_AS(a) alignas(a)
-#else
-#define START_BINDING(a) const uint
-    #define END_BINDING()
-    #define ALIGN_AS(a)
-#endif
+    uint objectBaseIndex = object.firstTriangleIndex;
 
-#define TRIANGLE_BUFFER_BINDING 0
-#define OBJECT_BUFFER_BINDING 1
-#define MATERIAL_BUFFER_BINDING 2
-#define EMISSIVE_BUFFER_BINDING 3
-
-// End Includesrc/deviceShared/BufferBindings.h
-
-/*
-bool getClosestHit2(Ray ray, out RayHit rayhit) {
-
-}
-*/
-
-bool getClosestHit(Ray ray, out RayHit rayhit) {
     float closest = 1000000;
     bool anyHit = false;
 
-    // Spheres
-    for (int i = 0; i < NUM_SPHERES; i++) {
-        float dist;
-        bool tmpEM;
-        Sphere sphere = spheres[i];
-        bool hit = intersectSphere(ray, sphere, dist, tmpEM);
-        if (hit && dist > 0) {
-            anyHit = true;
-            if (dist < closest) {
-                closest = dist;
-                rayhit.dist = dist;
-                rayhit.mat = sphere.mat;
-                rayhit.position = ray.origin + ray.direction * dist;
-                rayhit.normal = normalize(rayhit.position - sphere.center);
-                rayhit.enteringMat = tmpEM;
-            }
-        }
-    }
+    for (int i = 0; i < object.triangleCount; i++) {
+        Triangle triangle = triangles[objectBaseIndex + i];
 
-    // Triangles
-    for (int i = 0; i < NUM_TRIANGLES; i++) {
         float dist;
-        bool tmpEM;
-        Triangle triangle = triangles[i];
-        bool hit = intersectTriangle(ray, triangle, dist, tmpEM);
+        bool hitBackface;
+        bool hit = intersectTriangle(ray, triangle, dist, hitBackface);
         if (hit && dist > 0) {
             anyHit = true;
             if (dist < closest) {
@@ -368,8 +274,10 @@ bool getClosestHit(Ray ray, out RayHit rayhit) {
                 rayhit.dist = dist;
                 rayhit.mat = triangle.mat;
                 rayhit.position = ray.origin + ray.direction * dist;
-                rayhit.normal = normalize(cross(triangle.P0 - triangle.P1, triangle.P0 - triangle.P2));
-                rayhit.enteringMat = tmpEM;
+
+                // TODO normal calculation is false for backface normals when not rendering transmissives, needs to be flipped
+                rayhit.normal = normalize(cross(triangle.V0.pos.xyz - triangle.V1.pos.xyz, triangle.V0.pos.xyz - triangle.V2.pos.xyz));
+                rayhit.hitBackface = hitBackface;
             }
         }
     }
@@ -377,57 +285,34 @@ bool getClosestHit(Ray ray, out RayHit rayhit) {
     return anyHit;
 }
 
+// End Includeres/shaders/utils/intersectUtils.glsl
 
+// Included from src/deviceShared/BufferBindings.h
+// NOT INCLUDED AGAIN
+// End Includesrc/deviceShared/BufferBindings.h
 
-bool getClosestHit(Ray ray, out Sphere closestSphere, out float dist, out bool enteringMaterial) {
-    float closest = 1000000;
+bool getClosestHit(Ray ray, out RayHit rayhit) {
     bool anyHit = false;
-    int closestIndex = -1;
+    float closest = 1000000;
 
-    // Spheres
-    for (int i = 0; i < 5; i++) {
-        float dist;
-        bool tmpEM;
-        bool hit = intersectSphere(ray, spheres[i], dist, tmpEM);
-        if (hit && dist > 0) {
-            enteringMaterial = tmpEM;
+    RayHit tmp;
+    for (int i = 0; i < objectCount; i++) {
+        MeshObject meshObject = meshObjects[i];
+        bool hit = intersectObject(ray, meshObject, tmp);
+        if (hit && tmp.dist < closest) {
             anyHit = true;
-            if (dist < closest) {
-                closest = dist;
-                closestIndex = i;
+            closest = tmp.dist;
+            rayhit = tmp;
+            if (meshObject.emissive == 1) {
+                rayhit.mat.boolsSpecTransmissiveEmissive.z = 1;
             }
         }
     }
 
-    /*
-
-    Triangle triangle;
-    Material mat;
-    mat.color = vec3(1, 0, 0);
-    mat.diffuse = true;
-    mat.emissive = false;
-    mat.transmissive = false;
-    mat.IOR = 1.0f;
-    triangle.P0 = vec3(10, -10, -15);
-    triangle.P1 = vec3(-10, 10, -15);
-    triangle.P2 = vec3(-10, -10, -15);
-    triangle.mat;
-    float dist;
-    bool tmpEM;
-    intersectTriangle(ray, triangle, dist, tmpEM);
-    if (hit && dist < closest) {
-        closest = dist;
-    }
-*/
-
-
-    if (anyHit) {
-        closestSphere = spheres[closestIndex];
-        dist = closest;
-    }
     return anyHit;
 }
 
+/*
 vec3 sampleNEETarget(vec2 seed, out Triangle triangle) {
     // terrible name, but it indexes into the array of indices
     int sampledIndexIndex = int(max(rand(seed) * LIGHT_SOURCE_COUNT - 1e-5, 0.0f)); // complicated to make 100% sure index can not be the same as LIGHT_SOURCE_COUNT
@@ -437,8 +322,17 @@ vec3 sampleNEETarget(vec2 seed, out Triangle triangle) {
     triangle = triangles[primitiveIndex];
     return sampleTrianglePos(triangle, seed);
 }
+*/
 
 // End Includeres/shaders/utils/rayTraceUtils.glsl
+
+// Included from res/shaders/utils/MeshTypes.glsl
+// NOT INCLUDED AGAIN
+// End Includeres/shaders/utils/MeshTypes.glsl
+
+// Included from res/shaders/utils/RayTypes.glsl
+// NOT INCLUDED AGAIN
+// End Includeres/shaders/utils/RayTypes.glsl
 
 void main() {
     vec2 texelCoord = vec2(gl_GlobalInvocationID.xy);
@@ -456,29 +350,38 @@ void main() {
 
     Ray ray = Ray(pos, dir);
     float dist;
-    Sphere hitSphere;
 
-    bool enteringMaterial;
     RayHit rayHit;
     bool hit = getClosestHit(ray, rayHit);
     vec3 newPos = rayHit.position;
 
     vec3 N = hit ? rayHit.normal : vec3(0);
-    bool transmissive = rayHit.mat.transmissive;
+    N = rayHit.hitBackface ? N : -N;
+
+    // TODO
+    //bool transmissive = rayHit.mat.transmissive;
+    bool transmissive = rayHit.mat.boolsSpecTransmissiveEmissive.y != 0;
 
     vec3 newDir = vec3(0);
     if (transmissive) {
-        float IOR = rayHit.mat.IOR;
+        float IOR = 1.2; //rayHit.mat.IOR;
         // refraction calculation from https://stackoverflow.com/questions/29758545/how-to-find-refraction-vector-from-incoming-vector-and-surface-normal#:~:text=Let%20n%20be%20the%20normalized,c%20%3D%20%2Dn%20dot%20V_incedence.
 
-        float r = rayHit.enteringMat ? 1 / IOR : IOR;
+        float r = rayHit.hitBackface ? 1 / IOR : IOR;
         // N = rayHit.enteringMat ? N : -N;
         float c = dot(-N, dir);
 
         if (hit) {
-            newDir = r * dir + N * (r * c - sqrt(1.0f - pow(r, 2.0f) * (1.0f - c * c)));
+            float cos_theta_2_sqr = 1.0f - pow(r, 2.0f) * (1.0f - c * c);
+            if (cos_theta_2_sqr < 0) {
+                // critical angle reached, total internal reflection
+                newDir = reflect(dir, N);
+            } else {
+                newDir = r * dir + N * (r * c - sqrt(1.0f - pow(r, 2.0f) * (1.0f - c * c)));
+                mul *= float(hit);
+            }
+
         }
-        mul *= float(hit);
 
         newPos += eps * newDir;
 
@@ -489,7 +392,7 @@ void main() {
     }
 
     const vec3 LIGHT_INTENSITY = vec3(150);
-    bool emissive = rayHit.mat.emissive;
+    bool emissive = rayHit.mat.boolsSpecTransmissiveEmissive.z != 0; // TODO rayHit.mat.emissive;
     vec3 emission = int(emissive) * LIGHT_INTENSITY;
 
     // I think this is correct
@@ -498,15 +401,13 @@ void main() {
     float attenuation = 1; // dist * dist;
 
     // mul *= hitSphere.mat.color;
-    bool diffuseBSDF = hit && rayHit.mat.diffuse;
-    vec3 usedColor = emissive || !diffuseBSDF ? vec3(1) : rayHit.mat.color;
+    bool diffuseBSDF = hit && rayHit.mat.boolsSpecTransmissiveEmissive.x == 0; ; // TODO rayHit.mat.diffuse;
+    vec3 usedColor = emissive || !diffuseBSDF ? vec3(1) : rayHit.mat.color.xyz;
     mul *= int(hit) * usedColor / attenuation;
 
     vec3 color = int(hit) * mul * emission;
 
-
     vec2 seed = frameSeed + gl_GlobalInvocationID.xy;
-
 
     if (diffuseBSDF) {
         vec3 newTangentDir = sampleHemisphereUniform(seed);
@@ -518,33 +419,6 @@ void main() {
 
         // vec3 newDir = newTangentDir;
         newDir = int(hit) * normalize(mat3(T, B, N) * newTangentDir);
-
-        /*
-        // NEE
-        Triangle targetLightTri;
-        vec3 sampledLightPos = sampleNEETarget(seed, targetLightTri);
-
-
-
-        vec3 lightVec = sampledLightPos - newPos;
-        float targetDist = length(lightVec);
-        Ray shadowRay = Ray(newPos, lightVec / targetDist);
-
-
-        vec3 edge1 = targetLightTri.P1 - targetLightTri.P0;
-        vec3 edge2 = targetLightTri.P2 - targetLightTri.P0;
-        float pdf = pow(targetDist, 2.0f) * 2.0f / (length(edge1) * length(edge2));
-
-        RayHit shadowHit;
-        bool shadowHasHit = getClosestHit(shadowRay, shadowHit);
-        if (!(shadowHasHit && shadowHit.dist < targetDist)) {
-            color += mul * LIGHT_INTENSITY * pdf;
-        }
-        // color = vec3(pdf);
-        // 1. get NEE Direction
-        // 2. cast Shadow ray
-        // 3. apply light or don't
-        */
     } else {
         float x = rand(seed);
         seed = seed * vec2(x + 0.5, 1);
@@ -569,8 +443,9 @@ void main() {
     // TODO this is wrong, dont count a single bounce as a sample, instead count a full path as one
     vec4 newValue = prevBufferContent + outVal * vec4(vec3(pdfNorm), 1);
     // vec3 debugColor = vec3(diffuseBSDF);
-    // vec3 debugColor = newDir;
-    // newValue = vec4(debugColor / 20, 1);
+    vec3 debugColor = vec3(1, 0, 0);
+    debugColor = int(hit) * vec3(rayHit.mat.color);
+    // newValue = vec4(debugColor, 1);
     imageStore(imgOutput, bufferCoords, newValue);
 
     newPos += eps * newDir;

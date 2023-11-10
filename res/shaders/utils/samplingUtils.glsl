@@ -1,4 +1,6 @@
-#include "res/shaders/utils/typesAndValues.glsl"
+#include "res/shaders/utils/RayTypes.glsl"
+#include "res/shaders/utils/Constants.glsl"
+#include "res/shaders/utils/MeshTypes.glsl"
 
 float rand(vec2 co){
     return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
@@ -48,7 +50,7 @@ Ray samplePathStart(vec2 texelCoord, vec2 viewPortSize) {
 
     float pixelSize = 2 * sideDist / viewPortSize.x;
 
-    ray.origin = vec3(0, 0, 35) + vec3(rand(seed) * pixelSize, rand(seed) * pixelSize, 0);
+    ray.origin = vec3(0, 0, 20) + vec3(rand(seed) * pixelSize, rand(seed) * pixelSize, 0);
     ray.direction = normalize(camDir + upDist * shiftedScaled.y * upDir + sideDist * shiftedScaled.x * tanDir);
 
     return ray;
@@ -63,8 +65,8 @@ vec3 sampleTrianglePos(Triangle triangle, vec2 seed) {
         xi2 = 1 - xi2;
     }
 
-    vec3 edge1 = triangle.P1 - triangle.P0;
-    vec3 edge2 = triangle.P2 - triangle.P0;
+    vec3 edge1 = triangle.V1.pos.xyz - triangle.V0.pos.xyz;
+    vec3 edge2 = triangle.V2.pos.xyz - triangle.V0.pos.xyz;
 
-    return triangle.P0 + xi1 * edge1 + xi2 * edge2;
+    return triangle.V0.pos.xyz + xi1 * edge1 + xi2 * edge2;
 }

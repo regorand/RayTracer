@@ -1,4 +1,8 @@
 #include "res/shaders/utils/MeshTypes.glsl"
+#include "src/deviceShared/BufferBindings.h"
+
+uniform uint objectCount;
+uniform uint emissiveCount;
 
 layout(std430, binding = TRIANGLE_BUFFER_BINDING) buffer triangleList
 {
@@ -8,7 +12,7 @@ layout(std430, binding = TRIANGLE_BUFFER_BINDING) buffer triangleList
 
 layout(std430, binding = OBJECT_BUFFER_BINDING) buffer objectList
 {
-    uint objectIndices[];
+    MeshObject meshObjects[];
 };
 
 
@@ -22,11 +26,3 @@ layout(std430, binding = EMISSIVE_BUFFER_BINDING) buffer emissiveList
 {
     uint emissiveIndices[];
 };
-
-/*
-    TODO for first version needed:
-        1. Triangle buffer
-        2. Object buffer
-        3. Material buffer
-        4. Light indices buffer
-*/

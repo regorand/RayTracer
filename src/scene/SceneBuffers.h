@@ -12,12 +12,14 @@ private:
     SSBO mEmissiveSSBO;
 
 public:
-    SceneBuffers(std::vector<Triangle> &triangles,
-                 std::vector<unsigned int> &objectIds,
-                 std::vector<Material> &materials,
-                 std::vector<unsigned int> &emissiveObjects);
+    bool createGPUBuffers(std::vector<Triangle> &triangles,
+                          std::vector<BufferMeshObject> &objectIds,
+                          std::vector<Material> &materials,
+                          std::vector<unsigned int> &emissiveObjects);
 
     void bind();
     void unbind();
+
+    bool isValid();
 
 };
