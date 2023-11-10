@@ -65,6 +65,9 @@ using uint = unsigned int;
 #define MATERIAL_BUFFER_BINDING 2
 #define EMISSIVE_BUFFER_BINDING 3
 
+#define POST_PROC_SOURCE_BINDING 0
+#define POST_PROC_TARGET_BINDING 1
+
 // End Includesrc/deviceShared/BufferBindings.h
 
 uniform uint objectCount;

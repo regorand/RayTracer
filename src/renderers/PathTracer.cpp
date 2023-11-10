@@ -208,17 +208,21 @@ void PathTracer::buildImGuiWindow() {
             reloadShaders();
         }
 
-        if (ImGui::Button("Render", buttonSize)) {
+        bool currentlyRendering = mRenderStatus.state != RenderState::IDLE;
+
+        if (!currentlyRendering && ImGui::Button("Render", buttonSize)) {
             startRender();
+        }
+
+        if (currentlyRendering && ImGui::Button("Cancel Render", buttonSize)) {
+            cancelRender();
         }
 
         if (ImGui::Button("Clear Color Buffer", buttonSize)) {
             clearTarget();
         }
 
-        if (mRenderStatus.state != RenderState::IDLE && ImGui::Button("Cancel Render", buttonSize)) {
-            cancelRender();
-        }
+
 
         ImGui::InputInt("Target SPP per render", &mPathTraceSettings.spp);
 

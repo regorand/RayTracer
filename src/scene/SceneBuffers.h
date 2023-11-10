@@ -2,7 +2,7 @@
 
 #include <vector>
 #include "glWrappers/shaders/SSBO.h"
-#include "deviceShared/Types.h"
+#include "renderers/Types.h"
 
 class SceneBuffers {
 private:

@@ -5,6 +5,7 @@
 #include "renderers/PathTracer.h"
 #include "renderers/BufferRenderer.h"
 #include "ImguiUtils.h"
+#include "renderers/PostProcessor.h"
 #include <GLFW/glfw3.h>
 
 typedef struct RenderSettings_s {
@@ -28,7 +29,7 @@ public:
     int run();
 
 private:
-    void buildImguiControlSideBar(glm::vec2 displaySize, ImGuiMenuSettings menuSettings, PathTracer &pt, BufferRenderer &br);
+    void buildImguiControlSideBar(glm::vec2 displaySize, ImGuiMenuSettings menuSettings, PathTracer &pt, BufferRenderer &br, PostProcSettings &postProcSettings);
 
 };
 

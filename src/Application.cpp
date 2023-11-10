@@ -8,6 +8,7 @@
 #include "glWrappers/shaders/ShaderLoad.h"
 #include "scene/Scene.h"
 #include "utils/SceneCreateUtils.h"
+#include "renderers/PostProcessor.h"
 #include <imgui.h>
 
 Application::Application() {}
@@ -62,8 +63,11 @@ int Application::run() {
 
     HostBuffer buffer(displayWidth, displayHeight);
 
-    Texture texture(&buffer);
-    texture.setAccessType(GL_READ_WRITE);
+    Texture renderTarget(&buffer);
+    renderTarget.setAccessType(GL_READ_WRITE);
+
+    Texture displayBuffer(&buffer);
+    displayBuffer.setAccessType(GL_READ_WRITE);
 
     Scene scene;
     Camera camera(glm::vec3(0, 0, 30), glm::vec3(0, 0, -1));
@@ -76,13 +80,18 @@ int Application::run() {
     for (MeshObject &object: objects) {
         scene.addMeshObject(object);
     }
-
     scene.createGPUBuffers();
+
+    PostProcessor postProcessor;
+
+    PostProcSettings postProcSettings;
 
     PathTracer pathTracer(displayWidth, displayHeight);
     pathTracer.setScene(scene);
 
-    pathTracer.setTargetp(&texture);
+
+
+    pathTracer.setTargetp(&renderTarget);
     pathTracer.clearTarget();
     auto tmpSettings = pathTracer.getPathTraceSettings();
     PathTraceSettings initialSettings;
@@ -93,6 +102,7 @@ int Application::run() {
     while (state != RenderState::IDLE) {
         state = pathTracer.doRenderStep();
     }
+
     pathTracer.setPathTraceSettings(tmpSettings);
 
     ImGuiMenuSettings menuSettings;
@@ -116,7 +126,7 @@ int Application::run() {
         }
 
         if (menuSettings.showControlPanel) {
-            buildImguiControlSideBar(glm::vec2(displayWidth, displayHeight), menuSettings, pathTracer, br);
+            buildImguiControlSideBar(glm::vec2(displayWidth, displayHeight), menuSettings, pathTracer, br, postProcSettings);
         }
 
         if (state != RenderState::IDLE) pathTracer.buildImGuiProgressBar(glm::vec2(displayWidth, displayHeight));
@@ -125,7 +135,11 @@ int Application::run() {
 
         glViewport(0, 0, displayWidth, displayHeight);
         glClear(GL_COLOR_BUFFER_BIT);
-        br.render(&texture);
+
+
+        postProcessor.applyPostProcessing(renderTarget, displayBuffer, postProcSettings);
+
+        br.render(&displayBuffer);
 
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
@@ -146,7 +160,7 @@ int Application::run() {
 }
 
 void Application::buildImguiControlSideBar(glm::vec2 displaySize, ImGuiMenuSettings menuSettings, PathTracer &pt,
-                                           BufferRenderer &br) {
+                                           BufferRenderer &br, PostProcSettings &postProcSettings) {
     float windowWidth = displaySize.x / 6.0f;
 
     ImGui::SetNextWindowPos(
@@ -170,6 +184,19 @@ void Application::buildImguiControlSideBar(glm::vec2 displaySize, ImGuiMenuSetti
     ImGui::Indent(8.0f);
 
     pt.buildImGuiWindow();
+
+    ImGui::Unindent(8.0f);
+
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Spacing();
+
+    ImGui::Indent(8.0f);
+
+    if (ImGui::CollapsingHeader("Post Processing")) {
+        ImGui::Checkbox("Gamma Correction", &postProcSettings.gammaCorrect);
+        ImGui::Checkbox("tonemapping", &postProcSettings.tonemap);
+    }
 
     ImGui::Unindent(8.0f);
 

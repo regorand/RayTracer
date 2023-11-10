@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include "deviceShared/Types.h"
+#include "renderers/Types.h"
 
 /**
  * Represents a single, usually continous object made of triangles

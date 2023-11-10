@@ -5,7 +5,7 @@
 #include <vector>
 #include "glm/vec3.hpp"
 #include "scene/Camera.h"
-#include "deviceShared/Types.h"
+#include "renderers/Types.h"
 #include "glWrappers/shaders/SSBO.h"
 #include "MeshObject.h"
 #include "SceneBuffers.h"
