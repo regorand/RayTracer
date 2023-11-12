@@ -6,7 +6,7 @@ struct Vertex {
 
 struct Material {
     vec4 color;
-    vec4 boolsSpecTransmissiveEmissive; // specular if x comp is 1, transmissive if y comp is 1
+    // vec4 boolsSpecTransmissiveEmissive; // specular if x comp is 1, transmissive if y comp is 1
 };
 
 struct Triangle {

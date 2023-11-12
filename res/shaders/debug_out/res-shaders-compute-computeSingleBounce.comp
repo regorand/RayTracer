@@ -25,7 +25,7 @@ struct Vertex {
 
 struct Material {
     vec4 color;
-    vec4 boolsSpecTransmissiveEmissive; // specular if x comp is 1, transmissive if y comp is 1
+    // vec4 boolsSpecTransmissiveEmissive; // specular if x comp is 1, transmissive if y comp is 1
 };
 
 struct Triangle {
@@ -294,6 +294,24 @@ bool intersectObject(Ray ray, MeshObject object, out RayHit rayhit) {
 // NOT INCLUDED AGAIN
 // End Includesrc/deviceShared/BufferBindings.h
 
+// Included from src/deviceShared/MaterialFlags.h
+#ifdef __cplusplus
+#pragma once
+#endif
+
+#define SPECULAR_FLAG (1)
+#define TRANSMISSIVE_FLAG (1 << 1)
+#define EMISSIVE_FLAG (1 << 2)
+
+// End Includesrc/deviceShared/MaterialFlags.h
+
+// Included from res/shaders/utils/FlagUtils.glsl
+bool checkBitFlag(uint value, uint bitFlag) {
+    return (value & bitFlag) != 0;
+}
+
+// End Includeres/shaders/utils/FlagUtils.glsl
+
 bool getClosestHit(Ray ray, out RayHit rayhit) {
     bool anyHit = false;
     float closest = 1000000;
@@ -307,7 +325,9 @@ bool getClosestHit(Ray ray, out RayHit rayhit) {
             closest = tmp.dist;
             rayhit = tmp;
             if (meshObject.emissive == 1) {
-                rayhit.mat.boolsSpecTransmissiveEmissive.z = 1;
+                // rayhit.mat.boolsSpecTransmissiveEmissive.z = 1;
+                uint props = EMISSIVE_FLAG;
+                rayhit.mat.color.w = uintBitsToFloat(props);
             }
         }
     }
@@ -337,6 +357,14 @@ vec3 sampleNEETarget(vec2 seed, out Triangle triangle) {
 // NOT INCLUDED AGAIN
 // End Includeres/shaders/utils/RayTypes.glsl
 
+// Included from res/shaders/utils/FlagUtils.glsl
+// NOT INCLUDED AGAIN
+// End Includeres/shaders/utils/FlagUtils.glsl
+
+// Included from src/deviceShared/MaterialFlags.h
+// NOT INCLUDED AGAIN
+// End Includesrc/deviceShared/MaterialFlags.h
+
 void main() {
     vec2 texelCoord = vec2(gl_GlobalInvocationID.xy);
     ivec2 bufferCoords = ivec2(texelCoord);
@@ -363,7 +391,9 @@ void main() {
 
     // TODO
     //bool transmissive = rayHit.mat.transmissive;
-    bool transmissive = rayHit.mat.boolsSpecTransmissiveEmissive.y != 0;
+    uint matProperties = floatBitsToUint(rayHit.mat.color.w);
+
+    bool transmissive = checkBitFlag(matProperties, TRANSMISSIVE_FLAG); // rayHit.mat.boolsSpecTransmissiveEmissive.y != 0;
 
     vec3 newDir = vec3(0);
     if (transmissive) {
@@ -395,7 +425,7 @@ void main() {
     }
 
     const vec3 LIGHT_INTENSITY = vec3(150);
-    bool emissive = rayHit.mat.boolsSpecTransmissiveEmissive.z != 0; // TODO rayHit.mat.emissive;
+    bool emissive = checkBitFlag(matProperties, EMISSIVE_FLAG); //rayHit.mat.boolsSpecTransmissiveEmissive.z != 0; // TODO rayHit.mat.emissive;
     vec3 emission = int(emissive) * LIGHT_INTENSITY;
 
     // I think this is correct
@@ -404,7 +434,7 @@ void main() {
     float attenuation = 1; // dist * dist;
 
     // mul *= hitSphere.mat.color;
-    bool diffuseBSDF = hit && rayHit.mat.boolsSpecTransmissiveEmissive.x == 0; ; // TODO rayHit.mat.diffuse;
+    bool diffuseBSDF = hit && !checkBitFlag(matProperties, SPECULAR_FLAG);; //rayHit.mat.boolsSpecTransmissiveEmissive.x == 0; ; // TODO rayHit.mat.diffuse;
     vec3 usedColor = emissive || !diffuseBSDF ? vec3(1) : rayHit.mat.color.xyz;
     mul *= int(hit) * usedColor / attenuation;
 
@@ -430,8 +460,8 @@ void main() {
         float z = rand(seed);
         seed = seed * vec2(z + 0.5, y + 0.5);
 
-        newDir = int(hit) * normalize(25 * reflect(dir, N) + vec3(x, y, z));
-        // newDir = int(hit) * reflect(dir, N);
+        // newDir = int(hit) * normalize(25 * reflect(dir, N) + vec3(x, y, z));
+        newDir = int(hit) * reflect(dir, N);
     }
 
     float newDirLambert = int(hit) * max(0.0f, dot(N, newDir));

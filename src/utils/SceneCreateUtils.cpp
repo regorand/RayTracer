@@ -1,4 +1,5 @@
 #include "SceneCreateUtils.h"
+#include "deviceShared/MaterialFlags.h"
 
 void createCornellBox(std::vector<MeshObject> &outObjects) {
     MeshObject walls;
@@ -21,9 +22,14 @@ void createCornellBox(std::vector<MeshObject> &outObjects) {
     }
 
 
+    Material mirror;
+    // mirror.boolsSpecTrans = glm::vec4(1, 0, 0, 0);
+    unsigned int matProperties = SPECULAR_FLAG;
+    mirror.color.w = reinterpret_cast<float &>(matProperties);
+
     // left wall
-    walls.addTriangle(createTriangle(wallVertices, 1, 0, 2, DIFFUSE_RED));
-    walls.addTriangle(createTriangle(wallVertices, 1, 2, 3, DIFFUSE_RED));
+    walls.addTriangle(createTriangle(wallVertices, 1, 0, 2, mirror));
+    walls.addTriangle(createTriangle(wallVertices, 1, 2, 3, mirror));
 
     // ground
     walls.addTriangle(createTriangle(wallVertices, 0, 1, 4, DIFFUSE_BLUE));
@@ -66,17 +72,21 @@ void createCornellBox(std::vector<MeshObject> &outObjects) {
     Vertex UU;
     UU.pos = glm::vec3(lightHigher.x, higher.y - eps, lightHigher.y);
 
+    Material lightMat;
+    unsigned int lightMatProps = EMISSIVE_FLAG;
+    lightMat.color.w = reinterpret_cast<float &>(lightMatProps);
+
     Triangle lightTri1;
     lightTri1.V0 = LL;
     lightTri1.V1 = UL;
     lightTri1.V2 = UU;
-    lightTri1.material = DIFFUSE_WHITE;
+    lightTri1.material = lightMat;
 
     Triangle lightTri2;
     lightTri2.V0 = LL;
     lightTri2.V1 = UU;
     lightTri2.V2 = LU;
-    lightTri2.material = DIFFUSE_WHITE;
+    lightTri2.material = lightMat;
 
     lightSource.addTriangle(lightTri1);
     lightSource.addTriangle(lightTri2);
@@ -105,8 +115,10 @@ void createSampleBoxes(std::vector<MeshObject> &outObjects) {
     glm::vec3 lowerGlasBox( -9.5, -2.5, 5);
 
     Material glas;
+    unsigned int glasMatProperties = TRANSMISSIVE_FLAG;
+
     glas.color = glm::vec4(0);
-    glas.boolsSpecTrans = glm::vec4(0, 1, 0, 0);
+    glas.color.w = reinterpret_cast<float &>(glasMatProperties);
 
     std::vector<Triangle> glasBoxTris;
     createBox(glasBoxTris, glas, lowerGlasBox, higherGlasBox, ALL_FACES);

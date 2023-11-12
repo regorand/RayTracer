@@ -18,6 +18,8 @@ uniform vec2 frameSeed;
 #include "res/shaders/utils/rayTraceUtils.glsl"
 #include "res/shaders/utils/MeshTypes.glsl"
 #include "res/shaders/utils/RayTypes.glsl"
+#include "res/shaders/utils/FlagUtils.glsl"
+#include "src/deviceShared/MaterialFlags.h"
 
 void main() {
     vec2 texelCoord = vec2(gl_GlobalInvocationID.xy);
@@ -45,7 +47,9 @@ void main() {
 
     // TODO
     //bool transmissive = rayHit.mat.transmissive;
-    bool transmissive = rayHit.mat.boolsSpecTransmissiveEmissive.y != 0;
+    uint matProperties = floatBitsToUint(rayHit.mat.color.w);
+
+    bool transmissive = checkBitFlag(matProperties, TRANSMISSIVE_FLAG);
 
     vec3 newDir = vec3(0);
     if (transmissive) {
@@ -77,7 +81,7 @@ void main() {
     }
 
     const vec3 LIGHT_INTENSITY = vec3(150);
-    bool emissive = rayHit.mat.boolsSpecTransmissiveEmissive.z != 0; // TODO rayHit.mat.emissive;
+    bool emissive = checkBitFlag(matProperties, EMISSIVE_FLAG);
     vec3 emission = int(emissive) * LIGHT_INTENSITY;
 
     // I think this is correct
@@ -86,7 +90,7 @@ void main() {
     float attenuation = 1; // dist * dist;
 
     // mul *= hitSphere.mat.color;
-    bool diffuseBSDF = hit && rayHit.mat.boolsSpecTransmissiveEmissive.x == 0; ; // TODO rayHit.mat.diffuse;
+    bool diffuseBSDF = hit && !checkBitFlag(matProperties, SPECULAR_FLAG);
     vec3 usedColor = emissive || !diffuseBSDF ? vec3(1) : rayHit.mat.color.xyz;
     mul *= int(hit) * usedColor / attenuation;
 
@@ -112,8 +116,8 @@ void main() {
         float z = rand(seed);
         seed = seed * vec2(z + 0.5, y + 0.5);
 
-        newDir = int(hit) * normalize(25 * reflect(dir, N) + vec3(x, y, z));
-        // newDir = int(hit) * reflect(dir, N);
+        // newDir = int(hit) * normalize(25 * reflect(dir, N) + vec3(x, y, z));
+        newDir = int(hit) * reflect(dir, N);
     }
 
     float newDirLambert = int(hit) * max(0.0f, dot(N, newDir));
@@ -139,33 +143,3 @@ void main() {
     imageStore(mulBuffer, bufferCoords, (1 - int(emissive)) * mul.xyzz);
 
 }
-
-/*
-Goal:
-1. If needed create a new Ray -> Not when needed, when CPU says to through Uniform
-2. Else: read ray from buffer
-3. Compute 1 bounce including next direction
-    3.3 -> If doing NEE, do it now
-    3.5 -> Emissive Materials: See below
-4. Compute relevant multipliers
-5. Multiply relevant multipliers into buffer
-6. Store pos + bounce dir into buffer
-7. determine if ray terminates -> see below
-
-Emissive Materials:
-Check which applies:
-    1. Calculate Contribution using buffer multipliers right there, add into colorbuffer
-    2. Don't actually computer contribution of indirect bounce when using NEE ?
-
-Ray Termination
-Either:
-    1. Use constant path length (and accept bias for simplicity)
-    2. Russian Roulette -> May lead to different SPPs per pixel -> if I want constant, will waste some ressources
-
-
-Buffer contents needed:
-1. vec3 pos
-2. vec3 direction
-3. vec3 colorMultiplier -> Can I run into numerical problems with this ?
-
-*/

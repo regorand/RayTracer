@@ -1,5 +1,7 @@
 #include "res/shaders/utils/intersectUtils.glsl"
 #include "src/deviceShared/BufferBindings.h"
+#include "src/deviceShared/MaterialFlags.h"
+#include "res/shaders/utils/FlagUtils.glsl"
 
 bool getClosestHit(Ray ray, out RayHit rayhit) {
     bool anyHit = false;
@@ -14,7 +16,8 @@ bool getClosestHit(Ray ray, out RayHit rayhit) {
             closest = tmp.dist;
             rayhit = tmp;
             if (meshObject.emissive == 1) {
-                rayhit.mat.boolsSpecTransmissiveEmissive.z = 1;
+                uint props = EMISSIVE_FLAG;
+                rayhit.mat.color.w = uintBitsToFloat(props);
             }
         }
     }

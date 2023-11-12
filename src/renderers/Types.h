@@ -11,16 +11,16 @@ struct Vertex
 struct Material
 {
     alignas(16) glm::vec4 color{};
-    alignas(16) glm::vec4 boolsSpecTrans{}; // specular if x comp is 1, transmissive if y comp is 1
+    // alignas(16) glm::vec4 boolsSpecTrans{}; // specular if x comp is 1, transmissive if y comp is 1
 
     explicit Material() {
         color = glm::vec4(0);
-        boolsSpecTrans = glm::vec4(0);
+        // boolsSpecTrans = glm::vec4(0);
     }
 
     explicit Material(glm::vec4 color) {
         this->color = color;
-        boolsSpecTrans = glm::vec4(0);
+        // boolsSpecTrans = glm::vec4(0);
     }
 };
 
