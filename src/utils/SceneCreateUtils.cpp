@@ -1,3 +1,4 @@
+#include <iostream>
 #include "SceneCreateUtils.h"
 #include "deviceShared/MaterialFlags.h"
 
@@ -175,9 +176,10 @@ void createBox(std::vector<Triangle> &outTriangles, Material mat, glm::vec3 lowe
         outTriangles.push_back(createTriangle(wallVertices, 2, 3, 7, mat));
     }
 
+    // front
     if ((faceFlags & FRONT_WALL_FLAG) != 0) {
-        outTriangles.push_back(createTriangle(wallVertices, 5, 1, 7, mat));
-        outTriangles.push_back(createTriangle(wallVertices, 1, 3, 7, mat));
+        outTriangles.push_back(createTriangle(wallVertices, 1, 5, 7, mat));
+        outTriangles.push_back(createTriangle(wallVertices, 1, 7, 3, mat));
     }
 
 }
@@ -188,6 +190,14 @@ Triangle createTriangle(std::vector<Vertex> &vertices, unsigned int index1, unsi
     triangle.V0 = vertices[index1];
     triangle.V1 = vertices[index2];
     triangle.V2 = vertices[index3];
+
+    /*
+    glm::vec3 edge1 = triangle.V1.pos - triangle.V0.pos;
+    glm::vec3 edge2 = triangle.V2.pos - triangle.V0.pos;
+
+    glm::vec3 normal = glm::normalize(glm::cross(edge1, edge2));
+    std::cout << "[ " << normal.x << ", " << normal.y << ", " << normal.z << "]" << std::endl;
+    */
 
     triangle.material = mat;
 

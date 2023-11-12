@@ -25,7 +25,6 @@ struct Vertex {
 
 struct Material {
     vec4 color;
-    // vec4 boolsSpecTransmissiveEmissive; // specular if x comp is 1, transmissive if y comp is 1
 };
 
 struct Triangle {
@@ -148,14 +147,25 @@ vec3 sampleHemisphereUniform(inout vec2 seed) {
     return vec3(xy, z);
 }
 
+vec3 getRandVec3(inout vec2 seed) {
+    float x = rand(seed);
+    seed = seed * vec2(x + 0.5, 1);
+    float y = rand(seed);
+    seed = seed * vec2(y + 0.5, x + 0.5);
+    float z = rand(seed);
+    seed = seed * vec2(z + 0.5, y + 0.5);
+
+    return vec3(x, y, z);
+}
+
 vec3 getNewDirection(inout vec2 seed, vec3 normal) {
-    vec3 tangent = vec3(-normal.y, normal.x, normal.z);
-    vec3 cotangent = cross(tangent, normal);
+    vec3 tangent = vec3(normal.y, normal.z, -normal.x);
+    vec3 cotangent = cross(normal, tangent);
 
     mat3 rot = mat3(tangent, cotangent, normal);
     vec3 tangentSpaceDir = sampleHemisphereUniform(seed);
 
-    return rot * tangentSpaceDir;
+    return normalize(rot * tangentSpaceDir);
 }
 
 Ray samplePathStart(vec2 texelCoord, vec2 viewPortSize) {
@@ -217,8 +227,7 @@ vec3 sampleTrianglePos(Triangle triangle, vec2 seed) {
 // NOT INCLUDED AGAIN
 // End Includeres/shaders/scenes/CPUScene.glsl
 
-
-bool intersectTriangle(Ray ray, Triangle triangle, out float dist, out bool hitBackface) {
+bool intersectTriangle(Ray ray, Triangle triangle, out RayHit rayhit) {
     // algorithm modified from C++ example on https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
 
     const float eps = 1e-5;
@@ -240,13 +249,13 @@ bool intersectTriangle(Ray ray, Triangle triangle, out float dist, out bool hitB
 
     if (v < 0.0 || u + v > 1.0) return false;
 
-    dist = f * dot(edge2, q);
+    rayhit.dist = f * dot(edge2, q);
 
-    if (dist > eps) {
-        // vec3 N = cross(edge1, edge2);
-        vec3 N = normalize(cross(edge1, edge2)); // TODO prob not necessary to normalize for what I want to do
-        // TODO replace with interpolated normal for smooth shading ?
-        hitBackface = dot(N, (ray.origin - triangle.V0.pos.xyz)) > 0;
+    if (rayhit.dist > eps) {
+        rayhit.mat = triangle.mat;
+        rayhit.position = ray.origin + ray.direction * rayhit.dist;
+        rayhit.normal = normalize(cross(edge1, edge2)); // TODO replace with interpolated normal for smooth shading ?
+        rayhit.hitBackface = dot(rayhit.normal, (ray.origin - triangle.V0.pos.xyz)) < 0;
         return true;
     }
 
@@ -264,23 +273,17 @@ bool intersectObject(Ray ray, MeshObject object, out RayHit rayhit) {
     float closest = 1000000;
     bool anyHit = false;
 
+    RayHit tmp;
     for (int i = 0; i < object.triangleCount; i++) {
         Triangle triangle = triangles[objectBaseIndex + i];
 
-        float dist;
-        bool hitBackface;
-        bool hit = intersectTriangle(ray, triangle, dist, hitBackface);
-        if (hit && dist > 0) {
-            anyHit = true;
-            if (dist < closest) {
-                closest = dist;
-                rayhit.dist = dist;
-                rayhit.mat = triangle.mat;
-                rayhit.position = ray.origin + ray.direction * dist;
+        bool hit = intersectTriangle(ray, triangle, tmp);
 
-                // TODO normal calculation is false for backface normals when not rendering transmissives, needs to be flipped
-                rayhit.normal = normalize(cross(triangle.V0.pos.xyz - triangle.V1.pos.xyz, triangle.V0.pos.xyz - triangle.V2.pos.xyz));
-                rayhit.hitBackface = hitBackface;
+        if (hit && tmp.dist > 0) {
+            anyHit = true;
+            if (tmp.dist < closest) {
+                closest = tmp.dist;
+                rayhit = tmp;
             }
         }
     }
@@ -325,7 +328,6 @@ bool getClosestHit(Ray ray, out RayHit rayhit) {
             closest = tmp.dist;
             rayhit = tmp;
             if (meshObject.emissive == 1) {
-                // rayhit.mat.boolsSpecTransmissiveEmissive.z = 1;
                 uint props = EMISSIVE_FLAG;
                 rayhit.mat.color.w = uintBitsToFloat(props);
             }
@@ -333,6 +335,20 @@ bool getClosestHit(Ray ray, out RayHit rayhit) {
     }
 
     return anyHit;
+}
+
+vec3 getTransmittedDir(float oldIOR, float newIOR, vec3 N, vec3 dir) {
+    // refraction calculation from https://stackoverflow.com/questions/29758545/how-to-find-refraction-vector-from-incoming-vector-and-surface-normal#:~:text=Let%20n%20be%20the%20normalized,c%20%3D%20%2Dn%20dot%20V_incedence.
+    float r = oldIOR / newIOR;
+    float c = dot(-N, dir);
+
+    vec3 newDir = vec3(0);
+    float cos_theta_2_sqr = 1.0f - pow(r, 2.0f) * (1.0f - c * c);
+    if (cos_theta_2_sqr < 0) {
+        return reflect(dir, N);
+    } else {
+        return r * dir + N * (r * c - sqrt(cos_theta_2_sqr));
+    }
 }
 
 /*
@@ -372,6 +388,7 @@ void main() {
     const float eps = 1e-4;
 
     vec3 mul = imageLoad(mulBuffer, bufferCoords).xyz;
+
     if (length(mul) < eps) {
         return;
     }
@@ -384,136 +401,72 @@ void main() {
 
     RayHit rayHit;
     bool hit = getClosestHit(ray, rayHit);
-    vec3 newPos = rayHit.position;
 
-    vec3 N = hit ? rayHit.normal : vec3(0);
-    N = rayHit.hitBackface ? N : -N;
-
-    // TODO
-    //bool transmissive = rayHit.mat.transmissive;
-    uint matProperties = floatBitsToUint(rayHit.mat.color.w);
-
-    bool transmissive = checkBitFlag(matProperties, TRANSMISSIVE_FLAG); // rayHit.mat.boolsSpecTransmissiveEmissive.y != 0;
-
-    vec3 newDir = vec3(0);
-    if (transmissive) {
-        float IOR = 1.2; //rayHit.mat.IOR;
-        // refraction calculation from https://stackoverflow.com/questions/29758545/how-to-find-refraction-vector-from-incoming-vector-and-surface-normal#:~:text=Let%20n%20be%20the%20normalized,c%20%3D%20%2Dn%20dot%20V_incedence.
-
-        float r = rayHit.hitBackface ? 1 / IOR : IOR;
-        // N = rayHit.enteringMat ? N : -N;
-        float c = dot(-N, dir);
-
-        if (hit) {
-            float cos_theta_2_sqr = 1.0f - pow(r, 2.0f) * (1.0f - c * c);
-            if (cos_theta_2_sqr < 0) {
-                // critical angle reached, total internal reflection
-                newDir = reflect(dir, N);
-            } else {
-                newDir = r * dir + N * (r * c - sqrt(1.0f - pow(r, 2.0f) * (1.0f - c * c)));
-                mul *= float(hit);
-            }
-
-        }
-
-        newPos += eps * newDir;
-
-        imageStore(posBuffer, bufferCoords, newPos.xyzz);
-        imageStore(dirBuffer, bufferCoords, newDir.xyzz);
-        imageStore(mulBuffer, bufferCoords, mul.xyzz);
+    if (!hit) {
+        imageStore(mulBuffer, bufferCoords, vec4(0));
         return;
     }
 
-    const vec3 LIGHT_INTENSITY = vec3(150);
-    bool emissive = checkBitFlag(matProperties, EMISSIVE_FLAG); //rayHit.mat.boolsSpecTransmissiveEmissive.z != 0; // TODO rayHit.mat.emissive;
-    vec3 emission = int(emissive) * LIGHT_INTENSITY;
-
-    // I think this is correct
-    // I directly sample outgoing direction, not by area of some light or similar, thus I have a ray from point to point
-    // in a vacuum, which has no falloff
-    float attenuation = 1; // dist * dist;
-
-    // mul *= hitSphere.mat.color;
-    bool diffuseBSDF = hit && !checkBitFlag(matProperties, SPECULAR_FLAG);; //rayHit.mat.boolsSpecTransmissiveEmissive.x == 0; ; // TODO rayHit.mat.diffuse;
-    vec3 usedColor = emissive || !diffuseBSDF ? vec3(1) : rayHit.mat.color.xyz;
-    mul *= int(hit) * usedColor / attenuation;
-
-    vec3 color = int(hit) * mul * emission;
-
     vec2 seed = frameSeed + gl_GlobalInvocationID.xy;
 
-    if (diffuseBSDF) {
-        vec3 newTangentDir = sampleHemisphereUniform(seed);
+    vec3 newPos = rayHit.position;
 
-        // construct some tangent space around the normal of the surface
-        // T and B don't matter as long they are orthogonal to N and each other, as BSDF (currently lambert diffuse) is isotropic
-        vec3 T = vec3(N.y, N.z, -N.x);
-        vec3 B = cross(N, T);
+    vec3 N = rayHit.hitBackface ? -rayHit.normal : rayHit.normal;
 
-        // vec3 newDir = newTangentDir;
-        newDir = int(hit) * normalize(mat3(T, B, N) * newTangentDir);
-    } else {
-        float x = rand(seed);
-        seed = seed * vec2(x + 0.5, 1);
-        float y = rand(seed);
-        seed = seed * vec2(y + 0.5, x + 0.5);
-        float z = rand(seed);
-        seed = seed * vec2(z + 0.5, y + 0.5);
+    uint matProperties = floatBitsToUint(rayHit.mat.color.w);
 
-        // newDir = int(hit) * normalize(25 * reflect(dir, N) + vec3(x, y, z));
-        newDir = int(hit) * reflect(dir, N);
+    bool emissive = checkBitFlag(matProperties, EMISSIVE_FLAG);
+    bool transmissive = checkBitFlag(matProperties, TRANSMISSIVE_FLAG);
+    bool specular = checkBitFlag(matProperties, SPECULAR_FLAG);
+
+    vec3 newDir = vec3(0);
+
+    if (emissive) {
+        const vec3 LIGHT_INTENSITY = vec3(1);
+
+        vec3 color = mul * LIGHT_INTENSITY;
+
+        vec4 outVal = vec4(color, 1);
+        vec4 prevBufferContent = imageLoad(imgOutput, bufferCoords);
+
+
+        // TODO this is wrong, dont count a single bounce as a sample, instead count a full path as one
+        vec4 newValue = prevBufferContent + outVal;
+
+        imageStore(imgOutput, bufferCoords, newValue);
+    } else if (transmissive) {
+
+        float newIOR = 1.2 ; // rayHit.hitBackface ? 1   : 1.2;
+        float oldIOR = 1; // rayHit.hitBackface ? 1.2 : 1;
+
+
+        newDir = getTransmittedDir(oldIOR, newIOR, N, dir);
+
+    } else if (specular) {
+        newDir = reflect(dir, N);
+    } else /* Diffuse */ {
+        newDir = getNewDirection(seed, N);
+
+        float newDirLambert = max(0.0f, dot(N, newDir));
+
+        mul *= rayHit.mat.color.xyz * newDirLambert;
     }
 
-    float newDirLambert = int(hit) * max(0.0f, dot(N, newDir));
-    mul *= newDirLambert;
-
-    vec4 outVal = vec4(color, 1);
-    vec4 prevBufferContent = imageLoad(imgOutput, bufferCoords);
-
-    float pdfNorm = diffuseBSDF ? 1 / (4 * PI) : 1;
-
-
-    // TODO this is wrong, dont count a single bounce as a sample, instead count a full path as one
-    vec4 newValue = prevBufferContent + outVal * vec4(vec3(pdfNorm), 1);
-    // vec3 debugColor = vec3(diffuseBSDF);
-    vec3 debugColor = vec3(1, 0, 0);
-    debugColor = int(hit) * vec3(rayHit.mat.color);
-    // newValue = vec4(debugColor, 1);
-    imageStore(imgOutput, bufferCoords, newValue);
-
     newPos += eps * newDir;
-    imageStore(posBuffer, bufferCoords, (1 - int(emissive)) * newPos.xyzz);
-    imageStore(dirBuffer, bufferCoords, (1 - int(emissive)) * newDir.xyzz);
-    imageStore(mulBuffer, bufferCoords, (1 - int(emissive)) * mul.xyzz);
+    const bool debug = false;
+
+    if (debug) {
+        vec3 debugColor = rayHit.hitBackface ? vec3(1, 0, 0) : vec3(0, 0, 1);
+        vec4 newValue = vec4(debugColor, 1);
+
+        imageStore(imgOutput, bufferCoords, newValue);
+
+        imageStore(mulBuffer, bufferCoords, vec4(0));
+        return;
+    }
+
+    imageStore(posBuffer, bufferCoords, newPos.xyzz);
+    imageStore(dirBuffer, bufferCoords, newDir.xyzz);
+    imageStore(mulBuffer, bufferCoords, mul.xyzz);
 
 }
-
-/*
-Goal:
-1. If needed create a new Ray -> Not when needed, when CPU says to through Uniform
-2. Else: read ray from buffer
-3. Compute 1 bounce including next direction
-    3.3 -> If doing NEE, do it now
-    3.5 -> Emissive Materials: See below
-4. Compute relevant multipliers
-5. Multiply relevant multipliers into buffer
-6. Store pos + bounce dir into buffer
-7. determine if ray terminates -> see below
-
-Emissive Materials:
-Check which applies:
-    1. Calculate Contribution using buffer multipliers right there, add into colorbuffer
-    2. Don't actually computer contribution of indirect bounce when using NEE ?
-
-Ray Termination
-Either:
-    1. Use constant path length (and accept bias for simplicity)
-    2. Russian Roulette -> May lead to different SPPs per pixel -> if I want constant, will waste some ressources
-
-
-Buffer contents needed:
-1. vec3 pos
-2. vec3 direction
-3. vec3 colorMultiplier -> Can I run into numerical problems with this ?
-
-*/

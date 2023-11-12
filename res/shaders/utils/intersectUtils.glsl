@@ -2,8 +2,7 @@
 #include "res/shaders/utils/RayTypes.glsl"
 #include "res/shaders/scenes/CPUScene.glsl"
 
-
-bool intersectTriangle(Ray ray, Triangle triangle, out float dist, out bool hitBackface) {
+bool intersectTriangle(Ray ray, Triangle triangle, out RayHit rayhit) {
     // algorithm modified from C++ example on https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
 
     const float eps = 1e-5;
@@ -25,13 +24,13 @@ bool intersectTriangle(Ray ray, Triangle triangle, out float dist, out bool hitB
 
     if (v < 0.0 || u + v > 1.0) return false;
 
-    dist = f * dot(edge2, q);
+    rayhit.dist = f * dot(edge2, q);
 
-    if (dist > eps) {
-        // vec3 N = cross(edge1, edge2);
-        vec3 N = normalize(cross(edge1, edge2)); // TODO prob not necessary to normalize for what I want to do
-        // TODO replace with interpolated normal for smooth shading ?
-        hitBackface = dot(N, (ray.origin - triangle.V0.pos.xyz)) > 0;
+    if (rayhit.dist > eps) {
+        rayhit.mat = triangle.mat;
+        rayhit.position = ray.origin + ray.direction * rayhit.dist;
+        rayhit.normal = normalize(cross(edge1, edge2)); // TODO replace with interpolated normal for smooth shading ?
+        rayhit.hitBackface = dot(rayhit.normal, (ray.origin - triangle.V0.pos.xyz)) < 0;
         return true;
     }
 
@@ -49,23 +48,17 @@ bool intersectObject(Ray ray, MeshObject object, out RayHit rayhit) {
     float closest = 1000000;
     bool anyHit = false;
 
+    RayHit tmp;
     for (int i = 0; i < object.triangleCount; i++) {
         Triangle triangle = triangles[objectBaseIndex + i];
 
-        float dist;
-        bool hitBackface;
-        bool hit = intersectTriangle(ray, triangle, dist, hitBackface);
-        if (hit && dist > 0) {
-            anyHit = true;
-            if (dist < closest) {
-                closest = dist;
-                rayhit.dist = dist;
-                rayhit.mat = triangle.mat;
-                rayhit.position = ray.origin + ray.direction * dist;
+        bool hit = intersectTriangle(ray, triangle, tmp);
 
-                // TODO normal calculation is false for backface normals when not rendering transmissives, needs to be flipped
-                rayhit.normal = normalize(cross(triangle.V0.pos.xyz - triangle.V1.pos.xyz, triangle.V0.pos.xyz - triangle.V2.pos.xyz));
-                rayhit.hitBackface = hitBackface;
+        if (hit && tmp.dist > 0) {
+            anyHit = true;
+            if (tmp.dist < closest) {
+                closest = tmp.dist;
+                rayhit = tmp;
             }
         }
     }

@@ -25,6 +25,20 @@ bool getClosestHit(Ray ray, out RayHit rayhit) {
     return anyHit;
 }
 
+vec3 getTransmittedDir(float oldIOR, float newIOR, vec3 N, vec3 dir) {
+    // refraction calculation from https://stackoverflow.com/questions/29758545/how-to-find-refraction-vector-from-incoming-vector-and-surface-normal#:~:text=Let%20n%20be%20the%20normalized,c%20%3D%20%2Dn%20dot%20V_incedence.
+    float r = oldIOR / newIOR;
+    float c = dot(-N, dir);
+
+    vec3 newDir = vec3(0);
+    float cos_theta_2_sqr = 1.0f - pow(r, 2.0f) * (1.0f - c * c);
+    if (cos_theta_2_sqr < 0) {
+        return reflect(dir, N);
+    } else {
+        return r * dir + N * (r * c - sqrt(cos_theta_2_sqr));
+    }
+}
+
 /*
 vec3 sampleNEETarget(vec2 seed, out Triangle triangle) {
     // terrible name, but it indexes into the array of indices
