@@ -26,6 +26,7 @@ void Scene::createGPUBuffers() {
         unsigned int triangleCount = objectTriangles.size();
 
         BufferMeshObject bmo;
+        bmo.aabb = object.createAABB();
         bmo.emissive = object.isEmissive();
         bmo.firstTriangleIndex = triangleOffset;
         bmo.triangleCount = triangleCount;

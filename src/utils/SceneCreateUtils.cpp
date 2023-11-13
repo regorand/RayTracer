@@ -29,24 +29,34 @@ void createCornellBox(std::vector<MeshObject> &outObjects) {
     mirror.color.w = reinterpret_cast<float &>(matProperties);
 
     // left wall
-    walls.addTriangle(createTriangle(wallVertices, 1, 0, 2, mirror));
-    walls.addTriangle(createTriangle(wallVertices, 1, 2, 3, mirror));
+    MeshObject leftWall;
+    leftWall.addTriangle(createTriangle(wallVertices, 1, 0, 2, mirror));
+    leftWall.addTriangle(createTriangle(wallVertices, 1, 2, 3, mirror));
+    outObjects.push_back(leftWall);
 
     // ground
-    walls.addTriangle(createTriangle(wallVertices, 0, 1, 4, DIFFUSE_BLUE));
-    walls.addTriangle(createTriangle(wallVertices, 1, 5, 4, DIFFUSE_BLUE));
+    MeshObject ground;
+    ground.addTriangle(createTriangle(wallVertices, 0, 1, 4, DIFFUSE_BLUE));
+    ground.addTriangle(createTriangle(wallVertices, 1, 5, 4, DIFFUSE_BLUE));
+    outObjects.push_back(ground);
 
     // right wall
-    walls.addTriangle(createTriangle(wallVertices, 4, 5, 7, DIFFUSE_GREEN));
-    walls.addTriangle(createTriangle(wallVertices, 4, 7, 6, DIFFUSE_GREEN));
+    MeshObject rightWall;
+    rightWall.addTriangle(createTriangle(wallVertices, 4, 5, 7, DIFFUSE_GREEN));
+    rightWall.addTriangle(createTriangle(wallVertices, 4, 7, 6, DIFFUSE_GREEN));
+    outObjects.push_back(rightWall);
 
     // back wall
-    walls.addTriangle(createTriangle(wallVertices, 0, 4, 6, DIFFUSE_WHITE));
-    walls.addTriangle(createTriangle(wallVertices, 0, 6, 2, DIFFUSE_WHITE));
+    MeshObject backWall;
+    backWall.addTriangle(createTriangle(wallVertices, 0, 4, 6, DIFFUSE_WHITE));
+    backWall.addTriangle(createTriangle(wallVertices, 0, 6, 2, DIFFUSE_WHITE));
+    outObjects.push_back(backWall);
 
     // ceiling
-    walls.addTriangle(createTriangle(wallVertices, 2, 6, 7, DIFFUSE_WHITE));
-    walls.addTriangle(createTriangle(wallVertices, 2, 7, 3, DIFFUSE_WHITE));
+    MeshObject ceiling;
+    ceiling.addTriangle(createTriangle(wallVertices, 2, 6, 7, DIFFUSE_WHITE));
+    ceiling.addTriangle(createTriangle(wallVertices, 2, 7, 3, DIFFUSE_WHITE));
+    outObjects.push_back(ceiling);
 
     MeshObject lightSource;
 
@@ -94,7 +104,7 @@ void createCornellBox(std::vector<MeshObject> &outObjects) {
 
     lightSource.setEmissive(true);
 
-    outObjects.push_back(walls);
+    // outObjects.push_back(walls);
     outObjects.push_back(lightSource);
 }
 
@@ -112,8 +122,8 @@ void createSampleBoxes(std::vector<MeshObject> &outObjects) {
     }
 
     MeshObject glasBox;
-    glm::vec3 higherGlasBox(-4.5, -6.5, 2);
-    glm::vec3 lowerGlasBox( -9.5, -2.5, 5);
+    glm::vec3 lowerGlasBox( -8.5, -8.5, 4.5);
+    glm::vec3 higherGlasBox(-1.5, -3.5, 5);
 
     Material glas;
     unsigned int glasMatProperties = TRANSMISSIVE_FLAG;

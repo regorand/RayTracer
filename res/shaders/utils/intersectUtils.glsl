@@ -37,6 +37,49 @@ bool intersectTriangle(Ray ray, Triangle triangle, out RayHit rayhit) {
     return false;
 }
 
+bool intersectAABB(Ray ray, AABB aabb, out float t) {
+    // AABB intersection code taken from
+    // https://gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms/18459#18459
+
+    // r.dir is unit direction vector of ray
+    vec3 dirfrac;
+
+    dirfrac.x = 1.0f / ray.direction.x;
+    dirfrac.y = 1.0f / ray.direction.y;
+    dirfrac.z = 1.0f / ray.direction.z;
+    // lb is the corner of AABB with minimal coordinates - left bottom, rt is maximal corner
+    // r.org is origin of ray
+    vec3 lb = aabb.lower.xyz;
+    vec3 rt = aabb.upper.xyz;
+
+    float t1 = (lb.x - ray.origin.x)*dirfrac.x;
+    float t2 = (rt.x - ray.origin.x)*dirfrac.x;
+    float t3 = (lb.y - ray.origin.y)*dirfrac.y;
+    float t4 = (rt.y - ray.origin.y)*dirfrac.y;
+    float t5 = (lb.z - ray.origin.z)*dirfrac.z;
+    float t6 = (rt.z - ray.origin.z)*dirfrac.z;
+
+    float tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
+    float tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
+
+    // if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
+    if (tmax < 0)
+    {
+        t = tmax;
+        return false;
+    }
+
+    // if tmin > tmax, ray doesn't intersect AABB
+    if (tmin > tmax)
+    {
+        t = tmax;
+        return false;
+    }
+
+    t = tmin;
+    return true;
+}
+
 bool intersectObject(Ray ray, MeshObject object, out RayHit rayhit) {
     // TODO could try to intersect bounding box first here before looping triangles
 
@@ -46,6 +89,12 @@ bool intersectObject(Ray ray, MeshObject object, out RayHit rayhit) {
     uint objectBaseIndex = object.firstTriangleIndex;
 
     float closest = 1000000;
+
+    float dist;
+
+    bool aabbHit = intersectAABB(ray, object.aabb, dist);
+    if (!aabbHit) return false;
+
     bool anyHit = false;
 
     RayHit tmp;

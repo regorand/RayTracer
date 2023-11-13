@@ -20,6 +20,10 @@ void PathTracer::startRender() {
         mRenderStatus.state = RenderState::DUE_NEW_PATH;
         mRenderStatus.targetSpp = mPathTraceSettings.spp;
         mRenderStatus.currentSpp = 0;
+
+        renderStart = duration_cast< milliseconds >(
+                system_clock::now().time_since_epoch()
+        );
     } else {
         std::cerr << "Can not start render, missing target" << std::endl;
     }
@@ -46,6 +50,21 @@ RenderState PathTracer::doRenderStep() {
         status.currentSpp++;
         if (status.currentSpp == status.targetSpp) {
             status.state = RenderState::IDLE;
+
+            milliseconds renderEnd = duration_cast< milliseconds >(
+                    system_clock::now().time_since_epoch()
+            );
+
+            milliseconds renderTime = renderEnd - renderStart;
+            std::cout << "Render took "
+                        << renderTime.count()
+                        << " ms for "
+                        << status.currentSpp
+                        << " samples.\n"
+                        << renderTime.count() / status.currentSpp
+                        << " ms per sample."
+                        << std::endl;
+
             return RenderState::IDLE;
         } else {
             status.state = RenderState::DUE_NEW_PATH;
@@ -78,6 +97,8 @@ void PathTracer::reloadShaders() {
 
 void PathTracer::newPath() {
     glm::vec2 seed = dist.sampleVec2();
+
+    mCurrentTarget->bindAsImage(TARGET_BUFFER_TARGET);
 
     mPosBuffer.bindAsImage(POS_BUFFER_TARGET);
     mDirBuffer.bindAsImage(DIR_BUFFER_TARGET);

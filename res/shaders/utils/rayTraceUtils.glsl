@@ -10,6 +10,8 @@ bool getClosestHit(Ray ray, out RayHit rayhit) {
     RayHit tmp;
     for (int i = 0; i < objectCount; i++) {
         MeshObject meshObject = meshObjects[i];
+
+        // TODO rewrite intersect functions to accept max distance (here pass in closest), so we can early exit
         bool hit = intersectObject(ray, meshObject, tmp);
         if (hit && tmp.dist < closest) {
             anyHit = true;

@@ -28,9 +28,13 @@ public:
 
     void addTriangle(Triangle triangle);
 
+    AABB createAABB();
+
     std::vector<Triangle> &getTriangleBuffer();
 
     void setEmissive(bool emissive) { mIsEmissive = emissive; };
     bool isEmissive() const { return mIsEmissive ;};
+
+
 
 };

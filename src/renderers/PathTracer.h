@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include "GL/glew.h"
 #include "glWrappers/Texture.h"
 #include "glWrappers/shaders/ComputeShader.h"
@@ -58,6 +59,8 @@ typedef struct RenderStatus_s {
 
 } RenderStatus ;
 
+using namespace std::chrono;
+
 class PathTracer {
 private:
     const unsigned int TARGET_BUFFER_TARGET = 0;
@@ -94,6 +97,10 @@ private:
     Texture *mCurrentTarget;
 
     Scene mScene;
+
+    // TODO tmp
+
+    milliseconds renderStart;
 
 public:
     PathTracer(int width, int height);

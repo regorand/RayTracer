@@ -16,8 +16,15 @@ struct Triangle {
     Material mat;
 };
 
+struct AABB {
+    vec4 lower;
+    vec4 upper;
+};
+
 struct MeshObject {
+    AABB aabb;
     uint firstTriangleIndex;
     uint triangleCount;
     uint emissive; // 1 if emissive, 0 else
+    uint dummy;
 };

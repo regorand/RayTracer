@@ -16,12 +16,14 @@ typedef struct RenderSettings_s {
     }
 } RenderSettings;
 
+
 class Application {
 private:
     GLFWwindow* window;
 
     GLsync currentSync = nullptr;
     bool useSync = false;
+
 
 public:
     Application();

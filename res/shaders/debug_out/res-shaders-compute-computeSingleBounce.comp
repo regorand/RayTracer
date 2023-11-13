@@ -10,9 +10,6 @@ layout (rgba32f, binding = 3) uniform image2D mulBuffer;
 
 uniform vec2 frameSeed;
 
-// #include "res/shaders/scenes/sampleSceneDescr.glsl"
-// #include "res/shaders/scenes/cornell.glsl"
-
 
 // Included from res/shaders/scenes/CPUScene.glsl
 
@@ -35,10 +32,17 @@ struct Triangle {
     Material mat;
 };
 
+struct AABB {
+    vec4 lower;
+    vec4 upper;
+};
+
 struct MeshObject {
+    AABB aabb;
     uint firstTriangleIndex;
     uint triangleCount;
     uint emissive; // 1 if emissive, 0 else
+    uint dummy;
 };
 
 // End Includeres/shaders/utils/MeshTypes.glsl
@@ -262,6 +266,49 @@ bool intersectTriangle(Ray ray, Triangle triangle, out RayHit rayhit) {
     return false;
 }
 
+bool intersectAABB(Ray ray, AABB aabb, out float t) {
+    // AABB intersection code taken from
+    // https://gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms/18459#18459
+
+    // r.dir is unit direction vector of ray
+    vec3 dirfrac;
+
+    dirfrac.x = 1.0f / ray.direction.x;
+    dirfrac.y = 1.0f / ray.direction.y;
+    dirfrac.z = 1.0f / ray.direction.z;
+    // lb is the corner of AABB with minimal coordinates - left bottom, rt is maximal corner
+    // r.org is origin of ray
+    vec3 lb = aabb.lower.xyz;
+    vec3 rt = aabb.upper.xyz;
+
+    float t1 = (lb.x - ray.origin.x)*dirfrac.x;
+    float t2 = (rt.x - ray.origin.x)*dirfrac.x;
+    float t3 = (lb.y - ray.origin.y)*dirfrac.y;
+    float t4 = (rt.y - ray.origin.y)*dirfrac.y;
+    float t5 = (lb.z - ray.origin.z)*dirfrac.z;
+    float t6 = (rt.z - ray.origin.z)*dirfrac.z;
+
+    float tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
+    float tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
+
+    // if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
+    if (tmax < 0)
+    {
+        t = tmax;
+        return false;
+    }
+
+    // if tmin > tmax, ray doesn't intersect AABB
+    if (tmin > tmax)
+    {
+        t = tmax;
+        return false;
+    }
+
+    t = tmin;
+    return true;
+}
+
 bool intersectObject(Ray ray, MeshObject object, out RayHit rayhit) {
     // TODO could try to intersect bounding box first here before looping triangles
 
@@ -271,6 +318,12 @@ bool intersectObject(Ray ray, MeshObject object, out RayHit rayhit) {
     uint objectBaseIndex = object.firstTriangleIndex;
 
     float closest = 1000000;
+
+    float dist;
+
+    bool aabbHit = intersectAABB(ray, object.aabb, dist);
+    if (!aabbHit) return false;
+
     bool anyHit = false;
 
     RayHit tmp;
@@ -322,6 +375,8 @@ bool getClosestHit(Ray ray, out RayHit rayhit) {
     RayHit tmp;
     for (int i = 0; i < objectCount; i++) {
         MeshObject meshObject = meshObjects[i];
+
+        // TODO rewrite intersect functions to accept max distance (here pass in closest), so we can early exit
         bool hit = intersectObject(ray, meshObject, tmp);
         if (hit && tmp.dist < closest) {
             anyHit = true;
@@ -410,39 +465,24 @@ void main() {
     vec2 seed = frameSeed + gl_GlobalInvocationID.xy;
 
     vec3 newPos = rayHit.position;
-
     vec3 N = rayHit.hitBackface ? -rayHit.normal : rayHit.normal;
-
     uint matProperties = floatBitsToUint(rayHit.mat.color.w);
 
-    bool emissive = checkBitFlag(matProperties, EMISSIVE_FLAG);
-    bool transmissive = checkBitFlag(matProperties, TRANSMISSIVE_FLAG);
-    bool specular = checkBitFlag(matProperties, SPECULAR_FLAG);
-
     vec3 newDir = vec3(0);
-
-    if (emissive) {
-        const vec3 LIGHT_INTENSITY = vec3(1);
+    if (checkBitFlag(matProperties, EMISSIVE_FLAG)) {
+        const vec3 LIGHT_INTENSITY = vec3(15);
 
         vec3 color = mul * LIGHT_INTENSITY;
-
-        vec4 outVal = vec4(color, 1);
         vec4 prevBufferContent = imageLoad(imgOutput, bufferCoords);
-
-
-        // TODO this is wrong, dont count a single bounce as a sample, instead count a full path as one
-        vec4 newValue = prevBufferContent + outVal;
+        vec4 newValue = prevBufferContent + vec4(color, 0);
 
         imageStore(imgOutput, bufferCoords, newValue);
-    } else if (transmissive) {
-
-        float newIOR = 1.2 ; // rayHit.hitBackface ? 1   : 1.2;
-        float oldIOR = 1; // rayHit.hitBackface ? 1.2 : 1;
-
+    } else if (checkBitFlag(matProperties, TRANSMISSIVE_FLAG)) {
+        float newIOR = rayHit.hitBackface ? 1   : 1.2;
+        float oldIOR = rayHit.hitBackface ? 1.2 : 1;
 
         newDir = getTransmittedDir(oldIOR, newIOR, N, dir);
-
-    } else if (specular) {
+    } else if (checkBitFlag(matProperties, SPECULAR_FLAG)) {
         newDir = reflect(dir, N);
     } else /* Diffuse */ {
         newDir = getNewDirection(seed, N);

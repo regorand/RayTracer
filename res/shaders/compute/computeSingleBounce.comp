@@ -10,9 +10,6 @@ layout (rgba32f, binding = 3) uniform image2D mulBuffer;
 
 uniform vec2 frameSeed;
 
-// #include "res/shaders/scenes/sampleSceneDescr.glsl"
-// #include "res/shaders/scenes/cornell.glsl"
-
 #include "res/shaders/scenes/CPUScene.glsl"
 #include "res/shaders/utils/samplingUtils.glsl"
 #include "res/shaders/utils/rayTraceUtils.glsl"
@@ -50,39 +47,24 @@ void main() {
     vec2 seed = frameSeed + gl_GlobalInvocationID.xy;
 
     vec3 newPos = rayHit.position;
-
     vec3 N = rayHit.hitBackface ? -rayHit.normal : rayHit.normal;
-
     uint matProperties = floatBitsToUint(rayHit.mat.color.w);
 
-    bool emissive = checkBitFlag(matProperties, EMISSIVE_FLAG);
-    bool transmissive = checkBitFlag(matProperties, TRANSMISSIVE_FLAG);
-    bool specular = checkBitFlag(matProperties, SPECULAR_FLAG);
-
     vec3 newDir = vec3(0);
-
-    if (emissive) {
-        const vec3 LIGHT_INTENSITY = vec3(1);
+    if (checkBitFlag(matProperties, EMISSIVE_FLAG)) {
+        const vec3 LIGHT_INTENSITY = vec3(15);
 
         vec3 color = mul * LIGHT_INTENSITY;
-
-        vec4 outVal = vec4(color, 1);
         vec4 prevBufferContent = imageLoad(imgOutput, bufferCoords);
-
-
-        // TODO this is wrong, dont count a single bounce as a sample, instead count a full path as one
-        vec4 newValue = prevBufferContent + outVal;
+        vec4 newValue = prevBufferContent + vec4(color, 0);
 
         imageStore(imgOutput, bufferCoords, newValue);
-    } else if (transmissive) {
-
-        float newIOR = 1.2 ; // rayHit.hitBackface ? 1   : 1.2;
-        float oldIOR = 1; // rayHit.hitBackface ? 1.2 : 1;
-
+    } else if (checkBitFlag(matProperties, TRANSMISSIVE_FLAG)) {
+        float newIOR = rayHit.hitBackface ? 1   : 1.2;
+        float oldIOR = rayHit.hitBackface ? 1.2 : 1;
 
         newDir = getTransmittedDir(oldIOR, newIOR, N, dir);
-
-    } else if (specular) {
+    } else if (checkBitFlag(matProperties, SPECULAR_FLAG)) {
         newDir = reflect(dir, N);
     } else /* Diffuse */ {
         newDir = getNewDirection(seed, N);

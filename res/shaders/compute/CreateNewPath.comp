@@ -2,16 +2,11 @@
 
 layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
+layout (rgba32f, binding = 0) uniform image2D imgOutput;
+
 layout (rgba32f, binding = 1) uniform image2D posBuffer;
 layout (rgba32f, binding = 2) uniform image2D dirBuffer;
 layout (rgba32f, binding = 3) uniform image2D mulBuffer;
-
-
-/*
-layout(rgb32f) uniform imageBuffer posBuffer;
-layout(rgb32f) uniform imageBuffer dirBuffer;
-layout(rgb32f) uniform imageBuffer mulBuffer;
-*/
 
 uniform vec2 frameSeed;
 uniform vec2 viewPortSize;
@@ -23,6 +18,10 @@ void main() {
     ivec2 bufferCoords = ivec2(texelCoord);
 
     Ray ray = samplePathStart(texelCoord, viewPortSize);
+
+    vec4 bufferContent = imageLoad(imgOutput, bufferCoords);
+    bufferContent.a += 1;
+    imageStore(imgOutput, bufferCoords, bufferContent);
 
     imageStore(posBuffer, bufferCoords, vec4(ray.origin, 1));
     imageStore(dirBuffer, bufferCoords, vec4(ray.direction, 0));

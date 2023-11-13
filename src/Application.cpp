@@ -5,7 +5,6 @@
 #include "renderers/BufferRenderer.h"
 #include "ImguiUtils.h"
 #include "renderers/PathTracer.h"
-#include "glWrappers/shaders/ShaderLoad.h"
 #include "scene/Scene.h"
 #include "utils/SceneCreateUtils.h"
 #include "renderers/PostProcessor.h"
@@ -106,6 +105,7 @@ int Application::run() {
     pathTracer.setPathTraceSettings(tmpSettings);
 
     ImGuiMenuSettings menuSettings;
+
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
