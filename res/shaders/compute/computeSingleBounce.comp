@@ -9,6 +9,7 @@ layout (rgba32f, binding = 2) uniform image2D dirBuffer;
 layout (rgba32f, binding = 3) uniform image2D mulBuffer;
 
 uniform vec2 frameSeed;
+uniform float alphaRR;
 
 #include "res/shaders/scenes/CPUScene.glsl"
 #include "res/shaders/utils/samplingUtils.glsl"
@@ -32,6 +33,8 @@ void main() {
 
     vec3 pos = imageLoad(posBuffer, bufferCoords).xyz;
     vec3 dir = imageLoad(dirBuffer, bufferCoords).xyz;
+
+    mul /= alphaRR;
 
     Ray ray = Ray(pos, dir);
     float dist;
@@ -60,10 +63,12 @@ void main() {
 
         imageStore(imgOutput, bufferCoords, newValue);
     } else if (checkBitFlag(matProperties, TRANSMISSIVE_FLAG)) {
-        float newIOR = rayHit.hitBackface ? 1   : 1.2;
-        float oldIOR = rayHit.hitBackface ? 1.2 : 1;
+        float newIOR = rayHit.hitBackface ? 1   : 2;
+        float oldIOR = rayHit.hitBackface ? 2 : 1;
 
         newDir = getTransmittedDir(oldIOR, newIOR, N, dir);
+
+        // newDir = reflect(dir, N);
     } else if (checkBitFlag(matProperties, SPECULAR_FLAG)) {
         newDir = reflect(dir, N);
     } else /* Diffuse */ {

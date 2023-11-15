@@ -2,6 +2,7 @@
 
 #include <vector>
 #include "renderers/Types.h"
+#include "scene/Transformation.h"
 
 /**
  * Represents a single, usually continous object made of triangles
@@ -16,6 +17,8 @@ private:
 
     bool mIsEmissive = false;
 
+    Transformation mTransform;
+
 public:
     // TODO
     // MeshObject();
@@ -26,9 +29,15 @@ public:
      *
      */
 
+    void setTransform(Transformation transformation);
+    Transformation getTransform();
+    Transformation &getTransformRef();
+
     void addTriangle(Triangle triangle);
 
     AABB createAABB();
+
+
 
     std::vector<Triangle> &getTriangleBuffer();
 

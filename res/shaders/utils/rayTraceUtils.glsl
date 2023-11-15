@@ -5,14 +5,13 @@
 
 bool getClosestHit(Ray ray, out RayHit rayhit) {
     bool anyHit = false;
-    float closest = 1000000;
+    float closest = 10000000;
 
     RayHit tmp;
     for (int i = 0; i < objectCount; i++) {
         MeshObject meshObject = meshObjects[i];
 
-        // TODO rewrite intersect functions to accept max distance (here pass in closest), so we can early exit
-        bool hit = intersectObject(ray, meshObject, tmp);
+        bool hit = intersectObject(ray, meshObject, closest, tmp);
         if (hit && tmp.dist < closest) {
             anyHit = true;
             closest = tmp.dist;
@@ -28,16 +27,24 @@ bool getClosestHit(Ray ray, out RayHit rayhit) {
 }
 
 vec3 getTransmittedDir(float oldIOR, float newIOR, vec3 N, vec3 dir) {
-    // refraction calculation from https://stackoverflow.com/questions/29758545/how-to-find-refraction-vector-from-incoming-vector-and-surface-normal#:~:text=Let%20n%20be%20the%20normalized,c%20%3D%20%2Dn%20dot%20V_incedence.
+    float R_0 = pow((oldIOR - newIOR) / (oldIOR + newIOR), 2);
+
     float r = oldIOR / newIOR;
     float c = dot(-N, dir);
 
-    vec3 newDir = vec3(0);
+    float fresnel = R_0 + (1 - R_0) * pow(1 - c, 5); // Schlick's Approximation for the Fresnel effect;
+
+    if (rand(frameSeed) < fresnel) {
+        return reflect(dir, N);
+    }
+
+    // refraction calculation from https://stackoverflow.com/questions/29758545/how-to-find-refraction-vector-from-incoming-vector-and-surface-normal#:~:text=Let%20n%20be%20the%20normalized,c%20%3D%20%2Dn%20dot%20V_incedence.
+
     float cos_theta_2_sqr = 1.0f - pow(r, 2.0f) * (1.0f - c * c);
     if (cos_theta_2_sqr < 0) {
         return reflect(dir, N);
     } else {
-        return r * dir + N * (r * c - sqrt(cos_theta_2_sqr));
+        return normalize(r * dir + N * (r * c - sqrt(cos_theta_2_sqr)));
     }
 }
 

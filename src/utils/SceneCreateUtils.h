@@ -20,7 +20,7 @@ const static Material DIFFUSE_BLUE = Material(glm::vec4(0.2, 0.2, 1, 0.0f));
 
 const static Material DIFFUSE_YELLOW = Material(glm::vec4(1, 1, 0.2, 0.0f));
 const static Material DIFFUSE_MAGENTA = Material(glm::vec4(1, 0.2, 1, 0.0f));
-const static Material DIFFUSE_CYAN = Material(glm::vec4(1, 0.2, 1, 0.0f));
+const static Material DIFFUSE_CYAN = Material(glm::vec4(0.2, 1, 1, 0.0f));
 
 const static Material DIFFUSE_WHITE = Material(glm::vec4(1, 1, 1, 0.0f));
 

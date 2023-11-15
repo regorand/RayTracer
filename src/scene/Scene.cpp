@@ -2,6 +2,7 @@
 #include <iostream>
 #include "Scene.h"
 #include "deviceShared/BufferBindings.h"
+#include <glm/gtc/matrix_inverse.hpp>
 
 Scene::Scene():
         mCamera(Camera(glm::vec3(0), glm::vec3(0, 0, -1))) {
@@ -26,6 +27,8 @@ void Scene::createGPUBuffers() {
         unsigned int triangleCount = objectTriangles.size();
 
         BufferMeshObject bmo;
+        bmo.invTransform = glm::inverse(object.getTransform().getMatrix());
+        bmo.normalMat = glm::transpose(bmo.invTransform);
         bmo.aabb = object.createAABB();
         bmo.emissive = object.isEmissive();
         bmo.firstTriangleIndex = triangleOffset;

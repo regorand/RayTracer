@@ -1,5 +1,6 @@
 
 #include "MeshObject.h"
+#include "glm/ext/matrix_transform.hpp"
 
 void MeshObject::addTriangle(Triangle triangle) {
     mTriangles.push_back(triangle);
@@ -27,4 +28,16 @@ AABB MeshObject::createAABB() {
     aabb.upper += glm::vec3(eps);
 
     return aabb;
+}
+
+void MeshObject::setTransform(Transformation transformation) {
+    mTransform = transformation;
+}
+
+Transformation MeshObject::getTransform() {
+    return mTransform;
+}
+
+Transformation &MeshObject::getTransformRef() {
+    return mTransform;
 }

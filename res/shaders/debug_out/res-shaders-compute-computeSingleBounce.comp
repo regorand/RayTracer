@@ -9,6 +9,7 @@ layout (rgba32f, binding = 2) uniform image2D dirBuffer;
 layout (rgba32f, binding = 3) uniform image2D mulBuffer;
 
 uniform vec2 frameSeed;
+uniform float alphaRR;
 
 
 // Included from res/shaders/scenes/CPUScene.glsl
@@ -38,6 +39,8 @@ struct AABB {
 };
 
 struct MeshObject {
+    mat4 invTransform;
+    mat4 normalMat;
     AABB aabb;
     uint firstTriangleIndex;
     uint triangleCount;
@@ -309,20 +312,23 @@ bool intersectAABB(Ray ray, AABB aabb, out float t) {
     return true;
 }
 
-bool intersectObject(Ray ray, MeshObject object, out RayHit rayhit) {
-    // TODO could try to intersect bounding box first here before looping triangles
-
-    // TODO once objects have transformations, transform the ray into object space and perform intersection there
-        // TODO difficulty with this is, that the t value needs to be transformed somehow (i think)
-
+bool intersectObject(Ray ray, MeshObject object, float alreadyClosest, out RayHit rayhit) {
     uint objectBaseIndex = object.firstTriangleIndex;
 
-    float closest = 1000000;
-
+    float closest = alreadyClosest;
     float dist;
 
-    bool aabbHit = intersectAABB(ray, object.aabb, dist);
-    if (!aabbHit) return false;
+    mat4 inverseTransform = object.invTransform;
+
+    // Transform ray into object space
+    Ray objSpaceRay = Ray((inverseTransform * vec4(ray.origin, 1)).xyz, (inverseTransform * vec4(ray.direction, 0)).xyz);
+
+    // Save length of transformed direction before normalizing, need it to transform t value back to world distances
+    float rayDirScaling = length(objSpaceRay.direction);
+    objSpaceRay.direction = normalize(objSpaceRay.direction);
+
+    bool aabbHit = intersectAABB(objSpaceRay, object.aabb, dist);
+    if (!aabbHit || dist > closest) return false;
 
     bool anyHit = false;
 
@@ -330,18 +336,27 @@ bool intersectObject(Ray ray, MeshObject object, out RayHit rayhit) {
     for (int i = 0; i < object.triangleCount; i++) {
         Triangle triangle = triangles[objectBaseIndex + i];
 
-        bool hit = intersectTriangle(ray, triangle, tmp);
+        bool hit = intersectTriangle(objSpaceRay, triangle, tmp);
 
         if (hit && tmp.dist > 0) {
-            anyHit = true;
             if (tmp.dist < closest) {
+                anyHit = true;
                 closest = tmp.dist;
                 rayhit = tmp;
             }
         }
     }
 
+    if (anyHit) {
+        rayhit.dist /= rayDirScaling;
+        rayhit.normal = (object.normalMat * vec4(rayhit.normal, 0)).xyz;
+    }
+
     return anyHit;
+}
+
+bool intersectObject(Ray ray, MeshObject object, out RayHit rayhit) {
+    return intersectObject(ray, object, 10000000, rayhit);
 }
 
 // End Includeres/shaders/utils/intersectUtils.glsl
@@ -370,14 +385,13 @@ bool checkBitFlag(uint value, uint bitFlag) {
 
 bool getClosestHit(Ray ray, out RayHit rayhit) {
     bool anyHit = false;
-    float closest = 1000000;
+    float closest = 10000000;
 
     RayHit tmp;
     for (int i = 0; i < objectCount; i++) {
         MeshObject meshObject = meshObjects[i];
 
-        // TODO rewrite intersect functions to accept max distance (here pass in closest), so we can early exit
-        bool hit = intersectObject(ray, meshObject, tmp);
+        bool hit = intersectObject(ray, meshObject, closest, tmp);
         if (hit && tmp.dist < closest) {
             anyHit = true;
             closest = tmp.dist;
@@ -393,16 +407,24 @@ bool getClosestHit(Ray ray, out RayHit rayhit) {
 }
 
 vec3 getTransmittedDir(float oldIOR, float newIOR, vec3 N, vec3 dir) {
-    // refraction calculation from https://stackoverflow.com/questions/29758545/how-to-find-refraction-vector-from-incoming-vector-and-surface-normal#:~:text=Let%20n%20be%20the%20normalized,c%20%3D%20%2Dn%20dot%20V_incedence.
+    float R_0 = pow((oldIOR - newIOR) / (oldIOR + newIOR), 2);
+
     float r = oldIOR / newIOR;
     float c = dot(-N, dir);
 
-    vec3 newDir = vec3(0);
+    float fresnel = R_0 + (1 - R_0) * pow(1 - c, 5); // Schlick's Approximation for the Fresnel effect;
+
+    if (rand(frameSeed) < fresnel) {
+        return reflect(dir, N);
+    }
+
+    // refraction calculation from https://stackoverflow.com/questions/29758545/how-to-find-refraction-vector-from-incoming-vector-and-surface-normal#:~:text=Let%20n%20be%20the%20normalized,c%20%3D%20%2Dn%20dot%20V_incedence.
+
     float cos_theta_2_sqr = 1.0f - pow(r, 2.0f) * (1.0f - c * c);
     if (cos_theta_2_sqr < 0) {
         return reflect(dir, N);
     } else {
-        return r * dir + N * (r * c - sqrt(cos_theta_2_sqr));
+        return normalize(r * dir + N * (r * c - sqrt(cos_theta_2_sqr)));
     }
 }
 
@@ -451,6 +473,8 @@ void main() {
     vec3 pos = imageLoad(posBuffer, bufferCoords).xyz;
     vec3 dir = imageLoad(dirBuffer, bufferCoords).xyz;
 
+    mul /= alphaRR;
+
     Ray ray = Ray(pos, dir);
     float dist;
 
@@ -478,10 +502,12 @@ void main() {
 
         imageStore(imgOutput, bufferCoords, newValue);
     } else if (checkBitFlag(matProperties, TRANSMISSIVE_FLAG)) {
-        float newIOR = rayHit.hitBackface ? 1   : 1.2;
-        float oldIOR = rayHit.hitBackface ? 1.2 : 1;
+        float newIOR = rayHit.hitBackface ? 1   : 2;
+        float oldIOR = rayHit.hitBackface ? 2 : 1;
 
         newDir = getTransmittedDir(oldIOR, newIOR, N, dir);
+
+        // newDir = reflect(dir, N);
     } else if (checkBitFlag(matProperties, SPECULAR_FLAG)) {
         newDir = reflect(dir, N);
     } else /* Diffuse */ {

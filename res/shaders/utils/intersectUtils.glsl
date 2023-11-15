@@ -80,20 +80,23 @@ bool intersectAABB(Ray ray, AABB aabb, out float t) {
     return true;
 }
 
-bool intersectObject(Ray ray, MeshObject object, out RayHit rayhit) {
-    // TODO could try to intersect bounding box first here before looping triangles
-
-    // TODO once objects have transformations, transform the ray into object space and perform intersection there
-        // TODO difficulty with this is, that the t value needs to be transformed somehow (i think)
-
+bool intersectObject(Ray ray, MeshObject object, float alreadyClosest, out RayHit rayhit) {
     uint objectBaseIndex = object.firstTriangleIndex;
 
-    float closest = 1000000;
-
+    float closest = alreadyClosest;
     float dist;
 
-    bool aabbHit = intersectAABB(ray, object.aabb, dist);
-    if (!aabbHit) return false;
+    mat4 inverseTransform = object.invTransform;
+
+    // Transform ray into object space
+    Ray objSpaceRay = Ray((inverseTransform * vec4(ray.origin, 1)).xyz, (inverseTransform * vec4(ray.direction, 0)).xyz);
+
+    // Save length of transformed direction before normalizing, need it to transform t value back to world distances
+    float rayDirScaling = length(objSpaceRay.direction);
+    objSpaceRay.direction = normalize(objSpaceRay.direction);
+
+    bool aabbHit = intersectAABB(objSpaceRay, object.aabb, dist);
+    if (!aabbHit || dist > closest) return false;
 
     bool anyHit = false;
 
@@ -101,16 +104,25 @@ bool intersectObject(Ray ray, MeshObject object, out RayHit rayhit) {
     for (int i = 0; i < object.triangleCount; i++) {
         Triangle triangle = triangles[objectBaseIndex + i];
 
-        bool hit = intersectTriangle(ray, triangle, tmp);
+        bool hit = intersectTriangle(objSpaceRay, triangle, tmp);
 
         if (hit && tmp.dist > 0) {
-            anyHit = true;
             if (tmp.dist < closest) {
+                anyHit = true;
                 closest = tmp.dist;
                 rayhit = tmp;
             }
         }
     }
 
+    if (anyHit) {
+        rayhit.dist /= rayDirScaling;
+        rayhit.normal = (object.normalMat * vec4(rayhit.normal, 0)).xyz;
+    }
+
     return anyHit;
+}
+
+bool intersectObject(Ray ray, MeshObject object, out RayHit rayhit) {
+    return intersectObject(ray, object, 10000000, rayhit);
 }

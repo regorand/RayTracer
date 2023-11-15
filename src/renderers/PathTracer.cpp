@@ -161,8 +161,10 @@ void PathTracer::bindBounce() {
     // TODO get scene counts and bind as uniforms, then add stuff to the scene, try to only render albedo first
 
     mBounceShader.bind();
+
     mBounceShader.setUniform1ui("objectCount", mScene.getObjectCount());
     mBounceShader.setUniform1ui("emissiveCount", mScene.getEmissiveCount());
+    mBounceShader.setUniform1f("alphaRR", mPathTraceSettings.pathSettings.alphaRR);
 }
 
 void PathTracer::unbindBounce() {

@@ -22,6 +22,8 @@ struct AABB {
 };
 
 struct MeshObject {
+    mat4 invTransform;
+    mat4 normalMat;
     AABB aabb;
     uint firstTriangleIndex;
     uint triangleCount;

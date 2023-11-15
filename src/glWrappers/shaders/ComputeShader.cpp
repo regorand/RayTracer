@@ -63,6 +63,16 @@ bool ComputeShader::setUniform2f(const std::string &name, const glm::vec2 &value
     return true;
 }
 
+bool ComputeShader::setUniform1f(const std::string &name, const float &value) {
+    int uniformId = getUniformLocation(name);
+    if (uniformId == -1) {
+        printUniformNotFound(name);
+        return false;
+    }
+    glUniform1f(uniformId, value);
+    return true;
+}
+
 bool ComputeShader::setUniform1ui(const std::string &name, const unsigned int value) {
     int uniformId = getUniformLocation(name);
     if (uniformId == -1) {

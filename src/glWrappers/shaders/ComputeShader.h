@@ -27,6 +27,7 @@ public:
     bool setUniform1i(const std::string& name, const int value);
     bool setUniform1ui(const std::string& name, const unsigned int value);
 
+    bool setUniform1f(const std::string& name, const float& value);
     bool setUniform2f(const std::string& name, const glm::vec2& value);
 
 private:
