@@ -8,11 +8,25 @@ layout (rgba32f, binding = 1) uniform image2D posBuffer;
 layout (rgba32f, binding = 2) uniform image2D dirBuffer;
 layout (rgba32f, binding = 3) uniform image2D mulBuffer;
 
+layout(std430, binding = 4) buffer testBuffer
+{
+    vec4 testData[];
+};
+
 uniform vec2 frameSeed;
 uniform vec2 viewPortSize;
 
+uniform int width;
 
-// Included from res/shaders/utils/samplingUtils.glsl
+uniform vec3 cameraPos;
+uniform vec3 viewDir;
+uniform vec3 upDir;
+
+uniform float fov;
+uniform float aspect;
+
+
+// Included from res/shaders/utils/cameraUtils.glsl
 
 // Included from res/shaders/utils/RayTypes.glsl
 
@@ -67,67 +81,16 @@ struct RayHit {
 
 // End Includeres/shaders/utils/RayTypes.glsl
 
-// Included from res/shaders/utils/Constants.glsl
-const float PI = 3.14159;
-
-// End Includeres/shaders/utils/Constants.glsl
-
-// Included from res/shaders/utils/MeshTypes.glsl
-// NOT INCLUDED AGAIN
-// End Includeres/shaders/utils/MeshTypes.glsl
-
-float rand(vec2 co){
-    return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
-}
-
-vec3 sampleHemisphereUniform(inout vec2 seed) {
-    float Xi1 = rand(seed);
-    seed = seed * vec2(Xi1 + 0.5, 1);
-    float Xi2 = rand(seed);
-    seed = seed * vec2(Xi2 + 0.5, Xi1 + 0.5);
-
-    float theta = acos(Xi1);
-    float phi = 2 * PI * Xi2;
-
-    float z = cos(theta);
-    vec2 xy = sin(theta) * vec2(cos(phi), sin(phi));
-    return vec3(xy, z);
-}
-
-vec3 getRandVec3(inout vec2 seed) {
-    float x = rand(seed);
-    seed = seed * vec2(x + 0.5, 1);
-    float y = rand(seed);
-    seed = seed * vec2(y + 0.5, x + 0.5);
-    float z = rand(seed);
-    seed = seed * vec2(z + 0.5, y + 0.5);
-
-    return vec3(x, y, z);
-}
-
-vec3 getNewDirection(inout vec2 seed, vec3 normal) {
-    vec3 tangent = vec3(normal.y, normal.z, -normal.x);
-    vec3 cotangent = cross(normal, tangent);
-
-    mat3 rot = mat3(tangent, cotangent, normal);
-    vec3 tangentSpaceDir = sampleHemisphereUniform(seed);
-
-    return normalize(rot * tangentSpaceDir);
-}
-
 Ray samplePathStart(vec2 texelCoord, vec2 viewPortSize) {
-    vec2 halfSizes = vec2(gl_NumWorkGroups.xy / 2);
+    vec2 halfSizes = vec2(viewPortSize / 2);
 
     vec2 seed = frameSeed + gl_GlobalInvocationID.xy;
 
-    float fov = PI / 2;
-    float aspect = 9.0/16.0;
+    float upDist = tan(fov / 2.0f);
+    float sideDist = upDist * aspect;
 
-    float sideDist = tan(fov / 2);
-    float upDist = sideDist * aspect;
-
-    const vec3 camDir = vec3(0, 0, -1);
-    const vec3 upDir = vec3(0, 1, 0);
+    const vec3 camDir = viewDir;
+    const vec3 upDir = upDir;
     const vec3 tanDir = cross(camDir, upDir);
 
     vec2 shiftedScaled = (texelCoord - halfSizes) / halfSizes;
@@ -135,32 +98,19 @@ Ray samplePathStart(vec2 texelCoord, vec2 viewPortSize) {
 
     float pixelSize = 2 * sideDist / viewPortSize.x;
 
-    ray.origin = vec3(0, 0, 20) + vec3(rand(seed) * pixelSize, rand(seed) * pixelSize, 0);
+    ray.origin = cameraPos;//  + vec3(rand(seed) * pixelSize, rand(seed) * pixelSize, 0);
     ray.direction = normalize(camDir + upDist * shiftedScaled.y * upDir + sideDist * shiftedScaled.x * tanDir);
 
     return ray;
 }
 
-vec3 sampleTrianglePos(Triangle triangle, vec2 seed) {
-    float xi1 = rand(seed);
-    float xi2 = rand(seed);
-
-    if (xi1 + xi2 > 1) {
-        xi1 = 1 - xi1;
-        xi2 = 1 - xi2;
-    }
-
-    vec3 edge1 = triangle.V1.pos.xyz - triangle.V0.pos.xyz;
-    vec3 edge2 = triangle.V2.pos.xyz - triangle.V0.pos.xyz;
-
-    return triangle.V0.pos.xyz + xi1 * edge1 + xi2 * edge2;
-}
-
-// End Includeres/shaders/utils/samplingUtils.glsl
+// End Includeres/shaders/utils/cameraUtils.glsl
 
 void main() {
     vec2 texelCoord = vec2(gl_GlobalInvocationID.xy);
     ivec2 bufferCoords = ivec2(texelCoord);
+
+    int singleDimCoord = bufferCoords.y * width + bufferCoords.x;
 
     Ray ray = samplePathStart(texelCoord, viewPortSize);
 
@@ -169,6 +119,9 @@ void main() {
     imageStore(imgOutput, bufferCoords, bufferContent);
 
     imageStore(posBuffer, bufferCoords, vec4(ray.origin, 1));
+
+    testData[singleDimCoord] = vec4(ray.origin, 1);
+
     imageStore(dirBuffer, bufferCoords, vec4(ray.direction, 0));
     imageStore(mulBuffer, bufferCoords, vec4(1));
 }

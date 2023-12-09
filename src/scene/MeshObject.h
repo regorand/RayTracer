@@ -3,6 +3,9 @@
 #include <vector>
 #include "renderers/Types.h"
 #include "scene/Transformation.h"
+#include "glWrappers/IndexBuffer.h"
+#include "glWrappers/VertexArray.h"
+#include "glWrappers/ArrayBuffer.h"
 
 /**
  * Represents a single, usually continous object made of triangles
@@ -18,6 +21,10 @@ private:
     bool mIsEmissive = false;
 
     Transformation mTransform;
+
+    VertexArray mVa;
+    ArrayBuffer mAb;
+    IndexBuffer mIb;
 
 public:
     // TODO
@@ -35,15 +42,22 @@ public:
 
     void addTriangle(Triangle triangle);
 
+    std::vector<Triangle> &getTriangles();
+
     AABB createAABB();
-
-
 
     std::vector<Triangle> &getTriangleBuffer();
 
     void setEmissive(bool emissive) { mIsEmissive = emissive; };
-    bool isEmissive() const { return mIsEmissive ;};
+    bool isEmissive();
 
+    bool canRasterize();
 
+    VertexArray &getVertexArray();
+    IndexBuffer &getIndexBuffer();
+
+    void createRasterBuffers();
+
+    bool isTransmissive();
 
 };

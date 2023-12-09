@@ -2,6 +2,12 @@
 #include "utils/glewIncludeUtils.h"
 
 
+ArrayBuffer::ArrayBuffer()
+    :m_GlId(false), mValid(false)
+{
+
+}
+
 ArrayBuffer::ArrayBuffer(void* data, unsigned int size, bool dynamic): m_GlId(0)
 {
     glGenBuffers(1, &m_GlId);
@@ -16,7 +22,7 @@ ArrayBuffer::ArrayBuffer(void* data, unsigned int size, bool dynamic): m_GlId(0)
 
 ArrayBuffer::~ArrayBuffer()
 {
-    glDeleteBuffers(1, &m_GlId);
+    // glDeleteBuffers(1, &m_GlId);
 }
 
 void ArrayBuffer::updateData(void* data, unsigned int size)
@@ -35,4 +41,8 @@ void ArrayBuffer::bind()
 void ArrayBuffer::unbind()
 {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+bool ArrayBuffer::isValid() {
+    return mValid;
 }

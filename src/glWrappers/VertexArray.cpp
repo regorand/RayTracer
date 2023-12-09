@@ -1,6 +1,7 @@
 #include "VertexArray.h"
 
 VertexArray::VertexArray()
+    :m_GlId(0), mValid(true)
 {
     unbind();
     glGenVertexArrays(1, &m_GlId);
@@ -9,7 +10,7 @@ VertexArray::VertexArray()
 
 VertexArray::~VertexArray()
 {
-    glDeleteVertexArrays(1, &m_GlId);
+    // glDeleteVertexArrays(1, &m_GlId);
 }
 
 void VertexArray::bind()
@@ -20,4 +21,12 @@ void VertexArray::bind()
 void VertexArray::unbind()
 {
     glBindVertexArray(0);
+}
+
+void VertexArray::setValid(bool isValid) {
+    mValid = isValid;
+}
+
+bool VertexArray::isValid() {
+    return mValid;
 }

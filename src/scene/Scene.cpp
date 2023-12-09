@@ -12,6 +12,10 @@ void Scene::setCamera(Camera camera) {
     mCamera = camera;
 }
 
+Camera &Scene::getCamera() {
+    return mCamera;
+}
+
 void Scene::createGPUBuffers() {
     std::vector<Triangle> triangles;
     std::vector<BufferMeshObject> objects;
@@ -74,4 +78,37 @@ void Scene::unbind() {
     }
 
     sceneBuffers.unbind();
+}
+
+std::vector<MeshObject> &Scene::getObjects() {
+    return mObjects;
+}
+
+void Scene::buildRasterizeBuffers() {
+    for (auto &object: mObjects) {
+        object.createRasterBuffers();
+    }
+}
+
+bool Scene::canRasterize() {
+    for (auto &object: mObjects) {
+        if (!object.canRasterize()) return false;
+    }
+    for (auto &path: mPaths) {
+        if (!path.canRasterize()) return false;
+    }
+    return true;
+}
+
+void Scene::addPathObject(PathVisObject &pathVisObject) {
+    pathVisObject.createRasterBuffers();
+    mPaths.push_back(pathVisObject);
+}
+
+std::vector<PathVisObject> &Scene::getPathObjects() {
+    return mPaths;
+}
+
+void Scene::resetPaths() {
+    mPaths.clear();
 }

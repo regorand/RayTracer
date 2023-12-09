@@ -72,6 +72,14 @@ void Texture::updateTexture(GLint xOffset, GLint yOffset, GLsizei width, GLsizei
     glTexSubImage2D(GL_TEXTURE_2D, 0, xOffset, yOffset, width, height, mFormat, mType, pixels);
 }
 
+/*
+bool Texture::readPixels(glm::vec2 coords, glm::vec2 coords, glm::vec4 *) {
+    unbind();
+    bind(0);
+    glGetTexImage()
+}
+*/
+
 void Texture::bindAsImage(unsigned int imageSlot) {
     glBindImageTexture(imageSlot, mGlId, 0, GL_FALSE, 0, mAccessType, mInternalFormat);
 }

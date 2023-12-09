@@ -3,7 +3,6 @@
 
 #include "GL/glew.h"
 
-#define _BREAK_POINT
 #ifdef _WIN32
 #define BREAK_POINT __debugbreak();
 #elif defined(unix) || defined(__uni__) || defined(__unix)
@@ -37,15 +36,15 @@ void inline GLAPIENTRY callBackFunc(GLenum source, GLenum type, GLuint id, GLenu
             messageLogLevel = 0;
             break;
         case GL_DEBUG_SEVERITY_LOW:
-            _BREAK_POINT
+            BREAK_POINT
             messageLogLevel = 1;
             break;
         case GL_DEBUG_SEVERITY_MEDIUM:
-            _BREAK_POINT
+            BREAK_POINT
             messageLogLevel = 2;
             break;
         case GL_DEBUG_SEVERITY_HIGH:
-            _BREAK_POINT
+            BREAK_POINT
             messageLogLevel = 3;
             break;
     }

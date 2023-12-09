@@ -43,6 +43,8 @@ public:
 
     void bindAsImage(unsigned int imageSlot = 0);
 
+    // bool readPixels(glm::vec2 coords, glm::vec2 coords, glm::vec4 *);
+
 private:
     void createTexture(GLint internalFormat, GLsizei width, GLsizei height, GLenum format, GLenum type, void *data);
 

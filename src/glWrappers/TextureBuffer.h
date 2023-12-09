@@ -6,20 +6,28 @@
 class TextureBuffer
 {
 private:
-    unsigned int m_target;
-    unsigned int m_texture_target;
-    size_t m_datatype;
-
-    unsigned int m_texBufGlId;
-    unsigned int m_bufObjGlId;
-
+    unsigned int mBufferSize;
+    GLenum mInternalFormat;
     GLenum mUsageHint;
 
+    unsigned int mTexBufGlId;
+    unsigned int mBufObjGlId;
+
 public:
-    TextureBuffer(void* data, unsigned int size, unsigned int texture_target, size_t data_type, GLenum usageHint = GL_STATIC_DRAW);
+    TextureBuffer(unsigned int size, GLenum internalFormat, GLenum usage, void *data = nullptr);
     ~TextureBuffer();
 
-    void bind();
+    void uploadData(void *data, unsigned int size);
+    void updateData(void *data, unsigned int size, unsigned int offset);
+
+    void getData(void *target, unsigned int size, unsigned int offset);
+
+    void bind(GLuint target);
     void unbind();
+
+private:
+    void bindBuffer();
+    void unbindBuffer();
+
 };
 

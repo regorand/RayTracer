@@ -16,6 +16,7 @@ typedef struct RenderSettings_s {
     }
 } RenderSettings;
 
+static bool movementKeys[7];
 
 class Application {
 private:
@@ -31,7 +32,10 @@ public:
     int run();
 
 private:
-    void buildImguiControlSideBar(glm::vec2 displaySize, ImGuiMenuSettings menuSettings, PathTracer &pt, BufferRenderer &br, PostProcSettings &postProcSettings);
+    void buildImguiControlSideBar(glm::vec2 displaySize, ImGuiMenuSettings &menuSettings, PathTracer &pt, BufferRenderer &br, PostProcSettings &postProcSettings);
+
+    void handleInput(Camera &camera);
+    static void glfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
 };
 

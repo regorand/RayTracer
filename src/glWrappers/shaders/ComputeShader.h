@@ -6,6 +6,7 @@
 #include <string>
 #include "GL/glew.h"
 #include "glm/vec2.hpp"
+#include "glm/vec3.hpp"
 
 class ComputeShader {
 
@@ -29,6 +30,7 @@ public:
 
     bool setUniform1f(const std::string& name, const float& value);
     bool setUniform2f(const std::string& name, const glm::vec2& value);
+    bool setUniform3f(const std::string& name, const glm::vec3& value);
 
 private:
     int getUniformLocation(const std::string name);

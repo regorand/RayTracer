@@ -9,11 +9,13 @@
 #include "glWrappers/shaders/SSBO.h"
 #include "MeshObject.h"
 #include "SceneBuffers.h"
+#include "PathVisObject.h"
 
 class Scene {
 
 private:
     std::vector<MeshObject> mObjects;
+    std::vector<PathVisObject> mPaths;
 
     SceneBuffers sceneBuffers;
 
@@ -26,8 +28,13 @@ public:
     Scene();
 
     void setCamera(Camera camera);
+    Camera &getCamera();
 
     void addMeshObject(MeshObject &meshObject);
+    void addPathObject(PathVisObject &pathVisObject);
+
+    std::vector<MeshObject> &getObjects();
+    std::vector<PathVisObject> &getPathObjects();
 
     void createGPUBuffers();
 
@@ -39,6 +46,10 @@ public:
     void bind();
     void unbind();
 
+    void buildRasterizeBuffers();
+    bool canRasterize();
+
+    void resetPaths();
 };
 
 

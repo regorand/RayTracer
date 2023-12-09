@@ -19,6 +19,6 @@ void main() {
         vec2(1.0, 1.0)
     };
 
-    gl_Position = pos[gl_VertexID].xyzw;
-    uv = uvs[gl_VertexID].xy;
+    gl_Position = pos[gl_VertexID];
+    uv = uvs[gl_VertexID];
 }

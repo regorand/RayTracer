@@ -117,6 +117,8 @@ bool intersectObject(Ray ray, MeshObject object, float alreadyClosest, out RayHi
 
     if (anyHit) {
         rayhit.dist /= rayDirScaling;
+        vec4 tmp = inverse(inverseTransform) * vec4(rayhit.position, 1);
+        rayhit.position = tmp.xyz / tmp.w;
         rayhit.normal = (object.normalMat * vec4(rayhit.normal, 0)).xyz;
     }
 

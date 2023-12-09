@@ -41,32 +41,6 @@ vec3 getNewDirection(inout vec2 seed, vec3 normal) {
     return normalize(rot * tangentSpaceDir);
 }
 
-Ray samplePathStart(vec2 texelCoord, vec2 viewPortSize) {
-    vec2 halfSizes = vec2(gl_NumWorkGroups.xy / 2);
-
-    vec2 seed = frameSeed + gl_GlobalInvocationID.xy;
-
-    float fov = PI / 2;
-    float aspect = 9.0/16.0;
-
-    float sideDist = tan(fov / 2);
-    float upDist = sideDist * aspect;
-
-    const vec3 camDir = vec3(0, 0, -1);
-    const vec3 upDir = vec3(0, 1, 0);
-    const vec3 tanDir = cross(camDir, upDir);
-
-    vec2 shiftedScaled = (texelCoord - halfSizes) / halfSizes;
-    Ray ray;
-
-    float pixelSize = 2 * sideDist / viewPortSize.x;
-
-    ray.origin = vec3(0, 0, 20) + vec3(rand(seed) * pixelSize, rand(seed) * pixelSize, 0);
-    ray.direction = normalize(camDir + upDist * shiftedScaled.y * upDir + sideDist * shiftedScaled.x * tanDir);
-
-    return ray;
-}
-
 vec3 sampleTrianglePos(Triangle triangle, vec2 seed) {
     float xi1 = rand(seed);
     float xi2 = rand(seed);

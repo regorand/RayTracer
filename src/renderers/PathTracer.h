@@ -6,6 +6,13 @@
 #include "glWrappers/shaders/ComputeShader.h"
 #include "utils/UniformDistribution.h"
 #include "scene/Scene.h"
+#include "glWrappers/TextureBuffer.h"
+#include "glWrappers/ShaderStorageBuffer.h"
+
+typedef struct path_s {
+    std::vector<glm::vec3> vertices;
+    int pathLength = 0;
+} Path;
 
 typedef struct PathSettings_s {
     // Path length Params
@@ -81,6 +88,8 @@ private:
     Texture mDirBuffer;
     Texture mMultiplierBuffer;
 
+    ShaderStorageBuffer testBuffer;
+
     ComputeShader mNewPathShader;
     ComputeShader mBounceShader;
     // TODO want a terminate path shader ?
@@ -98,9 +107,11 @@ private:
 
     Scene mScene;
 
-    // TODO tmp
-
     milliseconds renderStart;
+
+    Path recordedPath;
+    glm::vec2 recordingCoords;
+    bool enableRecording;
 
 public:
     PathTracer(int width, int height);
@@ -126,6 +137,14 @@ public:
 
     void buildImGuiWindow();
     void buildImGuiProgressBar(glm::vec2 displaySize);
+
+    void enablePathRecording(bool enable);
+    bool hasRecordedPath();
+    Path &getRecordedPath();
+    void setRecordingCoords(glm::vec2 coords);
+
+    Scene &getSceneRef();
+
 private:
     bool renderFenceSignalled();
 
@@ -135,5 +154,6 @@ private:
     void newPath();
     void renderSingleBounce();
 
+    void recordPathVertex();
 
 };

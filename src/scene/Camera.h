@@ -5,9 +5,18 @@
 
 #include "glm/vec3.hpp"
 #include "glm/mat4x4.hpp"
+#include "glWrappers/ArrayBuffer.h"
+#include "glWrappers/VertexArray.h"
+#include "glWrappers/IndexBuffer.h"
 
 typedef struct {
-    float fov;
+    ArrayBuffer arrayBuffer;
+    VertexArray vertexArray;
+    IndexBuffer indexBuffer;
+} CameraVisBuffers ;
+
+typedef struct {
+    float yfov;
     float aspectRatio;
 } Intrinsics;
 
@@ -24,6 +33,7 @@ public:
     Camera(glm::vec3 position, glm::vec3 viewDir);
 
     glm::mat4 getTransformation();
+    glm::mat4 getProjection();
 
 
     [[nodiscard]] glm::vec3 &getLocation();
@@ -33,7 +43,11 @@ public:
     void setLocation(glm::vec3 location);
     void setViewDir(glm::vec3 viewDir);
 
-    [[nodiscard]] Intrinsics getIntrinsics() const {return mIntrinsics; };
+    void setAspect(float aspect);
+
+    [[nodiscard]] Intrinsics getIntrinsics() {return mIntrinsics; };
+
+    void buildCameraVisBuffers(CameraVisBuffers &buffers);
 };
 
 

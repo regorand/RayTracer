@@ -102,3 +102,13 @@ bool ComputeShader::setUniform1i(const std::string &name, const int value) {
     glUniform1i(uniformId, value);
     return true;
 }
+
+bool ComputeShader::setUniform3f(const std::string &name, const glm::vec3 &value) {
+    int uniformId = getUniformLocation(name);
+    if (uniformId == -1) {
+        printUniformNotFound(name);
+        return false;
+    }
+    glUniform3f(uniformId, value.x, value.y, value.z);
+    return true;
+}

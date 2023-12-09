@@ -8,8 +8,16 @@ layout (rgba32f, binding = 1) uniform image2D posBuffer;
 layout (rgba32f, binding = 2) uniform image2D dirBuffer;
 layout (rgba32f, binding = 3) uniform image2D mulBuffer;
 
+layout(std430, binding = 4) buffer testBuffer
+{
+    vec4 testData[];
+};
+
 uniform vec2 frameSeed;
 uniform float alphaRR;
+
+uniform int width;
+uniform int height;
 
 
 // Included from res/shaders/scenes/CPUScene.glsl
@@ -175,32 +183,6 @@ vec3 getNewDirection(inout vec2 seed, vec3 normal) {
     return normalize(rot * tangentSpaceDir);
 }
 
-Ray samplePathStart(vec2 texelCoord, vec2 viewPortSize) {
-    vec2 halfSizes = vec2(gl_NumWorkGroups.xy / 2);
-
-    vec2 seed = frameSeed + gl_GlobalInvocationID.xy;
-
-    float fov = PI / 2;
-    float aspect = 9.0/16.0;
-
-    float sideDist = tan(fov / 2);
-    float upDist = sideDist * aspect;
-
-    const vec3 camDir = vec3(0, 0, -1);
-    const vec3 upDir = vec3(0, 1, 0);
-    const vec3 tanDir = cross(camDir, upDir);
-
-    vec2 shiftedScaled = (texelCoord - halfSizes) / halfSizes;
-    Ray ray;
-
-    float pixelSize = 2 * sideDist / viewPortSize.x;
-
-    ray.origin = vec3(0, 0, 20) + vec3(rand(seed) * pixelSize, rand(seed) * pixelSize, 0);
-    ray.direction = normalize(camDir + upDist * shiftedScaled.y * upDir + sideDist * shiftedScaled.x * tanDir);
-
-    return ray;
-}
-
 vec3 sampleTrianglePos(Triangle triangle, vec2 seed) {
     float xi1 = rand(seed);
     float xi2 = rand(seed);
@@ -349,6 +331,8 @@ bool intersectObject(Ray ray, MeshObject object, float alreadyClosest, out RayHi
 
     if (anyHit) {
         rayhit.dist /= rayDirScaling;
+        vec4 tmp = inverse(inverseTransform) * vec4(rayhit.position, 1);
+        rayhit.position = tmp.xyz / tmp.w;
         rayhit.normal = (object.normalMat * vec4(rayhit.normal, 0)).xyz;
     }
 
@@ -469,8 +453,10 @@ void main() {
     if (length(mul) < eps) {
         return;
     }
+    int singleDimCoord = bufferCoords.y * width + bufferCoords.x;
 
-    vec3 pos = imageLoad(posBuffer, bufferCoords).xyz;
+    // vec3 pos = imageLoad(posBuffer, bufferCoords).xyz;
+    vec3 pos = testData[singleDimCoord].xyz;
     vec3 dir = imageLoad(dirBuffer, bufferCoords).xyz;
 
     mul /= alphaRR;
@@ -482,6 +468,7 @@ void main() {
     bool hit = getClosestHit(ray, rayHit);
 
     if (!hit) {
+        testData[singleDimCoord] = vec4(ray.origin + 10000 * ray.direction, 0);
         imageStore(mulBuffer, bufferCoords, vec4(0));
         return;
     }
@@ -502,8 +489,8 @@ void main() {
 
         imageStore(imgOutput, bufferCoords, newValue);
     } else if (checkBitFlag(matProperties, TRANSMISSIVE_FLAG)) {
-        float newIOR = rayHit.hitBackface ? 1   : 2;
-        float oldIOR = rayHit.hitBackface ? 2 : 1;
+        float newIOR = rayHit.hitBackface ? 1   : 1.5;
+        float oldIOR = rayHit.hitBackface ? 1.5 : 1;
 
         newDir = getTransmittedDir(oldIOR, newIOR, N, dir);
 
@@ -522,7 +509,7 @@ void main() {
     const bool debug = false;
 
     if (debug) {
-        vec3 debugColor = rayHit.hitBackface ? vec3(1, 0, 0) : vec3(0, 0, 1);
+        vec3 debugColor = vec3(float(singleDimCoord) / 1200000);
         vec4 newValue = vec4(debugColor, 1);
 
         imageStore(imgOutput, bufferCoords, newValue);
@@ -530,6 +517,11 @@ void main() {
         imageStore(mulBuffer, bufferCoords, vec4(0));
         return;
     }
+
+    // TODO this write does not seem to work
+    // imageStore(testBuffer, singleDimCoord, newPos.xyzz);
+
+    testData[singleDimCoord] = newPos.xyzz;
 
     imageStore(posBuffer, bufferCoords, newPos.xyzz);
     imageStore(dirBuffer, bufferCoords, newDir.xyzz);

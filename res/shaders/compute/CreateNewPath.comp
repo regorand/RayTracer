@@ -8,14 +8,30 @@ layout (rgba32f, binding = 1) uniform image2D posBuffer;
 layout (rgba32f, binding = 2) uniform image2D dirBuffer;
 layout (rgba32f, binding = 3) uniform image2D mulBuffer;
 
+layout(std430, binding = 4) buffer testBuffer
+{
+    vec4 testData[];
+};
+
 uniform vec2 frameSeed;
 uniform vec2 viewPortSize;
 
-#include "res/shaders/utils/samplingUtils.glsl"
+uniform int width;
+
+uniform vec3 cameraPos;
+uniform vec3 viewDir;
+uniform vec3 upDir;
+
+uniform float fov;
+uniform float aspect;
+
+#include "res/shaders/utils/cameraUtils.glsl"
 
 void main() {
     vec2 texelCoord = vec2(gl_GlobalInvocationID.xy);
     ivec2 bufferCoords = ivec2(texelCoord);
+
+    int singleDimCoord = bufferCoords.y * width + bufferCoords.x;
 
     Ray ray = samplePathStart(texelCoord, viewPortSize);
 
@@ -24,6 +40,9 @@ void main() {
     imageStore(imgOutput, bufferCoords, bufferContent);
 
     imageStore(posBuffer, bufferCoords, vec4(ray.origin, 1));
+
+    testData[singleDimCoord] = vec4(ray.origin, 1);
+
     imageStore(dirBuffer, bufferCoords, vec4(ray.direction, 0));
     imageStore(mulBuffer, bufferCoords, vec4(1));
 }

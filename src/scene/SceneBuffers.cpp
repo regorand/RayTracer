@@ -21,7 +21,7 @@ bool SceneBuffers::createGPUBuffers(std::vector<Triangle> &triangles, std::vecto
 
 void SceneBuffers::bind() {
     if (!isValid()) {
-        std::cerr << "Can only bind GPU buffers when they are created and valid" << std::endl;
+        std::cerr << "Can only bindToTarget GPU buffers when they are created and valid" << std::endl;
         return;
     }
 

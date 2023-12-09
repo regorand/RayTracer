@@ -3,6 +3,8 @@
 #include "imgui.h"
 
 typedef struct ImGuiMenuSettings_s{
+    bool viewPathTraceOutput = false;
+
     bool showStatsWindow;
     bool showControlPanel;
 

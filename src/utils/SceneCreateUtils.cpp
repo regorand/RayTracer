@@ -30,8 +30,8 @@ void createCornellBox(std::vector<MeshObject> &outObjects) {
 
     // left wall
     MeshObject leftWall;
-    leftWall.addTriangle(createTriangle(wallVertices, 1, 0, 2, mirror));
-    leftWall.addTriangle(createTriangle(wallVertices, 1, 2, 3, mirror));
+    leftWall.addTriangle(createTriangle(wallVertices, 1, 0, 2, DIFFUSE_RED));
+    leftWall.addTriangle(createTriangle(wallVertices, 1, 2, 3, DIFFUSE_RED));
     outObjects.push_back(leftWall);
 
     // ground
@@ -64,7 +64,7 @@ void createCornellBox(std::vector<MeshObject> &outObjects) {
     float zDiff = higher.z - lower.z;
 
     float percentage = 0.5;
-    float eps = 1e-5;
+    float eps = 1e-1;
 
     glm::vec2 lightLower =
             glm::vec2(lower.x, lower.y) + glm::vec2((xDiff * 0.5) * percentage, (zDiff * 0.5) * percentage);
@@ -104,7 +104,6 @@ void createCornellBox(std::vector<MeshObject> &outObjects) {
 
     lightSource.setEmissive(true);
 
-    outObjects.push_back(walls);
     outObjects.push_back(lightSource);
 }
 
@@ -134,7 +133,6 @@ void createSampleBoxes(std::vector<MeshObject> &outObjects) {
     Material glas;
     unsigned int glasMatProperties = TRANSMISSIVE_FLAG;
 
-    glas.color = glm::vec4(0);
     glas.color.w = reinterpret_cast<float &>(glasMatProperties);
 
     std::vector<Triangle> glasBoxTris;
@@ -144,6 +142,7 @@ void createSampleBoxes(std::vector<MeshObject> &outObjects) {
         glasBox.addTriangle(triangle);
     }
 
+    // TODO fix yo goddamn transofrms
     glasBox.getTransformRef().transform = glm::vec3(0, -5, 0);
     glasBox.getTransformRef().rotation = glm::vec3(0, -glm::quarter_pi<float>() / 4, 0);
 
@@ -152,8 +151,13 @@ void createSampleBoxes(std::vector<MeshObject> &outObjects) {
 
     std::vector<Triangle> transformTestBox;
 
+    Material glas2;
+    unsigned int glasMatProperties2 = TRANSMISSIVE_FLAG;
 
-    createBox(transformTestBox, mirror, lower, higher, ALL_FACES);
+    glas2.color.w = reinterpret_cast<float &>(glasMatProperties2);
+
+
+    createBox(transformTestBox, glas2, lower, higher, ALL_FACES);
     MeshObject transformTest;
 
 
@@ -179,10 +183,10 @@ void createSampleBoxes(std::vector<MeshObject> &outObjects) {
     backTransform.scale = glm::vec3(10);
 
 
-    outObjects.push_back(box);
     outObjects.push_back(glasBox);
     outObjects.push_back(transformTest);
-    outObjects.push_back(backBox);
+    outObjects.push_back(box);
+    // outObjects.push_back(backBox);
 }
 
 void createBox(std::vector<Triangle> &outTriangles, Material mat, glm::vec3 lower, glm::vec3 higher,

@@ -1,5 +1,6 @@
 
 #include <iostream>
+#include <array>
 #include "PathTracer.h"
 #include "imgui.h"
 
@@ -10,9 +11,23 @@ PathTracer::PathTracer(int width, int height)
           mDirBuffer(Texture(new HostBuffer(mWidth, mHeight))),
           mMultiplierBuffer(Texture(new HostBuffer(mWidth, mHeight))),
 
+          testBuffer(ShaderStorageBuffer(mWidth * mHeight * sizeof(float) * 4, GL_DYNAMIC_DRAW)),
+
           mBounceShader(ComputeShader("res/shaders/compute/computeSingleBounce.comp")),
           mNewPathShader(ComputeShader("res/shaders/compute/CreateNewPath.comp")),
           mClearTargetShader(ComputeShader("res/shaders/compute/clearColorBuffer.comp")) {
+
+    /*
+    const int size = mWidth * mHeight * sizeof(float) * 3;
+    char *data = new char[size];
+
+    for (int i = 0; i < size; i++) {
+        data[i] = i % 10;
+    }
+
+    testBuffer.uploadData(data, size);
+    delete[] data;
+     */
 }
 
 void PathTracer::startRender() {
@@ -98,29 +113,52 @@ void PathTracer::reloadShaders() {
 void PathTracer::newPath() {
     glm::vec2 seed = dist.sampleVec2();
 
+    if (enableRecording && !recordedPath.vertices.empty()) {
+        recordedPath.vertices.erase(recordedPath.vertices.begin(), recordedPath.vertices.end());
+        recordedPath.pathLength = 0;
+    }
+
     mCurrentTarget->bindAsImage(TARGET_BUFFER_TARGET);
 
     mPosBuffer.bindAsImage(POS_BUFFER_TARGET);
     mDirBuffer.bindAsImage(DIR_BUFFER_TARGET);
     mMultiplierBuffer.bindAsImage(MULT_BUFFER_TARGET);
 
+    testBuffer.bindToTarget(4);
+
     mNewPathShader.bind();
     mNewPathShader.setUniform2f("frameSeed", seed);
     mNewPathShader.setUniform2f("viewPortSize", glm::vec2(mWidth, mHeight));
 
+    mNewPathShader.setUniform1i("width", mWidth);
+
+    Camera &camera = mScene.getCamera();
+
+    mNewPathShader.setUniform3f("cameraPos", camera.getLocation());
+    mNewPathShader.setUniform3f("viewDir", camera.getViewDir());
+    mNewPathShader.setUniform3f("upDir", camera.getUpVec());
+
+    mNewPathShader.setUniform1f("fov", camera.getIntrinsics().yfov);
+    mNewPathShader.setUniform1f("aspect", camera.getIntrinsics().aspectRatio);
+
     glDispatchCompute(mWidth, mHeight, 1);
 
     mNewPathShader.unbind();
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_BUFFER_UPDATE_BARRIER_BIT);
+
+    recordPathVertex();
 }
 
 void PathTracer::renderSingleBounce() {
+
     glm::vec2 seed = dist.sampleVec2();
 
     mBounceShader.setUniform2f("frameSeed", seed);
     glDispatchCompute(mWidth, mHeight, 1);
 
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_BUFFER_UPDATE_BARRIER_BIT);
+
+    recordPathVertex();
 }
 
 void PathTracer::clearTarget() {
@@ -156,6 +194,8 @@ void PathTracer::bindBounce() {
     mDirBuffer.bindAsImage(DIR_BUFFER_TARGET);
     mMultiplierBuffer.bindAsImage(MULT_BUFFER_TARGET);
 
+    testBuffer.bindToTarget(4);
+
     mScene.bind();
 
     // TODO get scene counts and bind as uniforms, then add stuff to the scene, try to only render albedo first
@@ -165,6 +205,9 @@ void PathTracer::bindBounce() {
     mBounceShader.setUniform1ui("objectCount", mScene.getObjectCount());
     mBounceShader.setUniform1ui("emissiveCount", mScene.getEmissiveCount());
     mBounceShader.setUniform1f("alphaRR", mPathTraceSettings.pathSettings.alphaRR);
+
+    mBounceShader.setUniform1i("width", mWidth);
+    mBounceShader.setUniform1i("height", mHeight);
 }
 
 void PathTracer::unbindBounce() {
@@ -245,8 +288,6 @@ void PathTracer::buildImGuiWindow() {
             clearTarget();
         }
 
-
-
         ImGui::InputInt("Target SPP per render", &mPathTraceSettings.spp);
 
         std::string sppString = "SPP of current image: " + std::to_string(mSppCount);
@@ -263,4 +304,50 @@ void PathTracer::buildImGuiWindow() {
             ImGui::Unindent(8.0f);
         }
     }
+}
+
+void PathTracer::enablePathRecording(bool enable) {
+    enableRecording = enable;
+}
+
+bool PathTracer::hasRecordedPath() {
+    return !recordedPath.vertices.empty();
+}
+
+Path &PathTracer::getRecordedPath() {
+    return recordedPath;
+}
+
+void PathTracer::setRecordingCoords(glm::vec2 coords) {
+    recordingCoords = coords;
+}
+
+void PathTracer::recordPathVertex() {
+    if (enableRecording) {
+        GLsync sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+
+        GLuint64 timeoutNs = 10ll * 1000l * 1000l * 1000l;
+        glClientWaitSync(sync, 0, timeoutNs);
+
+        GLint signal = 0;
+        glGetSynciv(sync, GL_SYNC_STATUS, 1, nullptr, &signal);
+
+        while (signal != GL_SIGNALED) {
+            glGetSynciv(sync, GL_SYNC_STATUS, 1, nullptr, &signal);
+        }
+
+        int offsetIndex = recordingCoords.y * mWidth + recordingCoords.x;
+        int offset = offsetIndex * sizeof(glm::vec4);
+
+        glm::vec4 vertex;
+        testBuffer.getData(&vertex, sizeof(glm::vec4), offset);
+
+        recordedPath.vertices.emplace_back(vertex);
+        recordedPath.pathLength++;
+        glDeleteSync(sync);
+    }
+}
+
+Scene &PathTracer::getSceneRef() {
+    return mScene;
 }
