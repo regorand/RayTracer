@@ -16,28 +16,37 @@ typedef struct {
 } CameraVisBuffers ;
 
 typedef struct {
-    float yfov;
+    float fovY;
     float aspectRatio;
 } Intrinsics;
 
-static const glm::vec3 UP_VECTOR = glm::vec3(0, 1, 0);
+static const glm::vec3 UP_ALIGNMENT = glm::vec3(0, 1, 0);
 
 class Camera {
 private:
     glm::vec3 mPosition;
     glm::vec3 mViewDir;
 
+    glm::vec3 mCameraSpaceUp;
+    glm::vec3 mLocalUp;
+
     Intrinsics mIntrinsics;
 
 public:
-    Camera(glm::vec3 position, glm::vec3 viewDir);
+    Camera(glm::vec3 position, glm::vec3 viewDir, glm::vec3 up = glm::vec3(0, 1, 0));
 
     glm::mat4 getTransformation();
     glm::mat4 getProjection();
 
+    void applyTransform(glm::mat4 transform);
+
+    void transformPosition(glm::mat4 transform);
+    void transformViewDir(glm::mat4 transform);
+    void transformCamSpaceUpDir(glm::mat4 transform);
 
     [[nodiscard]] glm::vec3 &getLocation();
-    [[nodiscard]] glm::vec3 getUpVec();
+    [[nodiscard]] glm::vec3 getCamSpaceUpVec();
+    [[nodiscard]] glm::vec3 getLocalUpVec();
     [[nodiscard]] glm::vec3 &getViewDir();
 
     void setLocation(glm::vec3 location);
@@ -48,6 +57,10 @@ public:
     [[nodiscard]] Intrinsics getIntrinsics() {return mIntrinsics; };
 
     void buildCameraVisBuffers(CameraVisBuffers &buffers);
+
+private:
+    void calculateLocalUp();
+
 };
 
 

@@ -11,8 +11,7 @@
 #include "renderers/Rasterizer.h"
 #include <imgui.h>
 
-Application::Application()
-{
+Application::Application() {
 }
 
 
@@ -61,11 +60,10 @@ int Application::run() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, major);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, minor);
 
-    glfwSetKeyCallback(window, glfwKeyCallback);
+    keyStateManager->registerGLFW(window);
 
     registerGLCallBack();
 
-    int displayWidth, displayHeight;
     glfwGetFramebufferSize(window, &displayWidth, &displayHeight);
 
     BufferRenderer br;
@@ -111,7 +109,7 @@ int Application::run() {
     initialSettings.pathSettings.alphaRR = 0.99;
     pathTracer.setPathTraceSettings(initialSettings);
 
-    pathTracer.setRecordingCoords(glm::vec2((displayWidth - 1) / 3, (displayHeight - 1) / 3));
+    pathTracer.setRecordingCoords(glm::vec2((displayWidth - 1) / 2 + 35, (displayHeight - 1) / 3));
     pathTracer.enablePathRecording(true);
 
     pathTracer.startRender();
@@ -134,6 +132,7 @@ int Application::run() {
 
     pathTracer.enablePathRecording(false);
 
+    keyStateManager->getMouseAndGetDiff(window);
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
@@ -149,14 +148,13 @@ int Application::run() {
 
         buildImguiMenu(menuSettings);
 
-        handleInput(rasterizer.getSceneRef().getCamera());
-
         if (menuSettings.showStatsWindow) {
             buildImguiAppStats(menuSettings);
         }
 
         if (menuSettings.showControlPanel) {
-            buildImguiControlSideBar(glm::vec2(displayWidth, displayHeight), menuSettings, pathTracer, br, postProcSettings);
+            buildImguiControlSideBar(glm::vec2(displayWidth, displayHeight), menuSettings, pathTracer, br,
+                                     rasterizer, postProcSettings);
         }
 
         if (state != RenderState::IDLE) pathTracer.buildImGuiProgressBar(glm::vec2(displayWidth, displayHeight));
@@ -173,6 +171,9 @@ int Application::run() {
 
             br.render(&displayBuffer);
         } else {
+            glm::vec2 diff = keyStateManager->getMouseAndGetDiff(window);
+            cameraManipulator.updateCamera(rasterizer.getSceneRef().getCamera(), keyStateManager, diff, glm::vec2(displayWidth, displayHeight));
+
             rasterizer.render();
             rasterizer.renderPaths();
             CameraVisBuffers buffers;
@@ -199,7 +200,7 @@ int Application::run() {
 }
 
 void Application::buildImguiControlSideBar(glm::vec2 displaySize, ImGuiMenuSettings &menuSettings, PathTracer &pt,
-                                           BufferRenderer &br, PostProcSettings &postProcSettings) {
+                                           BufferRenderer &br, Rasterizer &rasterizer, PostProcSettings &postProcSettings) {
     float windowWidth = displaySize.x / 6.0f;
 
 
@@ -235,6 +236,16 @@ void Application::buildImguiControlSideBar(glm::vec2 displaySize, ImGuiMenuSetti
 
     ImGui::Indent(8.0f);
 
+    buildImguiCameraControls(pt, rasterizer);
+
+    ImGui::Unindent(8.0f);
+
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Spacing();
+
+    ImGui::Indent(8.0f);
+
     if (ImGui::CollapsingHeader("Post Processing")) {
         ImGui::Checkbox("Gamma Correction", &postProcSettings.gammaCorrect);
         ImGui::Checkbox("tonemapping", &postProcSettings.tonemap);
@@ -245,121 +256,19 @@ void Application::buildImguiControlSideBar(glm::vec2 displaySize, ImGuiMenuSetti
     ImGui::End();
 }
 
-void Application::handleInput(Camera &camera) {
-    bool space = movementKeys[6];
+void Application::buildImguiCameraControls(PathTracer &pt, Rasterizer &rasterizer) {
+    if (ImGui::CollapsingHeader("Camera Controls")) {
 
-    glm::vec3 location = camera.getLocation();
-    glm::vec3 viewDir = camera.getViewDir();
-    glm::vec3 up = camera.getUpVec();
-    glm::vec3 tangent = glm::cross(viewDir, up);
+        ImVec2 windowSize = ImGui::GetWindowSize();
+        ImVec2 buttonSize = ImVec2(windowSize.x * 0.9, 25);
 
-    float posSpeed = 0.05;
-    float viewDirSpeed = 0.01;
-
-    // w
-    if (movementKeys[0]) {
-        if (space) {
-            viewDir.y += viewDirSpeed;
-        } else {
-            location += viewDir * posSpeed;
+        if (ImGui::Button("Reset debug camera", buttonSize)) {
+            rasterizer.getSceneRef().setCamera(pt.getSceneRef().getCamera());
         }
-    }
 
-    // a
-    if (movementKeys[1]) {
-        if (space) {
-            viewDir.x -= viewDirSpeed;
-        } else {
-            location -= tangent * posSpeed;
+        if (ImGui::Button("Pathtrace camera to debug camera", buttonSize)) {
+            pt.getSceneRef().setCamera(rasterizer.getSceneRef().getCamera());
         }
-    }
 
-    // s
-    if (movementKeys[2]) {
-        if (space) {
-            viewDir.y -= viewDirSpeed;
-        } else {
-            location -= viewDir * posSpeed;
-        }
     }
-
-    // d
-    if (movementKeys[3]) {
-        if (space) {
-            viewDir.x += viewDirSpeed;
-        } else {
-            location += tangent * posSpeed;
-        }
-    }
-
-    // q
-    if (movementKeys[4]) {
-        if (!space) {
-            location += up * posSpeed;
-        }
-    }
-
-    // e
-    if (movementKeys[5]) {
-        if (!space) {
-            location -= up * posSpeed;
-        }
-    }
-
-    camera.setLocation(location);
-    camera.setViewDir(glm::normalize(viewDir));
 }
-
-void Application::glfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
-    if (key == GLFW_KEY_W) {
-        if (action == GLFW_RELEASE) {
-            movementKeys[0] = false;
-        } else if (action == GLFW_PRESS) {
-            movementKeys[0] = true;
-        }
-    }
-
-    if (key == GLFW_KEY_A) {
-        if (action == GLFW_RELEASE) {
-            movementKeys[1] = false;
-        } else if (action == GLFW_PRESS) {
-            movementKeys[1] = true;
-        }    }
-
-    if (key == GLFW_KEY_S) {
-        if (action == GLFW_RELEASE) {
-            movementKeys[2] = false;
-        } else if (action == GLFW_PRESS) {
-            movementKeys[2] = true;
-        }    }
-
-    if (key == GLFW_KEY_D) {
-        if (action == GLFW_RELEASE) {
-            movementKeys[3] = false;
-        } else if (action == GLFW_PRESS) {
-            movementKeys[3] = true;
-        }    }
-
-    if (key == GLFW_KEY_Q) {
-        if (action == GLFW_RELEASE) {
-            movementKeys[4] = false;
-        } else if (action == GLFW_PRESS) {
-            movementKeys[4] = true;
-        }    }
-
-    if (key == GLFW_KEY_E) {
-        if (action == GLFW_RELEASE) {
-            movementKeys[5] = false;
-        } else if (action == GLFW_PRESS) {
-            movementKeys[5] = true;
-        }    }
-
-    if (key == GLFW_KEY_SPACE) {
-        if (action == GLFW_RELEASE) {
-            movementKeys[6] = false;
-        } else if (action == GLFW_PRESS) {
-            movementKeys[6] = true;
-        }    }
-}
-
-

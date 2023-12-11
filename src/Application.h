@@ -6,12 +6,15 @@
 #include "renderers/BufferRenderer.h"
 #include "ImguiUtils.h"
 #include "renderers/PostProcessor.h"
+#include "userInput/KeyStateManager.h"
+#include "renderers/Rasterizer.h"
+#include "userInput/CameraManipulator.h"
 #include <GLFW/glfw3.h>
 
 typedef struct RenderSettings_s {
     bool alwaysRenderNew;
 
-    RenderSettings_s () {
+    RenderSettings_s() {
         this->alwaysRenderNew = false;
     }
 } RenderSettings;
@@ -20,11 +23,15 @@ static bool movementKeys[7];
 
 class Application {
 private:
-    GLFWwindow* window;
+    GLFWwindow *window;
 
     GLsync currentSync = nullptr;
     bool useSync = false;
 
+    int displayWidth, displayHeight;
+
+    KeyStateManager *keyStateManager = KeyStateManager::getInstance();
+    CameraManipulator cameraManipulator;
 
 public:
     Application();
@@ -32,11 +39,11 @@ public:
     int run();
 
 private:
-    void buildImguiControlSideBar(glm::vec2 displaySize, ImGuiMenuSettings &menuSettings, PathTracer &pt, BufferRenderer &br, PostProcSettings &postProcSettings);
+    void
+    buildImguiControlSideBar(glm::vec2 displaySize, ImGuiMenuSettings &menuSettings, PathTracer &pt, BufferRenderer &br,
+                             Rasterizer &rasterizer, PostProcSettings &postProcSettings);
 
-    void handleInput(Camera &camera);
-    static void glfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
-
+    void buildImguiCameraControls(PathTracer &pt,Rasterizer &rasterizer);
 };
 
 

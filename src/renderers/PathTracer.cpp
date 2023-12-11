@@ -136,9 +136,9 @@ void PathTracer::newPath() {
 
     mNewPathShader.setUniform3f("cameraPos", camera.getLocation());
     mNewPathShader.setUniform3f("viewDir", camera.getViewDir());
-    mNewPathShader.setUniform3f("upDir", camera.getUpVec());
+    mNewPathShader.setUniform3f("upDir", camera.getLocalUpVec());
 
-    mNewPathShader.setUniform1f("fov", camera.getIntrinsics().yfov);
+    mNewPathShader.setUniform1f("fov", camera.getIntrinsics().fovY);
     mNewPathShader.setUniform1f("aspect", camera.getIntrinsics().aspectRatio);
 
     glDispatchCompute(mWidth, mHeight, 1);
