@@ -11,23 +11,13 @@ PathTracer::PathTracer(int width, int height)
           mDirBuffer(Texture(new HostBuffer(mWidth, mHeight))),
           mMultiplierBuffer(Texture(new HostBuffer(mWidth, mHeight))),
 
-          testBuffer(ShaderStorageBuffer(mWidth * mHeight * sizeof(float) * 4, GL_DYNAMIC_DRAW)),
+          posBuffer(mWidth * mHeight * sizeof(float) * 4, GL_DYNAMIC_DRAW),
+          dirBuffer(mWidth * mHeight * sizeof(float) * 4, GL_DYNAMIC_DRAW),
+          multiplierBuffer(mWidth * mHeight * sizeof(float) * 4, GL_DYNAMIC_DRAW),
 
           mBounceShader(ComputeShader("res/shaders/compute/computeSingleBounce.comp")),
           mNewPathShader(ComputeShader("res/shaders/compute/CreateNewPath.comp")),
           mClearTargetShader(ComputeShader("res/shaders/compute/clearColorBuffer.comp")) {
-
-    /*
-    const int size = mWidth * mHeight * sizeof(float) * 3;
-    char *data = new char[size];
-
-    for (int i = 0; i < size; i++) {
-        data[i] = i % 10;
-    }
-
-    testBuffer.uploadData(data, size);
-    delete[] data;
-     */
 }
 
 void PathTracer::startRender() {
@@ -124,7 +114,9 @@ void PathTracer::newPath() {
     mDirBuffer.bindAsImage(DIR_BUFFER_TARGET);
     mMultiplierBuffer.bindAsImage(MULT_BUFFER_TARGET);
 
-    testBuffer.bindToTarget(4);
+    posBuffer.bindToTarget(4);
+    dirBuffer.bindToTarget(5);
+    multiplierBuffer.bindToTarget(6);
 
     mNewPathShader.bind();
     mNewPathShader.setUniform2f("frameSeed", seed);
@@ -194,7 +186,9 @@ void PathTracer::bindBounce() {
     mDirBuffer.bindAsImage(DIR_BUFFER_TARGET);
     mMultiplierBuffer.bindAsImage(MULT_BUFFER_TARGET);
 
-    testBuffer.bindToTarget(4);
+    posBuffer.bindToTarget(4);
+    dirBuffer.bindToTarget(5);
+    multiplierBuffer.bindToTarget(6);
 
     mScene.bind();
 
@@ -340,7 +334,7 @@ void PathTracer::recordPathVertex() {
         int offset = offsetIndex * sizeof(glm::vec4);
 
         glm::vec4 vertex;
-        testBuffer.getData(&vertex, sizeof(glm::vec4), offset);
+        posBuffer.getData(&vertex, sizeof(glm::vec4), offset);
 
         recordedPath.vertices.emplace_back(vertex);
         recordedPath.pathLength++;

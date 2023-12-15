@@ -88,7 +88,9 @@ private:
     Texture mDirBuffer;
     Texture mMultiplierBuffer;
 
-    ShaderStorageBuffer testBuffer;
+    ShaderStorageBuffer posBuffer;
+    ShaderStorageBuffer dirBuffer;
+    ShaderStorageBuffer multiplierBuffer;
 
     ComputeShader mNewPathShader;
     ComputeShader mBounceShader;
