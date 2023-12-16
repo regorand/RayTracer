@@ -4,21 +4,19 @@ layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 layout (rgba32f, binding = 0) uniform image2D imgOutput;
 
-layout (rgba32f, binding = 1) uniform image2D posBuffer;
-layout (rgba32f, binding = 2) uniform image2D dirBuffer;
-layout (rgba32f, binding = 3) uniform image2D mulBuffer;
+#include "src/deviceShared/BufferBindings.h"
 
-layout(std430, binding = 4) buffer positionBuffer
+layout(std430, binding = POS_BUFFER_TARGET) buffer positionBuffer
 {
     vec4 posData[];
 };
 
-layout(std430, binding = 5) buffer directionBuffer
+layout(std430, binding = DIR_BUFFER_TARGET) buffer directionBuffer
 {
     vec4 dirData[];
 };
 
-layout(std430, binding = 6) buffer multiplierData
+layout(std430, binding = MULT_BUFFER_TARGET) buffer multiplierData
 {
     vec4 mulData[];
 };
@@ -45,28 +43,15 @@ void main() {
 
     int singleDimCoord = bufferCoords.y * width + bufferCoords.x;
 
-    const bool new = true;
-
-    vec3 mul;
-    if (new) {
-        mul = mulData[singleDimCoord].xyz;
-    } else {
-        mul = imageLoad(mulBuffer, bufferCoords).xyz;
-    }
+    vec3 mul = mulData[singleDimCoord].xyz;
 
     if (length(mul) < eps) {
         return;
     }
 
-    // vec3 pos = imageLoad(posBuffer, bufferCoords).xyz;
     vec3 pos = posData[singleDimCoord].xyz;
+    vec3 dir = dirData[singleDimCoord].xyz;
 
-    vec3 dir;
-    if (new) {
-        dir = dirData[singleDimCoord].xyz;
-    } else {
-        dir = imageLoad(dirBuffer, bufferCoords).xyz;
-    }
 
     mul /= alphaRR;
 
@@ -78,7 +63,7 @@ void main() {
 
     if (!hit) {
         posData[singleDimCoord] = vec4(ray.origin + 10000 * ray.direction, 0);
-        imageStore(mulBuffer, bufferCoords, vec4(0));
+        mulData[singleDimCoord] = vec4(0);
         return;
     }
 
@@ -123,26 +108,12 @@ void main() {
 
         imageStore(imgOutput, bufferCoords, newValue);
 
-        imageStore(mulBuffer, bufferCoords, vec4(0));
+        mulData[singleDimCoord] = vec4(0);
         return;
     }
 
-    // TODO this write does not seem to work
-    // imageStore(testBuffer, singleDimCoord, newPos.xyzz);
-
-    // imageStore(posBuffer, bufferCoords, newPos.xyzz);
     posData[singleDimCoord] = newPos.xyzz;
 
-
-    if (new) {
-        dirData[singleDimCoord] = newDir.xyzz;
-        mulData[singleDimCoord] = mul.xyzz;
-    } else {
-        imageStore(dirBuffer, bufferCoords, newDir.xyzz);
-        imageStore(mulBuffer, bufferCoords, mul.xyzz);
-    }
-
-
-
-
+    dirData[singleDimCoord] = newDir.xyzz;
+    mulData[singleDimCoord] = mul.xyzz;
 }

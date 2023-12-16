@@ -70,23 +70,10 @@ using namespace std::chrono;
 
 class PathTracer {
 private:
-    const unsigned int TARGET_BUFFER_TARGET = 0;
-
-    const unsigned int POS_BUFFER_TARGET = 1;
-    const unsigned int DIR_BUFFER_TARGET = 2;
-    const unsigned int MULT_BUFFER_TARGET = 3;
-
-    const GLenum POS_BUFFER_FORMAT = GL_RGBA32F;
-    const GLenum DIR_BUFFER_FORMAT = GL_RGBA32F;
-    const GLenum MULT_BUFFER_FORMAT = GL_RGBA32F;
+    const unsigned int TARGET_TEXTURE_TARGET = 0;
 
     int mWidth;
     int mHeight;
-
-    // TODO get TextureBuffers working ? -> More efficient creation
-    Texture mPosBuffer;
-    Texture mDirBuffer;
-    Texture mMultiplierBuffer;
 
     ShaderStorageBuffer posBuffer;
     ShaderStorageBuffer dirBuffer;

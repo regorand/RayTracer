@@ -4,21 +4,19 @@ layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 layout (rgba32f, binding = 0) uniform image2D imgOutput;
 
-layout (rgba32f, binding = 1) uniform image2D posBuffer;
-layout (rgba32f, binding = 2) uniform image2D dirBuffer;
-layout (rgba32f, binding = 3) uniform image2D mulBuffer;
+#include "src/deviceShared/BufferBindings.h"
 
-layout(std430, binding = 4) buffer positionBuffer
+layout(std430, binding = POS_BUFFER_TARGET) buffer positionBuffer
 {
     vec4 posData[];
 };
 
-layout(std430, binding = 5) buffer directionBuffer
+layout(std430, binding = DIR_BUFFER_TARGET) buffer directionBuffer
 {
     vec4 dirData[];
 };
 
-layout(std430, binding = 6) buffer multiplierData
+layout(std430, binding = MULT_BUFFER_TARGET) buffer multiplierData
 {
     vec4 mulData[];
 };
@@ -49,12 +47,7 @@ void main() {
     bufferContent.a += 1;
     imageStore(imgOutput, bufferCoords, bufferContent);
 
-    imageStore(posBuffer, bufferCoords, vec4(ray.origin, 1));
-
     posData[singleDimCoord] = vec4(ray.origin, 1);
     dirData[singleDimCoord] = vec4(ray.direction, 1);
     mulData[singleDimCoord] = vec4(vec4(1));
-
-    imageStore(dirBuffer, bufferCoords, vec4(ray.direction, 0));
-    imageStore(mulBuffer, bufferCoords, vec4(1));
 }

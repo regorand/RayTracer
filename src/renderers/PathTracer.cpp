@@ -3,13 +3,11 @@
 #include <array>
 #include "PathTracer.h"
 #include "imgui.h"
+#include "deviceShared/BufferBindings.h"
 
 PathTracer::PathTracer(int width, int height)
         : mWidth(width),
           mHeight(height),
-          mPosBuffer(Texture(new HostBuffer(mWidth, mHeight))),
-          mDirBuffer(Texture(new HostBuffer(mWidth, mHeight))),
-          mMultiplierBuffer(Texture(new HostBuffer(mWidth, mHeight))),
 
           posBuffer(mWidth * mHeight * sizeof(float) * 4, GL_DYNAMIC_DRAW),
           dirBuffer(mWidth * mHeight * sizeof(float) * 4, GL_DYNAMIC_DRAW),
@@ -108,15 +106,11 @@ void PathTracer::newPath() {
         recordedPath.pathLength = 0;
     }
 
-    mCurrentTarget->bindAsImage(TARGET_BUFFER_TARGET);
+    mCurrentTarget->bindAsImage(TARGET_TEXTURE_TARGET);
 
-    mPosBuffer.bindAsImage(POS_BUFFER_TARGET);
-    mDirBuffer.bindAsImage(DIR_BUFFER_TARGET);
-    mMultiplierBuffer.bindAsImage(MULT_BUFFER_TARGET);
-
-    posBuffer.bindToTarget(4);
-    dirBuffer.bindToTarget(5);
-    multiplierBuffer.bindToTarget(6);
+    posBuffer.bindToTarget(POS_BUFFER_TARGET);
+    dirBuffer.bindToTarget(DIR_BUFFER_TARGET);
+    multiplierBuffer.bindToTarget(MULT_BUFFER_TARGET);
 
     mNewPathShader.bind();
     mNewPathShader.setUniform2f("frameSeed", seed);
@@ -155,7 +149,7 @@ void PathTracer::renderSingleBounce() {
 
 void PathTracer::clearTarget() {
     mSppCount = 0;
-    mCurrentTarget->bindAsImage(TARGET_BUFFER_TARGET);
+    mCurrentTarget->bindAsImage(TARGET_TEXTURE_TARGET);
     mClearTargetShader.bind();
 
     glDispatchCompute(mWidth, mHeight, 1);
@@ -180,15 +174,11 @@ void PathTracer::setTargetp(Texture *target) {
 }
 
 void PathTracer::bindBounce() {
-    mCurrentTarget->bindAsImage(TARGET_BUFFER_TARGET);
+    mCurrentTarget->bindAsImage(TARGET_TEXTURE_TARGET);
 
-    mPosBuffer.bindAsImage(POS_BUFFER_TARGET);
-    mDirBuffer.bindAsImage(DIR_BUFFER_TARGET);
-    mMultiplierBuffer.bindAsImage(MULT_BUFFER_TARGET);
-
-    posBuffer.bindToTarget(4);
-    dirBuffer.bindToTarget(5);
-    multiplierBuffer.bindToTarget(6);
+    posBuffer.bindToTarget(POS_BUFFER_TARGET);
+    dirBuffer.bindToTarget(DIR_BUFFER_TARGET);
+    multiplierBuffer.bindToTarget(MULT_BUFFER_TARGET);
 
     mScene.bind();
 
