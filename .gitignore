@@ -1,9 +1,5 @@
 CMakeSettings.json
 
-libs/glfw
-libs/glm
-libs/imgui
-
 res/shaders/debug_out
 
 
