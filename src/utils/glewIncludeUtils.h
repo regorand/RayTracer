@@ -7,7 +7,7 @@
 #define BREAK_POINT __debugbreak();
 #elif defined(unix) || defined(__uni__) || defined(__unix)
 // untested
-# define BREAK_POINT raise(SIGTRAP);
+# define BREAK_POINT // raise(SIGTRAP);
 #endif
 
 #include <GL/glew.h>
