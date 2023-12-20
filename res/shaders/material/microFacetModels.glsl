@@ -19,29 +19,43 @@ Calculation Steps:
 Question -> Where do I modulate albedo into specular reflection for metallic materials ?
 */
 
-struct MaterialTMP {
-    vec3 albedo;
-    float roughness;
-    float metallic;
-    // transmittance factor ?
+#include "res/shaders/material/material.glsl"
 
-    // https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#metallic-roughness-material
-    // sample metallic value to decide if to evalutate metallic or dielectric bsdf ?
-    // -> need to consider this in pdf -> is that just a constant factor ?
-    // need sheen layer for colorless highlights ?
-    // metallic seems to have higher prio than transmittance of dielectric
-    // -> look at principled bsdf shader example!
+float GGXNormalDistFunc(float alpha, vec3 m, vec3 n, float thetaM) {
+    float alpha_2 = alpha * alpha;
+
+    float xi = max(dot(n, m), 0.0f);
+    float cosThetaM = cos(thetaM);
+    float tanThetaM = tan(thetaM);
+
+    return alpha_2 * xi / (PI * pow(cosThetaM, 4.0f) * thetaM * pow(alpha_2 + pow(tanThetaM, 2.0f), 2.0f));
 }
 
-void GGXNormalDistFunc(float alpha) {
+float shadowingFunction(float alpha, vec3 m, vec3 n, vec3 i, float thetaV) {
+    float alpha_2 = alpha * alpha;
 
+    float vDotM = dot(i, m);
+    float vDotN = dot(i, n);
+
+    float xi = max(vDotM / vDotN, 0.0f);
+
+    float tanThetaV = tan(thetaV);
+
+    return xi * 2 / (1 + sqrt(1.0f + alpha_2 * pow(tanThetaV, 2.0f)));
+}
+
+vec3 schlickFresnel(vec3 F0, vec3 n, vec3 i) {
+    float r = oldIOR / newIOR;
+    float c = dot(-n, i);
+
+    return F0 + (1 - F0) * pow(1.0f - c, 5.0f);
 }
 
 #include "res/shaders/utils/rng.glsl"
 #include "res/shaders/utils/Constants.glsl"
 
 // returns sampled micronormal in tangent space
-vec3 sampleGGX(float roughness, float seed) {
+vec3 sampleGGX(float roughness, float seed, out float thetaM) {
     float eta1 = randUniform_0_1(seed);
     float eta2 = randUniform_0_1(seed);
 
@@ -57,10 +71,11 @@ vec3 sampleGGX(float roughness, float seed) {
     return vec3(sin_theta_m * cos_phi_m, cos_theta_m, sin_theta_m * sin_phi_m);
 }
 
-vec3 evaluateBRDF(vec3 i, vec3 n, out vec3 o, float seed, MaterialTMP material) {
+vec3 evaluateBRDF(vec3 i, vec3 n, out vec3 o, out float pdf, float seed, MaterialTMP material) {
 
     // STEP 1. sample microsurface normal m
-    vec3 tangentM = sampleGGX(material.roughness, seed);
+    float thetaM = 0;
+    vec3 tangentM = sampleGGX(material.roughness, seed, thetaM);
 
     // only do isotropic material models for now, the tangent space doesn't matter
     vec3 tangent = vec3(n.y, n.z, -n.x);
@@ -74,8 +89,21 @@ vec3 evaluateBRDF(vec3 i, vec3 n, out vec3 o, float seed, MaterialTMP material) 
 
     // STEP 3. compute Fresnel, NDF, G
 
+    vec3 F0 = mix(vec3(0.04f), material.albedo, material.metallic);
+    vec3 fresnel = schlickFresnel(F0, n, i);
+
+    float NDF = GGXNormalDistFunc(material.roughness, m, n, thetaM);
+
+    float thetaV = acos(dot(n, -i));
+    float G = shadowingFunction(material.roughness, m, n, i, thetaV);
+
 
     // STEP 4. compute pdf
-    // STEP 5. compute radiance
+
+    float reflectionPDF = 4 * dot(i, n) * dot(o, n);
+
+    pdf = reflectionPDF;
+    // STEP 5. compute brdf
+    return fresnel * NDF * G / reflectionPDF;
 }
 

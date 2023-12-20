@@ -27,12 +27,12 @@ bool getClosestHit(Ray ray, out RayHit rayhit) {
 }
 
 vec3 getTransmittedDir(float oldIOR, float newIOR, vec3 N, vec3 dir) {
-    float R_0 = pow((oldIOR - newIOR) / (oldIOR + newIOR), 2);
+    float R_0 = pow((oldIOR - newIOR) / (oldIOR + newIOR), 2.0f);
 
     float r = oldIOR / newIOR;
     float c = dot(-N, dir);
 
-    float fresnel = R_0 + (1 - R_0) * pow(1 - c, 5); // Schlick's Approximation for the Fresnel effect;
+    float fresnel = R_0 + (1 - R_0) * pow(1.0f - c, 5.0f); // Schlick's Approximation for the Fresnel effect;
 
     if (rand(frameSeed) < fresnel) {
         return reflect(dir, N);
