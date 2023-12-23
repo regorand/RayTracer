@@ -13,7 +13,7 @@ PathTracer::PathTracer(int width, int height)
           dirBuffer(mWidth * mHeight * sizeof(float) * 4, GL_DYNAMIC_DRAW),
           multiplierBuffer(mWidth * mHeight * sizeof(float) * 4, GL_DYNAMIC_DRAW),
 
-          mBounceShader(ComputeShader("res/shaders/compute/computeSingleBounce.comp")),
+          mBounceShader(ComputeShader("res/shaders/compute/computeSingleBounceNewMat.comp")),
           mNewPathShader(ComputeShader("res/shaders/compute/CreateNewPath.comp")),
           mClearTargetShader(ComputeShader("res/shaders/compute/clearColorBuffer.comp")) {
 }
@@ -99,7 +99,8 @@ void PathTracer::reloadShaders() {
 }
 
 void PathTracer::newPath() {
-    glm::vec2 seed = dist.sampleVec2();
+    // glm::vec2 seed = dist.sampleVec2();
+    float seed = dist.sampleFloat();
 
     if (enableRecording && !recordedPath.vertices.empty()) {
         recordedPath.vertices.erase(recordedPath.vertices.begin(), recordedPath.vertices.end());
@@ -113,7 +114,7 @@ void PathTracer::newPath() {
     multiplierBuffer.bindToTarget(MULT_BUFFER_TARGET);
 
     mNewPathShader.bind();
-    mNewPathShader.setUniform2f("frameSeed", seed);
+    mNewPathShader.setUniform1f("frameSeed", seed);
     mNewPathShader.setUniform2f("viewPortSize", glm::vec2(mWidth, mHeight));
 
     mNewPathShader.setUniform1i("width", mWidth);

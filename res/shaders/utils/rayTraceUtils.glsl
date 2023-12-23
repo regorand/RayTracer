@@ -26,6 +26,7 @@ bool getClosestHit(Ray ray, out RayHit rayhit) {
     return anyHit;
 }
 
+/*
 vec3 getTransmittedDir(float oldIOR, float newIOR, vec3 N, vec3 dir) {
     float R_0 = pow((oldIOR - newIOR) / (oldIOR + newIOR), 2.0f);
 
@@ -47,6 +48,7 @@ vec3 getTransmittedDir(float oldIOR, float newIOR, vec3 N, vec3 dir) {
         return normalize(r * dir + N * (r * c - sqrt(cos_theta_2_sqr)));
     }
 }
+*/
 
 /*
 vec3 sampleNEETarget(vec2 seed, out Triangle triangle) {

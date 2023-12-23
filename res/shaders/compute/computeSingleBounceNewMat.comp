@@ -70,7 +70,7 @@ void main() {
         return;
     }
 
-    vec2 seed = frameSeed + gl_GlobalInvocationID.xy;
+    // vec2 seed = frameSeed + gl_GlobalInvocationID.xy;
 
     vec3 newPos = rayHit.position;
     vec3 N = rayHit.hitBackface ? -rayHit.normal : rayHit.normal;

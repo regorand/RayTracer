@@ -20,6 +20,8 @@ Question -> Where do I modulate albedo into specular reflection for metallic mat
 */
 
 #include "res/shaders/material/material.glsl"
+#include "res/shaders/utils/rng.glsl"
+#include "res/shaders/utils/Constants.glsl"
 
 float GGXNormalDistFunc(float alpha, vec3 m, vec3 n, float thetaM) {
     float alpha_2 = alpha * alpha;
@@ -45,14 +47,13 @@ float shadowingFunction(float alpha, vec3 m, vec3 n, vec3 i, float thetaV) {
 }
 
 vec3 schlickFresnel(vec3 F0, vec3 n, vec3 i) {
+    //
     float r = oldIOR / newIOR;
     float c = dot(-n, i);
 
     return F0 + (1 - F0) * pow(1.0f - c, 5.0f);
 }
 
-#include "res/shaders/utils/rng.glsl"
-#include "res/shaders/utils/Constants.glsl"
 
 // returns sampled micronormal in tangent space
 vec3 sampleGGX(float roughness, float seed, out float thetaM) {
