@@ -22,15 +22,15 @@ void ComputeShader::unbind()
 void ComputeShader::reloadShader() {
 
     std::string src = loadShaderSource(mSourcePath, true);
-    createShader(src);
+    createShader(src, mSourcePath);
     if (mIsValid) {
         glUseProgram(mGLid);
     }
     unbind();
 }
 
-void ComputeShader::createShader(const std::string &shaderSource) {
-    unsigned int shaderId = compileShader(GL_COMPUTE_SHADER, shaderSource);
+void ComputeShader::createShader(const std::string &shaderSource, const std::string &name) {
+    unsigned int shaderId = compileShader(GL_COMPUTE_SHADER, shaderSource, name);
 
     if (shaderId == 0) {
         mIsValid = false;

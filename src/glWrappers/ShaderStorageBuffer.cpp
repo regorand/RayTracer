@@ -52,3 +52,6 @@ void ShaderStorageBuffer::getData(void *target, unsigned int size, unsigned int 
 void ShaderStorageBuffer::bindBuffer() {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_GlId);
 }
+unsigned int ShaderStorageBuffer::getBuffersSize() {
+    return mBufferSize;
+}

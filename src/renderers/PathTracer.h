@@ -8,6 +8,7 @@
 #include "scene/Scene.h"
 #include "glWrappers/TextureBuffer.h"
 #include "glWrappers/ShaderStorageBuffer.h"
+#include "settings/DataStore.h"
 
 typedef struct path_s {
     std::vector<glm::vec3> vertices;
@@ -64,7 +65,29 @@ typedef struct RenderStatus_s {
         currentSpp = 1;
     }
 
-} RenderStatus ;
+} RenderStatus;
+
+typedef struct ptBuffers_s {
+    ShaderStorageBuffer posBuffer;
+    ShaderStorageBuffer dirBuffer;
+    ShaderStorageBuffer multiplierBuffer;
+
+    ptBuffers_s(unsigned int size, GLenum usage)
+            : posBuffer(size, usage), dirBuffer(size, usage), multiplierBuffer(size, usage) {}
+
+    static std::vector<std::string> getAsList() {
+        return {"Pos buffer", "Dir buffer", "Color buffer"};
+    }
+
+    ShaderStorageBuffer &getByIndex(int index) {
+        switch (index) {
+            case 0: return posBuffer;
+            case 1: return dirBuffer;
+            case 2: return multiplierBuffer;
+            default: return posBuffer;
+        }
+    }
+} PathTracerBuffers;
 
 using namespace std::chrono;
 
@@ -75,9 +98,7 @@ private:
     int mWidth;
     int mHeight;
 
-    ShaderStorageBuffer posBuffer;
-    ShaderStorageBuffer dirBuffer;
-    ShaderStorageBuffer multiplierBuffer;
+    PathTracerBuffers buffers;
 
     ComputeShader mNewPathShader;
     ComputeShader mBounceShader;
@@ -106,12 +127,15 @@ public:
     PathTracer(int width, int height);
 
     void startRender();
+
     RenderState doRenderStep();
 
     void setPathTraceSettings(PathTraceSettings pathTraceSettings);
+
     PathTraceSettings getPathTraceSettings();
 
     RenderStatus getRenderStatus();
+
     RenderState getRenderState();
 
     void cancelRender();
@@ -124,23 +148,31 @@ public:
 
     void clearTarget();
 
-    void buildImGuiWindow();
+    void buildImGuiWindow(DataStore &settings);
+
     void buildImGuiProgressBar(glm::vec2 displaySize);
 
     void enablePathRecording(bool enable);
+
     bool hasRecordedPath();
+
     Path &getRecordedPath();
+
     void setRecordingCoords(glm::vec2 coords);
 
     Scene &getSceneRef();
+
+    PathTracerBuffers &getBuffers();
 
 private:
     bool renderFenceSignalled();
 
     void bindBounce();
+
     void unbindBounce();
 
     void newPath();
+
     void renderSingleBounce();
 
     void recordPathVertex();

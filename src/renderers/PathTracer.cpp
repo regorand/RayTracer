@@ -4,14 +4,13 @@
 #include "PathTracer.h"
 #include "imgui.h"
 #include "deviceShared/BufferBindings.h"
+#include "settings/SettingIndex.h"
 
 PathTracer::PathTracer(int width, int height)
         : mWidth(width),
           mHeight(height),
 
-          posBuffer(mWidth * mHeight * sizeof(float) * 4, GL_DYNAMIC_DRAW),
-          dirBuffer(mWidth * mHeight * sizeof(float) * 4, GL_DYNAMIC_DRAW),
-          multiplierBuffer(mWidth * mHeight * sizeof(float) * 4, GL_DYNAMIC_DRAW),
+          buffers(mWidth * mHeight * sizeof(float) * 4, GL_DYNAMIC_DRAW),
 
           mBounceShader(ComputeShader("res/shaders/compute/computeSingleBounceNewMat.comp")),
           mNewPathShader(ComputeShader("res/shaders/compute/CreateNewPath.comp")),
@@ -109,9 +108,9 @@ void PathTracer::newPath() {
 
     mCurrentTarget->bindAsImage(TARGET_TEXTURE_TARGET);
 
-    posBuffer.bindToTarget(POS_BUFFER_TARGET);
-    dirBuffer.bindToTarget(DIR_BUFFER_TARGET);
-    multiplierBuffer.bindToTarget(MULT_BUFFER_TARGET);
+    buffers.posBuffer.bindToTarget(POS_BUFFER_TARGET);
+    buffers.dirBuffer.bindToTarget(DIR_BUFFER_TARGET);
+    buffers.multiplierBuffer.bindToTarget(MULT_BUFFER_TARGET);
 
     mNewPathShader.bind();
     mNewPathShader.setUniform1f("frameSeed", seed);
@@ -177,9 +176,9 @@ void PathTracer::setTargetp(Texture *target) {
 void PathTracer::bindBounce() {
     mCurrentTarget->bindAsImage(TARGET_TEXTURE_TARGET);
 
-    posBuffer.bindToTarget(POS_BUFFER_TARGET);
-    dirBuffer.bindToTarget(DIR_BUFFER_TARGET);
-    multiplierBuffer.bindToTarget(MULT_BUFFER_TARGET);
+    buffers.posBuffer.bindToTarget(POS_BUFFER_TARGET);
+    buffers.dirBuffer.bindToTarget(DIR_BUFFER_TARGET);
+    buffers.multiplierBuffer.bindToTarget(MULT_BUFFER_TARGET);
 
     mScene.bind();
 
@@ -248,12 +247,40 @@ void PathTracer::setScene(Scene &scene) {
     mScene = scene;
 }
 
-void PathTracer::buildImGuiWindow() {
+void PathTracer::buildImGuiWindow(DataStore &settings) {
     PathSettings &pathSettings = mPathTraceSettings.pathSettings;
     if (ImGui::CollapsingHeader("Path Tracer Control")) {
 
         ImVec2 windowSize = ImGui::GetWindowSize();
         ImVec2 buttonSize = ImVec2(windowSize.x * 0.9, 25);
+
+        ImGui::Checkbox("Show Pathtrace debug",
+                        settings.getPointer<bool>(SHOW_PATHTRACE_DEBUG)
+        );
+
+        if (settings.getOrElse(SHOW_PATHTRACE_DEBUG, false)) {
+            auto items = PathTracerBuffers::getAsList();
+            int currentIndex = settings.getOrInit<int>(PATHTRACE_DEBUG_BUFFER_INDEX);
+            currentIndex = glm::min(glm::max(currentIndex, 0), (int) items.size() - 1);
+
+            std::string selected = items[currentIndex];
+            if (ImGui::BeginCombo(" Buffer", items[currentIndex].c_str())) {
+                for (int i = 0; i < items.size(); i++) {
+                    bool is_selected = (selected == items[i]); // You can store your selection however you want, outside or inside your objects
+                    if (ImGui::Selectable(items[i].c_str(), is_selected)) {
+                        selected = items[i];
+                        currentIndex = i;
+                    }
+                    if (is_selected)
+                        ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
+
+                }
+
+                ImGui::EndCombo();
+                settings.store(PATHTRACE_DEBUG_BUFFER_INDEX, currentIndex);
+            }
+
+        }
 
         if (ImGui::Button("Reload compute shaders", buttonSize)) {
             reloadShaders();
@@ -278,7 +305,7 @@ void PathTracer::buildImGuiWindow() {
         std::string sppString = "SPP of current image: " + std::to_string(mSppCount);
         ImGui::Text("%s", sppString.c_str());
 
-        if (ImGui::CollapsingHeader("Path Settings")) {
+        if (ImGui::CollapsingHeader("Path DataStore")) {
             ImGui::Indent(8.0f);
             ImGui::Checkbox("Russian Roulette", &pathSettings.russianRoulette);
             if (pathSettings.russianRoulette) {
@@ -325,7 +352,7 @@ void PathTracer::recordPathVertex() {
         int offset = offsetIndex * sizeof(glm::vec4);
 
         glm::vec4 vertex;
-        posBuffer.getData(&vertex, sizeof(glm::vec4), offset);
+        buffers.posBuffer.getData(&vertex, sizeof(glm::vec4), offset);
 
         recordedPath.vertices.emplace_back(vertex);
         recordedPath.pathLength++;
@@ -335,4 +362,7 @@ void PathTracer::recordPathVertex() {
 
 Scene &PathTracer::getSceneRef() {
     return mScene;
+}
+PathTracerBuffers &PathTracer::getBuffers() {
+    return buffers;
 }

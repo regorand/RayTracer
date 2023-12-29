@@ -98,14 +98,15 @@ void main() {
     }
 
     newPos += eps * newDir;
-    const bool debug = false;
+    const bool debug = true;
 
     if (debug) {
-        vec3 debugColor = vec3(float(singleDimCoord) / 1200000);
+        vec3 debugColor = vec3(1, 0, 1);
         vec4 newValue = vec4(debugColor, 1);
 
         imageStore(imgOutput, bufferCoords, newValue);
 
+        posData[singleDimCoord] = vec4(1, 0, 1, 1);
         mulData[singleDimCoord] = vec4(0);
         return;
     }

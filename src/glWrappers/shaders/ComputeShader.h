@@ -23,7 +23,7 @@ public:
     void unbind();
 
     void reloadShader();
-    void createShader(const std::string &shaderSource);
+    void createShader(const std::string &shaderSource, const std::string &name);
 
     bool setUniform1i(const std::string& name, const int value);
     bool setUniform1ui(const std::string& name, const unsigned int value);

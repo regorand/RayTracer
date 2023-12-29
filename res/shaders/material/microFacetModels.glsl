@@ -47,8 +47,7 @@ float shadowingFunction(float alpha, vec3 m, vec3 n, vec3 i, float thetaV) {
 }
 
 vec3 schlickFresnel(vec3 F0, vec3 n, vec3 i) {
-    //
-    float r = oldIOR / newIOR;
+    // float r = oldIOR / newIOR;
     float c = dot(-n, i);
 
     return F0 + (1 - F0) * pow(1.0f - c, 5.0f);

@@ -45,6 +45,6 @@ private:
 	unsigned int getUniformLocation(const std::string name);
 	void printUniformNotFound(std::string name);
 
-	void createShader(const std::string& vertexShader, const std::string& fragmentShader);
+	void createShader(const std::string& vertexShader, const std::string& fragmentShader, const std::string &vertName, const std::string &fragName);
 };
 

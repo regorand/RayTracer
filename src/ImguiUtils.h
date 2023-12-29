@@ -1,24 +1,10 @@
 #pragma once
 
 #include "imgui.h"
+#include "settings/DataStore.h"
 
-typedef struct ImGuiMenuSettings_s{
-    bool viewPathTraceOutput = false;
+void buildImguiMenu(DataStore &settings);
 
-    bool showStatsWindow;
-    bool showControlPanel;
+void buildImguiAppStats(DataStore &settings);
 
-    ImVec2 menuBarSize;
-
-    ImGuiMenuSettings_s() {
-        showStatsWindow = true;
-        showControlPanel = true;
-
-        menuBarSize = ImVec2(0, 0);
-    }
-} ImGuiMenuSettings;
-
-
-void buildImguiMenu(ImGuiMenuSettings &settings);
-
-void buildImguiAppStats(ImGuiMenuSettings &settings);
+glm::vec2 ImVec2ToGlmVec2(ImVec2 vec);

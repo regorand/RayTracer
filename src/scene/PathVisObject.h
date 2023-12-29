@@ -22,4 +22,6 @@ public:
 
     VertexArray &getVertexArray();
     IndexBuffer &getIndexBuffer();
+
+    bool hasVertices();
 };

@@ -10,6 +10,7 @@
 
 BufferRenderer::BufferRenderer()
     : mShader(Shader("res/shaders/raster/fullscreen.vert", "res/shaders/raster/fullscreen.frag")),
+      mStorageDisplayShader("res/shaders/raster/fullscreen.vert", "res/shaders/raster/displayStorageBuffer.frag"),
         mVa(std::make_shared<VertexArray>()),
         mVerts(std::make_shared<ArrayBuffer>((void *) VERTICES, 4 * 3 * sizeof(float), true))
 {
@@ -41,6 +42,7 @@ void BufferRenderer::render(HostBuffer *buffer) {
 
 void BufferRenderer::reloadShaders() {
     mShader.reloadShader();
+    mStorageDisplayShader.reloadShader();
 }
 
 void BufferRenderer::render(Texture *texture) {
@@ -68,4 +70,23 @@ void BufferRenderer::buildImGuiWindow() {
         }
     }
 
+}
+void BufferRenderer::renderStorageBuffer(ShaderStorageBuffer &buffer,
+                                         glm::vec2 extents) {
+
+    mVa->bind();
+    mVerts->bind();
+
+    mStorageDisplayShader.bind();
+
+    mStorageDisplayShader.setUniform1i("width", static_cast<int>(extents.x));
+    mStorageDisplayShader.setUniform1i("totalBufferSize", buffer.getBuffersSize());
+
+    buffer.bindToTarget(0);
+
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    mVa->unbind();
+    mVerts->unbind();
+    mShader.unbind();
 }

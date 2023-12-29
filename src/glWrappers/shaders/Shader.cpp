@@ -42,18 +42,18 @@ void Shader::reloadShader()
 {
 	std::string vertSrc = read_file(m_ShaderDef.vertex_path);
 	std::string fragSrc = read_file(m_ShaderDef.fragment_path);
-	createShader(vertSrc, fragSrc);
+	createShader(vertSrc, fragSrc, m_ShaderDef.vertex_path, m_ShaderDef.fragment_path);
 	if (mIsValid) {
 		glUseProgram(mGLid);
 	}
 	unbind();
 }
 
-void Shader::createShader(const std::string& vertexShader, const std::string& fragmentShader)
+void Shader::createShader(const std::string& vertexShader, const std::string& fragmentShader, const std::string &vertName, const std::string &fragName)
 {
     mGLid = glCreateProgram();
-	unsigned int vs = compileShader(GL_VERTEX_SHADER, vertexShader);
-	unsigned int fs = compileShader(GL_FRAGMENT_SHADER, fragmentShader);
+	unsigned int vs = compileShader(GL_VERTEX_SHADER, vertexShader, vertName);
+	unsigned int fs = compileShader(GL_FRAGMENT_SHADER, fragmentShader, fragName);
 
 	if (vs == 0 || fs == 0) {
         mIsValid = false;

@@ -33,3 +33,7 @@ VertexArray &PathVisObject::getVertexArray() {
 IndexBuffer &PathVisObject::getIndexBuffer() {
     return mIb;
 }
+
+bool PathVisObject::hasVertices() {
+    return !mVertices.empty();
+}

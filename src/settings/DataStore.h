@@ -2,8 +2,9 @@
 
 #include <map>
 #include <string>
+#include "glm/vec2.hpp"
 
-class Settings {
+class DataStore {
 private:
 
     template<typename T>
@@ -14,7 +15,7 @@ private:
             value = new T;
         }
 
-        DataElement(T data) {
+        explicit DataElement(T data) {
             value = new T;
             *value = data;
         }
@@ -26,9 +27,10 @@ private:
 
     std::map<int, DataElement<bool>> boolStore;
     std::map<int, DataElement<int>> intStore;
+    std::map<int, DataElement<glm::vec2>> vec2Store;
 
 public:
-    Settings();
+    DataStore();
 
     template<typename T>
     void store(int index, T data) {
@@ -48,6 +50,19 @@ public:
     }
 
     template<typename T>
+    T getOrInit(int index) {
+        std::map<int, DataElement<T>> *map = getMapP<T>();
+
+        return *(*map)[index].value;
+    }
+
+    template<typename T>
+    T getOrElse(int index, T elseVal) {
+        std::optional<T> res = get<T>(index);
+        return res.value_or(elseVal);
+    }
+
+    template<typename T>
     bool exists(int index) {
         auto map = getMapP<T>();
 
@@ -60,6 +75,7 @@ public:
 
         return (*map)[index].value;
     }
+
 private:
     template<typename T>
     std::optional<std::map<int, DataElement<T>> *> getMap() {

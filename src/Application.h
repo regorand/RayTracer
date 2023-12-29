@@ -9,6 +9,7 @@
 #include "userInput/KeyStateManager.h"
 #include "renderers/Rasterizer.h"
 #include "userInput/CameraManipulator.h"
+#include "settings/DataStore.h"
 #include <GLFW/glfw3.h>
 
 typedef struct RenderSettings_s {
@@ -30,6 +31,8 @@ private:
 
     int displayWidth, displayHeight;
 
+    DataStore settings;
+
     KeyStateManager *keyStateManager = KeyStateManager::getInstance();
     CameraManipulator cameraManipulator;
 
@@ -40,10 +43,10 @@ public:
 
 private:
     void
-    buildImguiControlSideBar(glm::vec2 displaySize, ImGuiMenuSettings &menuSettings, PathTracer &pt, BufferRenderer &br,
+    buildImguiControlSideBar(glm::vec2 displaySize, PathTracer &pt, BufferRenderer &br,
                              Rasterizer &rasterizer, PostProcSettings &postProcSettings);
 
-    void buildImguiCameraControls(PathTracer &pt,Rasterizer &rasterizer);
+    void buildImguiCameraControls(PathTracer &pt, Rasterizer &rasterizer);
 };
 
 

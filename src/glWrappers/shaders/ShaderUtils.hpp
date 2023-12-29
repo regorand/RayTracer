@@ -16,7 +16,7 @@ inline std::string getShaderTypeString(unsigned int type) {
     }
 }
 
-inline unsigned int compileShader(unsigned int type, const std::string &source) {
+inline unsigned int compileShader(unsigned int type, const std::string &source, const std::string &name) {
     unsigned int id = glCreateShader(type);
     const char *src = source.c_str();
     glShaderSource(id, 1, &src, nullptr);
@@ -32,7 +32,7 @@ inline unsigned int compileShader(unsigned int type, const std::string &source) 
 
         glGetShaderInfoLog(id, length, &length, message);
 
-        std::cout << "Failed to compile " << getShaderTypeString(type) << std::endl;
+        std::cout << "Failed to compile " << getShaderTypeString(type) << ": " << name << std::endl;
         std::cout << message << std::endl;
 
         glDeleteShader(id);

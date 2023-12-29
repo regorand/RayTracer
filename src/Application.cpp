@@ -9,6 +9,7 @@
 #include "utils/SceneCreateUtils.h"
 #include "renderers/PostProcessor.h"
 #include "renderers/Rasterizer.h"
+#include "settings/SettingIndex.h"
 #include <imgui.h>
 
 Application::Application() {
@@ -112,14 +113,18 @@ int Application::run() {
     pathTracer.setRecordingCoords(glm::vec2((displayWidth - 1) / 2 + 35, (displayHeight - 1) / 3));
     pathTracer.enablePathRecording(true);
 
+    /*
     pathTracer.startRender();
     RenderState state = pathTracer.getRenderState();
     while (state != RenderState::IDLE) {
         state = pathTracer.doRenderStep();
     }
+     */
 
     PathVisObject pathObj = PathVisObject(pathTracer.getRecordedPath().vertices);
-    rasterizer.getSceneRef().addPathObject(pathObj);
+    if (pathObj.hasVertices()) {
+        rasterizer.getSceneRef().addPathObject(pathObj);
+    }
     // rasterizer.getSceneRef().getCamera().setLocation(glm::vec3(9, -5, 15));
     // rasterizer.getSceneRef().getCamera().setViewDir(glm::normalize(glm::vec3(-1, 0, -1)));
 
@@ -128,11 +133,14 @@ int Application::run() {
 
     pathTracer.setPathTraceSettings(tmpSettings);
 
-    ImGuiMenuSettings menuSettings;
-
     pathTracer.enablePathRecording(false);
 
     keyStateManager->getMouseAndGetDiff(window);
+
+    settings.store(SHOW_STATS_WINDOW, false);
+    settings.store(SHOW_CONTROL_PANEL, true);
+    settings.store(SHOW_PATHTRACE_OUTPUT, false);
+    settings.store(SHOW_PATHTRACE_DEBUG, false);
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
@@ -146,47 +154,58 @@ int Application::run() {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        buildImguiMenu(menuSettings);
+        buildImguiMenu(settings);
 
-        if (menuSettings.showStatsWindow) {
-            buildImguiAppStats(menuSettings);
+        if (settings.get<bool>(SHOW_STATS_WINDOW).value_or(false)) {
+            buildImguiAppStats(settings);
         }
 
-        if (menuSettings.showControlPanel) {
-            buildImguiControlSideBar(glm::vec2(displayWidth, displayHeight), menuSettings, pathTracer, br,
+
+        if (settings.getOrElse<bool>(SHOW_CONTROL_PANEL, false)) {
+            buildImguiControlSideBar(glm::vec2(displayWidth, displayHeight), pathTracer, br,
                                      rasterizer, postProcSettings);
+
+            if (state != RenderState::IDLE) pathTracer.buildImGuiProgressBar(glm::vec2(displayWidth, displayHeight));
+
+            ImGui::Render();
+
+
+            glViewport(0, 0, displayWidth, displayHeight);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+
+            if (settings.getOrElse(SHOW_PATHTRACE_OUTPUT, false)) {
+                postProcessor.applyPostProcessing(renderTarget, displayBuffer, postProcSettings);
+
+                if (settings.getOrElse(SHOW_PATHTRACE_DEBUG, false)) {
+                    int currentIndex = settings.getOrElse(PATHTRACE_DEBUG_BUFFER_INDEX, 0);
+                    int maxIndex = PathTracerBuffers::getAsList().size();
+                    currentIndex = glm::min(glm::max(currentIndex, 0), maxIndex);
+
+                    br.renderStorageBuffer(pathTracer.getBuffers().getByIndex(currentIndex),
+                                           glm::vec2(displayWidth, displayHeight));
+                } else {
+                    br.render(&displayBuffer);
+                }
+            } else {
+                glm::vec2 diff = keyStateManager->getMouseAndGetDiff(window);
+                cameraManipulator.updateCamera(rasterizer.getSceneRef().getCamera(), keyStateManager, diff,
+                                               glm::vec2(displayWidth, displayHeight));
+
+                rasterizer.render();
+                rasterizer.renderPaths();
+                CameraVisBuffers buffers;
+                pathTracer.getSceneRef().getCamera().buildCameraVisBuffers(buffers);
+                rasterizer.renderCameraFrustum(buffers);
+            }
+
+            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+
+            glfwSwapBuffers(window);
         }
-
-        if (state != RenderState::IDLE) pathTracer.buildImGuiProgressBar(glm::vec2(displayWidth, displayHeight));
-
-        ImGui::Render();
-
-
-        glViewport(0, 0, displayWidth, displayHeight);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-
-        if (menuSettings.viewPathTraceOutput) {
-            postProcessor.applyPostProcessing(renderTarget, displayBuffer, postProcSettings);
-
-            br.render(&displayBuffer);
-        } else {
-            glm::vec2 diff = keyStateManager->getMouseAndGetDiff(window);
-            cameraManipulator.updateCamera(rasterizer.getSceneRef().getCamera(), keyStateManager, diff, glm::vec2(displayWidth, displayHeight));
-
-            rasterizer.render();
-            rasterizer.renderPaths();
-            CameraVisBuffers buffers;
-            pathTracer.getSceneRef().getCamera().buildCameraVisBuffers(buffers);
-            rasterizer.renderCameraFrustum(buffers);
-        }
-
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-
-        glfwSwapBuffers(window);
     }
 
     ImGui_ImplOpenGL3_Shutdown();
@@ -199,20 +218,30 @@ int Application::run() {
     return 0;
 }
 
-void Application::buildImguiControlSideBar(glm::vec2 displaySize, ImGuiMenuSettings &menuSettings, PathTracer &pt,
-                                           BufferRenderer &br, Rasterizer &rasterizer, PostProcSettings &postProcSettings) {
+
+void Application::buildImguiControlSideBar(glm::vec2 displaySize, PathTracer &pt,
+                                           BufferRenderer &br, Rasterizer &rasterizer,
+                                           PostProcSettings &postProcSettings) {
+
     float windowWidth = displaySize.x / 6.0f;
 
+    glm::vec2 menuBarSize = settings.get<glm::vec2>(MENU_BAR_SIZE).value_or(glm::vec2(0));
 
     ImGui::SetNextWindowPos(
-            ImVec2(displaySize.x - windowWidth, menuSettings.menuBarSize.y),
-            ImGuiCond_Once);
-    ImGui::SetNextWindowSize(ImVec2(windowWidth, displaySize.y), ImGuiCond_Once);
-    ImGui::Begin("Control Panel", &menuSettings.showControlPanel,
+            ImVec2(displaySize.x - windowWidth, menuBarSize.y),
+            ImGuiCond_Once
+    );
+    ImGui::SetNextWindowSize(ImVec2(windowWidth, displaySize.y), ImGuiCond_Once
+    );
+    ImGui::Begin("Control Panel", settings.
+                         getPointer<bool>(SHOW_CONTROL_PANEL),
                  ImGuiWindowFlags_NoResize
                  | ImGuiWindowFlags_NoMove);
 
-    ImGui::Checkbox("Show Pathtrace output", &menuSettings.viewPathTraceOutput);
+// ImGui::Checkbox("Show Pathtrace output", &menuSettings.viewPathTraceOutput);
+    ImGui::Checkbox("Show Pathtrace output", settings.
+            getPointer<bool>(SHOW_PATHTRACE_OUTPUT)
+    );
 
     ImGui::Indent(8.0f);
 
@@ -221,27 +250,34 @@ void Application::buildImguiControlSideBar(glm::vec2 displaySize, ImGuiMenuSetti
     ImGui::Unindent(8.0f);
 
     ImGui::Spacing();
+
     ImGui::Separator();
+
     ImGui::Spacing();
 
     ImGui::Indent(8.0f);
 
-    pt.buildImGuiWindow();
+    pt.buildImGuiWindow(settings);
 
     ImGui::Unindent(8.0f);
 
     ImGui::Spacing();
+
     ImGui::Separator();
+
     ImGui::Spacing();
 
     ImGui::Indent(8.0f);
 
-    buildImguiCameraControls(pt, rasterizer);
+    buildImguiCameraControls(pt, rasterizer
+    );
 
     ImGui::Unindent(8.0f);
 
     ImGui::Spacing();
+
     ImGui::Separator();
+
     ImGui::Spacing();
 
     ImGui::Indent(8.0f);
@@ -254,6 +290,7 @@ void Application::buildImguiControlSideBar(glm::vec2 displaySize, ImGuiMenuSetti
     ImGui::Unindent(8.0f);
 
     ImGui::End();
+
 }
 
 void Application::buildImguiCameraControls(PathTracer &pt, Rasterizer &rasterizer) {
