@@ -17,7 +17,6 @@ enum SettingIndex {
      * Interaction DataStore
      */
 
-
     /*
      * Window DataStore
      */

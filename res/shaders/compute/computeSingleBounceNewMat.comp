@@ -89,17 +89,14 @@ void main() {
     } else /* Diffuse */ {
         MaterialTMP mat;
         mat.albedo = rayHit.mat.color.xyz;
-        mat.roughness = 0.5f;
+        mat.roughness = 0.01f;
         mat.metallic = 0.0f;
 
         float pdf = 1;
         vec3 brdf = evaluateBRDF(dir, N, newDir, pdf, instanceSeed, mat);
 
-        mul *= brdf / pdf;
-        // newDir = getNewDirection(instanceSeed, N);
-
         float newDirLambert = max(0.0f, dot(N, newDir));
-        // mul *= newDirLambert * rayHit.mat.color.xyz; //mat.albedo;
+        mul *= newDirLambert * brdf / pdf;
     }
 
     newPos += eps * newDir;

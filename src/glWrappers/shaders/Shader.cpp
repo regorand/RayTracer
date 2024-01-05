@@ -35,7 +35,8 @@ unsigned int Shader::getUniformLocation(const std::string name)
 
 void Shader::printUniformNotFound(std::string name)
 {
-    std::cout << "Could not find Uniform with name \"" << name << "\"" << std::endl;
+    // TODO better system for debug output
+    // std::cout << "Could not find Uniform with name \"" << name << "\"" << std::endl;
 }
 
 void Shader::reloadShader()

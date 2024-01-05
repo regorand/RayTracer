@@ -31,7 +31,7 @@ float GGXNormalDistFunc(float alpha, vec3 m, vec3 n, float thetaM) {
     float tanThetaM = tan(thetaM);
 
     return alpha_2 * xi / (PI * pow(cosThetaM, 4.0f) * pow(alpha_2 + pow(tanThetaM, 2.0f), 2.0f));
-    // NDF in desmos f\left(x\right)=\frac{t\cdot t\cdot\max\left(\cos\left(x\right),\ 0\right)}{\pi\left(\cos\left(x\right)\right)^{4}\left(t^{2}+\tan^{2}\left(x\right)\right)^{2}}\left\{-\frac{\pi}{2}\le x\le\ \frac{\pi}{2}\right\}
+    // NDF in desmos f\left(x\right)=\{t\cdot t\cdot\max\left(\cos\left(x\right),\ 0\right)}{\pi\left(\cos\left(x\right)\right)^{4}\left(t^{2}+\tan^{2}\left(x\right)\right)^{2}}\left\{-\frac{\pi}{2}\le x\le\ \frac{\pi}{2}\right\}
 }
 
 float shadowingFunction(float alpha, vec3 m, vec3 n, vec3 i, float thetaV) {
@@ -73,16 +73,20 @@ vec3 sampleGGX(float roughness, inout uint seed, out float thetaM) {
 }
 
 vec3 evaluateBRDF(vec3 i, vec3 n, out vec3 o, out float pdf, inout uint seed, MaterialTMP material) {
+    vec3 brdf = vec3(1);
+    if (material.metallic < 1.0 /* TODO && material.transmission < 1.0 */) {
+        brdf = material.albedo; // diffuse term here
+    }
+
     if (abs(material.roughness) < 1e-3) {
         o = n;
         pdf = 1;
-        return vec3(1); // TODO which mirror color ?
+        return brdf; // TODO which mirror color ?
     }
 
     // STEP 1. sample microsurface normal m
     float thetaM = 0;
     vec3 tangentM = sampleGGX(material.roughness, seed, thetaM);
-    // vec3 tangentM = sampleHemisphereUniform(seed);
 
     // only do isotropic material models for now, the tangent space doesn't matter
     vec3 tangent = vec3(n.y, n.z, -n.x);
@@ -105,12 +109,11 @@ vec3 evaluateBRDF(vec3 i, vec3 n, out vec3 o, out float pdf, inout uint seed, Ma
     float G = shadowingFunction(material.roughness, m, n, i, thetaV);
 
     // STEP 4. compute pdf
+    pdf = NDF * dot(m, n);
 
-    float reflectionPDF = 4 * dot(i, n) * dot(o, n);
-
-    pdf = reflectionPDF;
     // STEP 5. compute brdf
+    float demon = 4 * dot(i, n) * dot(o, n);
 
-    return fresnel * NDF * G;
+    return brdf * fresnel * NDF * G / demon;
 }
 
