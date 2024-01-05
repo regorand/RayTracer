@@ -86,11 +86,6 @@ void main() {
         imageStore(imgOutput, bufferCoords, newValue);
         mul = vec3(0);
     } else /* Diffuse */ {
-        MaterialTMP mat;
-        mat.albedo = rayHit.mat.albedo;
-        mat.roughness = 0.01f;
-        mat.metallic = 0.0f;
-
         float pdf = 1;
         vec3 brdf = evaluateBRDF(dir, N, newDir, pdf, instanceSeed, rayHit.mat);
 

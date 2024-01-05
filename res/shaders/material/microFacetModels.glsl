@@ -72,7 +72,7 @@ vec3 sampleGGX(float roughness, inout uint seed, out float thetaM) {
     return vec3(sin_theta_m * cos_phi_m, cos_theta_m, sin_theta_m * sin_phi_m);
 }
 
-vec3 evaluateBRDF(vec3 i, vec3 n, out vec3 o, out float pdf, inout uint seed, MaterialTMP material) {
+vec3 evaluateBRDF(vec3 i, vec3 n, out vec3 o, out float pdf, inout uint seed, Material material) {
     vec3 brdf = vec3(1);
     if (material.metallic < 1.0 /* TODO && material.transmission < 1.0 */) {
         brdf = material.albedo.xyz; // diffuse term here
@@ -81,7 +81,7 @@ vec3 evaluateBRDF(vec3 i, vec3 n, out vec3 o, out float pdf, inout uint seed, Ma
     if (abs(material.roughness) < 1e-3) {
         o = reflect(i, n);
         pdf = 1;
-        return brdf / max(1e-3, dot(n, o)); // TODO which mirror color ?
+        return material.albedo.xyz / max(1e-3, dot(n, o)); // TODO which mirror color ?
     }
 
     // STEP 1. sample microsurface normal m

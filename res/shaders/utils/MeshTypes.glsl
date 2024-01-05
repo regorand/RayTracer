@@ -6,18 +6,12 @@ struct Vertex {
     vec4 uv;
 };
 
-/*
-struct Material {
-    vec4 color;
-};
-*/
-
 struct Triangle {
     Vertex V0;
     Vertex V1;
     Vertex V2;
 
-    MaterialTMP mat;
+    Material mat;
 };
 
 struct AABB {

@@ -18,7 +18,7 @@ layout(std430, binding = OBJECT_BUFFER_BINDING) buffer objectList
 
 layout(std430, binding = MATERIAL_BUFFER_BINDING) buffer materialList
 {
-    MaterialTMP materials[];
+    Material materials[];
 };
 
 

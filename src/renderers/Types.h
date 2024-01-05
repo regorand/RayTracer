@@ -26,7 +26,7 @@ struct Material
 };
  */
 
-struct MaterialTMP {
+struct Material {
     glm::vec4 albedo;
     float roughness;
     float metallic;
@@ -49,7 +49,7 @@ struct Triangle
     Vertex V1;
     Vertex V2;
 
-    MaterialTMP material{};
+    Material material{};
 };
 
 struct AABB {

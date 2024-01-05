@@ -22,7 +22,7 @@ void createCornellBox(std::vector<MeshObject> &outObjects) {
         }
     }
 
-    MaterialTMP lowRoughWhite{};
+    Material lowRoughWhite{};
     lowRoughWhite.albedo = glm::vec4(1.0f);
     lowRoughWhite.roughness = 0.0f;
     lowRoughWhite.emission = 0.0f;
@@ -89,7 +89,7 @@ void createCornellBox(std::vector<MeshObject> &outObjects) {
     Vertex UU;
     UU.pos = glm::vec3(lightHigher.x, higher.y - eps, lightHigher.y);
 
-    MaterialTMP lightMat = WHITE_ROUGH;
+    Material lightMat = WHITE_ROUGH;
     lightMat.emission = 1.0;
 
     Triangle lightTri1;
@@ -161,7 +161,7 @@ void createSampleBoxes(std::vector<MeshObject> &outObjects) {
     outObjects.push_back(box);
 }
 
-void createBox(std::vector<Triangle> &outTriangles, MaterialTMP mat, glm::vec3 lower, glm::vec3 higher,
+void createBox(std::vector<Triangle> &outTriangles, Material mat, glm::vec3 lower, glm::vec3 higher,
                unsigned int faceFlags) {
     std::vector<Vertex> wallVertices;
 
@@ -214,7 +214,7 @@ void createBox(std::vector<Triangle> &outTriangles, MaterialTMP mat, glm::vec3 l
 }
 
 Triangle createTriangle(std::vector<Vertex> &vertices, unsigned int index1, unsigned int index2, unsigned int index3,
-                        MaterialTMP mat) {
+                        Material mat) {
     Triangle triangle;
     triangle.V0 = vertices[index1];
     triangle.V1 = vertices[index2];

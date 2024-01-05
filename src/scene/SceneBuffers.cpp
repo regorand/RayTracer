@@ -3,14 +3,14 @@
 #include "deviceShared/BufferBindings.h"
 
 bool SceneBuffers::createGPUBuffers(std::vector<Triangle> &triangles, std::vector<BufferMeshObject> &objectIds,
-                                    std::vector<MaterialTMP> &materials, std::vector<unsigned int> &emissiveObjects) {
+                                    std::vector<Material> &materials, std::vector<unsigned int> &emissiveObjects) {
     mTriangleSSBO = SSBO(triangles.data(), sizeof(Triangle) * triangles.size(), GL_STATIC_READ,
                          TRIANGLE_BUFFER_BINDING);
 
     mObjectSSBO = SSBO(objectIds.data(), sizeof(BufferMeshObject) * objectIds.size(), GL_STATIC_READ,
                        OBJECT_BUFFER_BINDING);
 
-    mMaterialSSBO = SSBO(materials.data(), sizeof(MaterialTMP) * materials.size(), GL_STATIC_READ,
+    mMaterialSSBO = SSBO(materials.data(), sizeof(Material) * materials.size(), GL_STATIC_READ,
                          MATERIAL_BUFFER_BINDING);
 
     mEmissiveSSBO = SSBO(emissiveObjects.data(), sizeof(unsigned int) * emissiveObjects.size(), GL_STATIC_READ,

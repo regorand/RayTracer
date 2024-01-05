@@ -1,4 +1,4 @@
-struct MaterialTMP {
+struct Material {
     vec4 albedo;
     float roughness;
     float metallic;
