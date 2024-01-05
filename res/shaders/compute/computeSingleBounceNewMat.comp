@@ -79,7 +79,8 @@ void main() {
     if (rayHit.mat.emission > 0.0f) {
         const vec3 LIGHT_INTENSITY = vec3(15);
 
-        vec3 color = mul * LIGHT_INTENSITY;
+        float emissionLambert = max(0.0f, dot(N, -ray.direction));
+        vec3 color = emissionLambert * mul * LIGHT_INTENSITY;
         vec4 prevBufferContent = imageLoad(imgOutput, bufferCoords);
         vec4 newValue = prevBufferContent + vec4(color, 0);
 
