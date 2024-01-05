@@ -1,10 +1,12 @@
 struct MaterialTMP {
-    vec3 albedo;
+    vec4 albedo;
     float roughness;
     float metallic;
+    float transparency;
+    float emission;
     // TODO
     // transmittance factor ?
-    // IOR
+    // IORMaterial
 
     // https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#metallic-roughness-material
     // sample metallic value to decide if to evalutate metallic or dielectric bsdf ?

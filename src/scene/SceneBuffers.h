@@ -14,7 +14,7 @@ private:
 public:
     bool createGPUBuffers(std::vector<Triangle> &triangles,
                           std::vector<BufferMeshObject> &objectIds,
-                          std::vector<Material> &materials,
+                          std::vector<MaterialTMP> &materials,
                           std::vector<unsigned int> &emissiveObjects);
 
     void bind();

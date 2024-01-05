@@ -8,6 +8,7 @@ struct Vertex
     alignas(16) glm::vec2 uv{};
 };
 
+/*
 struct Material
 {
     alignas(16) glm::vec4 color{};
@@ -23,6 +24,24 @@ struct Material
         // boolsSpecTrans = glm::vec4(0);
     }
 };
+ */
+
+struct MaterialTMP {
+    glm::vec4 albedo;
+    float roughness;
+    float metallic;
+    float transparency;
+    float emission;
+    // TODO
+    // IOR, specular tint, etc.
+
+    // https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#metallic-roughness-material
+    // sample metallic value to decide if to evalutate metallic or dielectric bsdf ?
+    // -> need to consider this in pdf -> is that just a constant factor ?
+    // need sheen layer for colorless highlights ?
+    // metallic seems to have higher prio than transmittance of dielectric
+    // -> look at principled bsdf shader example!
+};
 
 struct Triangle
 {
@@ -30,7 +49,7 @@ struct Triangle
     Vertex V1;
     Vertex V2;
 
-    Material material{};
+    MaterialTMP material{};
 };
 
 struct AABB {

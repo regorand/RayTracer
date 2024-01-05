@@ -9,6 +9,6 @@ struct RayHit {
     float dist;
     vec3 position;
     vec3 normal;
-    Material mat;
+    MaterialTMP mat;
     bool hitBackface;
 };

@@ -67,9 +67,12 @@ void MeshObject::createRasterBuffers() {
             data.emplace_back(vertex.pos);
             data.emplace_back(normal);
 
+            // TODO display different materials differently (see commented out code before)
+            data.emplace_back(triangle.material.albedo);
+
+            /*
             unsigned int compValue = reinterpret_cast<unsigned int &>(triangle.material.color.w);
             if (compValue == 0) {
-                data.emplace_back(triangle.material.color);
             } else if ((compValue & EMISSIVE_FLAG) != 0) {
                 data.emplace_back(glm::vec4(1, 1, 1, 0));
             } else if ((compValue & TRANSMISSIVE_FLAG) != 0) {
@@ -77,6 +80,7 @@ void MeshObject::createRasterBuffers() {
             } else {
                 data.emplace_back(glm::vec4(0.6) * glm::vec4(1, 1, 1, 0));
             }
+             */
 
         }
 
@@ -115,16 +119,12 @@ IndexBuffer &MeshObject::getIndexBuffer() {
 
 bool MeshObject::isTransmissive() {
     if (mTriangles.empty()) return false;
-    unsigned int compValue = reinterpret_cast<unsigned int &>(mTriangles.front().material.color.w);
-
-    return (compValue & TRANSMISSIVE_FLAG) != 0;
+    return mTriangles.front().material.transparency > 0.99f;
 }
 
 bool MeshObject::isEmissive() {
     // return mIsEmissive;
 
     if (mTriangles.empty()) return false;
-    unsigned int compValue = reinterpret_cast<unsigned int &>(mTriangles.front().material.color.w);
-
-    return (compValue & EMISSIVE_FLAG) != 0;
+    return mTriangles.front().material.emission;
 }

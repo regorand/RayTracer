@@ -74,10 +74,9 @@ void main() {
 
     vec3 newPos = rayHit.position;
     vec3 N = rayHit.hitBackface ? -rayHit.normal : rayHit.normal;
-    uint matProperties = floatBitsToUint(rayHit.mat.color.w);
 
     vec3 newDir = vec3(0);
-    if (checkBitFlag(matProperties, EMISSIVE_FLAG)) {
+    if (rayHit.mat.emission > 0.0f) {
         const vec3 LIGHT_INTENSITY = vec3(15);
 
         vec3 color = mul * LIGHT_INTENSITY;
@@ -88,12 +87,12 @@ void main() {
         mul = vec3(0);
     } else /* Diffuse */ {
         MaterialTMP mat;
-        mat.albedo = rayHit.mat.color.xyz;
+        mat.albedo = rayHit.mat.albedo;
         mat.roughness = 0.01f;
         mat.metallic = 0.0f;
 
         float pdf = 1;
-        vec3 brdf = evaluateBRDF(dir, N, newDir, pdf, instanceSeed, mat);
+        vec3 brdf = evaluateBRDF(dir, N, newDir, pdf, instanceSeed, rayHit.mat);
 
         float newDirLambert = max(0.0f, dot(N, newDir));
         mul *= newDirLambert * brdf / pdf;

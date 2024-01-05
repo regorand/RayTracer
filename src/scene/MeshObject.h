@@ -16,8 +16,6 @@ private:
 
     // TODO best option would be to have mapping from triangles into local material list, save local indices in \
         the triangles GPU buffer and store a constant offset in object buffer
-    Material material;
-
     bool mIsEmissive = false;
 
     Transformation mTransform;

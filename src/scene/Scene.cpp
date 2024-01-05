@@ -19,7 +19,7 @@ Camera &Scene::getCamera() {
 void Scene::createGPUBuffers() {
     std::vector<Triangle> triangles;
     std::vector<BufferMeshObject> objects;
-    std::vector<Material> materials;
+    std::vector<MaterialTMP> materials;
     std::vector<unsigned int> emissiveIndices;
 
     unsigned int triangleOffset = 0;

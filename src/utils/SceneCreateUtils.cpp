@@ -22,40 +22,46 @@ void createCornellBox(std::vector<MeshObject> &outObjects) {
         }
     }
 
-
-    Material mirror;
-    // mirror.boolsSpecTrans = glm::vec4(1, 0, 0, 0);
-    unsigned int matProperties = SPECULAR_FLAG;
-    mirror.color.w = reinterpret_cast<float &>(matProperties);
+    MaterialTMP lowRoughWhite{};
+    lowRoughWhite.albedo = glm::vec4(1.0f);
+    lowRoughWhite.roughness = 0.0f;
+    lowRoughWhite.emission = 0.0f;
+    lowRoughWhite.metallic = 1.0;
+    lowRoughWhite.transparency = 0.0f;
 
     // left wall
     MeshObject leftWall;
-    leftWall.addTriangle(createTriangle(wallVertices, 1, 0, 2, DIFFUSE_RED));
-    leftWall.addTriangle(createTriangle(wallVertices, 1, 2, 3, DIFFUSE_RED));
+    /*
+    leftWall.addTriangle(createTriangle(wallVertices, 1, 0, 2, RED_ROUGH));
+    leftWall.addTriangle(createTriangle(wallVertices, 1, 2, 3, RED_ROUGH));
+    */
+
+    leftWall.addTriangle(createTriangle(wallVertices, 1, 0, 2, lowRoughWhite));
+    leftWall.addTriangle(createTriangle(wallVertices, 1, 2, 3, lowRoughWhite));
     outObjects.push_back(leftWall);
 
     // ground
     MeshObject ground;
-    ground.addTriangle(createTriangle(wallVertices, 0, 1, 4, DIFFUSE_BLUE));
-    ground.addTriangle(createTriangle(wallVertices, 1, 5, 4, DIFFUSE_BLUE));
+    ground.addTriangle(createTriangle(wallVertices, 0, 1, 4, BLUE_ROUGH));
+    ground.addTriangle(createTriangle(wallVertices, 1, 5, 4, BLUE_ROUGH));
     outObjects.push_back(ground);
 
     // right wall
     MeshObject rightWall;
-    rightWall.addTriangle(createTriangle(wallVertices, 4, 5, 7, DIFFUSE_GREEN));
-    rightWall.addTriangle(createTriangle(wallVertices, 4, 7, 6, DIFFUSE_GREEN));
+    rightWall.addTriangle(createTriangle(wallVertices, 4, 5, 7, GREEN_ROUGH));
+    rightWall.addTriangle(createTriangle(wallVertices, 4, 7, 6, GREEN_ROUGH));
     outObjects.push_back(rightWall);
 
     // back wall
     MeshObject backWall;
-    backWall.addTriangle(createTriangle(wallVertices, 0, 4, 6, DIFFUSE_WHITE));
-    backWall.addTriangle(createTriangle(wallVertices, 0, 6, 2, DIFFUSE_WHITE));
+    backWall.addTriangle(createTriangle(wallVertices, 0, 4, 6, WHITE_ROUGH));
+    backWall.addTriangle(createTriangle(wallVertices, 0, 6, 2, WHITE_ROUGH));
     outObjects.push_back(backWall);
 
     // ceiling
     MeshObject ceiling;
-    ceiling.addTriangle(createTriangle(wallVertices, 2, 6, 7, DIFFUSE_WHITE));
-    ceiling.addTriangle(createTriangle(wallVertices, 2, 7, 3, DIFFUSE_WHITE));
+    ceiling.addTriangle(createTriangle(wallVertices, 2, 6, 7, WHITE_ROUGH));
+    ceiling.addTriangle(createTriangle(wallVertices, 2, 7, 3, WHITE_ROUGH));
     outObjects.push_back(ceiling);
 
     MeshObject lightSource;
@@ -83,9 +89,8 @@ void createCornellBox(std::vector<MeshObject> &outObjects) {
     Vertex UU;
     UU.pos = glm::vec3(lightHigher.x, higher.y - eps, lightHigher.y);
 
-    Material lightMat;
-    unsigned int lightMatProps = EMISSIVE_FLAG;
-    lightMat.color.w = reinterpret_cast<float &>(lightMatProps);
+    MaterialTMP lightMat = WHITE_ROUGH;
+    lightMat.emission = 1.0;
 
     Triangle lightTri1;
     lightTri1.V0 = LL;
@@ -108,19 +113,13 @@ void createCornellBox(std::vector<MeshObject> &outObjects) {
 }
 
 void createSampleBoxes(std::vector<MeshObject> &outObjects) {
-    Material mirror;
-    // mirror.boolsSpecTrans = glm::vec4(1, 0, 0, 0);
-    unsigned int matProperties = SPECULAR_FLAG;
-    mirror.color.w = reinterpret_cast<float &>(matProperties);
-
-
     MeshObject box;
 
     glm::vec3 lowerBox(-7.5, -7.5, -5);
     glm::vec3 higherBox(-2.5, -2.5, 0);
 
     std::vector<Triangle> boxTris;
-    createBox(boxTris, DIFFUSE_MAGENTA, lowerBox, higherBox, ALL_FACES);
+    createBox(boxTris, MAGENTA_ROUGH, lowerBox, higherBox, ALL_FACES);
 
     for (Triangle &triangle: boxTris) {
         box.addTriangle(triangle);
@@ -130,19 +129,13 @@ void createSampleBoxes(std::vector<MeshObject> &outObjects) {
     glm::vec3 lowerGlasBox( -8.5, -2.5, 4.5);
     glm::vec3 higherGlasBox(-1.5, 2.5, 5);
 
-    Material glas;
-    unsigned int glasMatProperties = TRANSMISSIVE_FLAG;
-
-    glas.color.w = reinterpret_cast<float &>(glasMatProperties);
-
     std::vector<Triangle> glasBoxTris;
-    createBox(glasBoxTris, glas, lowerGlasBox, higherGlasBox, ALL_FACES);
+    createBox(glasBoxTris, YELLOW_ROUGH, lowerGlasBox, higherGlasBox, ALL_FACES);
 
     for (Triangle &triangle: glasBoxTris) {
         glasBox.addTriangle(triangle);
     }
 
-    // TODO fix yo goddamn transofrms
     glasBox.getTransformRef().transform = glm::vec3(0, -5, 0);
     glasBox.getTransformRef().rotation = glm::vec3(0, -glm::quarter_pi<float>() / 4, 0);
 
@@ -151,13 +144,7 @@ void createSampleBoxes(std::vector<MeshObject> &outObjects) {
 
     std::vector<Triangle> transformTestBox;
 
-    Material glas2;
-    unsigned int glasMatProperties2 = TRANSMISSIVE_FLAG;
-
-    glas2.color.w = reinterpret_cast<float &>(glasMatProperties2);
-
-
-    createBox(transformTestBox, glas2, lower, higher, ALL_FACES);
+    createBox(transformTestBox, CYAN_ROUGH, lower, higher, ALL_FACES);
     MeshObject transformTest;
 
 
@@ -169,27 +156,12 @@ void createSampleBoxes(std::vector<MeshObject> &outObjects) {
     transformation.rotation = glm::vec3(0, 0.8 * glm::quarter_pi<float>(), 0);
     transformation.scale = glm::vec3(1);
 
-    MeshObject backBox;
-
-    std::vector<Triangle> backBoxesTris;
-    createBox(backBoxesTris, DIFFUSE_CYAN, glm::vec3(-1), glm::vec3(1), ALL_FACES);
-
-    for (Triangle &triangle: backBoxesTris) {
-        backBox.addTriangle(triangle);
-    }
-    Transformation &backTransform = backBox.getTransformRef();
-    backTransform.transform = glm::vec3(0, 0, 35);
-    backTransform.rotation = glm::vec3(0, 0, 0);
-    backTransform.scale = glm::vec3(10);
-
-
     outObjects.push_back(glasBox);
     outObjects.push_back(transformTest);
     outObjects.push_back(box);
-    // outObjects.push_back(backBox);
 }
 
-void createBox(std::vector<Triangle> &outTriangles, Material mat, glm::vec3 lower, glm::vec3 higher,
+void createBox(std::vector<Triangle> &outTriangles, MaterialTMP mat, glm::vec3 lower, glm::vec3 higher,
                unsigned int faceFlags) {
     std::vector<Vertex> wallVertices;
 
@@ -242,7 +214,7 @@ void createBox(std::vector<Triangle> &outTriangles, Material mat, glm::vec3 lowe
 }
 
 Triangle createTriangle(std::vector<Vertex> &vertices, unsigned int index1, unsigned int index2, unsigned int index3,
-                        Material mat) {
+                        MaterialTMP mat) {
     Triangle triangle;
     triangle.V0 = vertices[index1];
     triangle.V1 = vertices[index2];

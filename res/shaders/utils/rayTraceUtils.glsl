@@ -17,8 +17,7 @@ bool getClosestHit(Ray ray, out RayHit rayhit) {
             closest = tmp.dist;
             rayhit = tmp;
             if (meshObject.emissive == 1) {
-                uint props = EMISSIVE_FLAG;
-                rayhit.mat.color.w = uintBitsToFloat(props);
+                rayhit.mat.emission = 1.0f;
             }
         }
     }
