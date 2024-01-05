@@ -3,11 +3,17 @@
 #include "res/shaders/utils/MeshTypes.glsl"
 #include "res/shaders/utils/rng.glsl"
 
-vec3 sampleHemisphereUniform(inout vec2 seed) {
+
+vec3 sampleHemisphereUniform(inout uint seed) {
+    /*
     float Xi1 = rand(seed);
     seed = seed * vec2(Xi1 + 0.5, 1);
     float Xi2 = rand(seed);
     seed = seed * vec2(Xi2 + 0.5, Xi1 + 0.5);
+*/
+
+    float Xi1 = randUniform_0_1(seed);
+    float Xi2 = randUniform_0_1(seed);
 
     float theta = acos(Xi1);
     float phi = 2 * PI * Xi2;
@@ -28,7 +34,7 @@ vec3 getRandVec3(inout vec2 seed) {
     return vec3(x, y, z);
 }
 
-vec3 getNewDirection(inout vec2 seed, vec3 normal) {
+vec3 getNewDirection(inout uint seed, vec3 normal) {
     vec3 tangent = vec3(normal.y, normal.z, -normal.x);
     vec3 cotangent = cross(normal, tangent);
 

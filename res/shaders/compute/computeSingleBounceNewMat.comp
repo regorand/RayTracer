@@ -27,7 +27,7 @@ uniform float alphaRR;
 uniform int width;
 uniform int height;
 
-uniform float seed;
+uniform uint seed;
 
 #include "res/shaders/scenes/CPUScene.glsl"
 #include "res/shaders/utils/rayTraceUtils.glsl"
@@ -36,6 +36,7 @@ uniform float seed;
 #include "res/shaders/utils/FlagUtils.glsl"
 #include "src/deviceShared/MaterialFlags.h"
 
+#include "res/shaders/utils/samplingUtils.glsl"
 #include "res/shaders/material/microFacetModels.glsl"
 
 void main() {
@@ -55,6 +56,7 @@ void main() {
     vec3 pos = posData[singleDimCoord].xyz;
     vec3 dir = dirData[singleDimCoord].xyz;
 
+    uint instanceSeed = triple32(floatBitsToUint(seed) + triple32(singleDimCoord));
 
     mul /= alphaRR;
 
@@ -70,8 +72,6 @@ void main() {
         return;
     }
 
-    // vec2 seed = frameSeed + gl_GlobalInvocationID.xy;
-
     vec3 newPos = rayHit.position;
     vec3 N = rayHit.hitBackface ? -rayHit.normal : rayHit.normal;
     uint matProperties = floatBitsToUint(rayHit.mat.color.w);
@@ -85,6 +85,7 @@ void main() {
         vec4 newValue = prevBufferContent + vec4(color, 0);
 
         imageStore(imgOutput, bufferCoords, newValue);
+        mul = vec3(0);
     } else /* Diffuse */ {
         MaterialTMP mat;
         mat.albedo = rayHit.mat.color.xyz;
@@ -92,27 +93,31 @@ void main() {
         mat.metallic = 0.0f;
 
         float pdf = 1;
-        vec3 brdf = evaluateBRDF(dir, N, newDir, pdf, seed, mat);
+        vec3 brdf = evaluateBRDF(dir, N, newDir, pdf, instanceSeed, mat);
 
         mul *= brdf / pdf;
+        // newDir = getNewDirection(instanceSeed, N);
+
+        float newDirLambert = max(0.0f, dot(N, newDir));
+        // mul *= newDirLambert * rayHit.mat.color.xyz; //mat.albedo;
     }
 
     newPos += eps * newDir;
-    const bool debug = true;
+    const bool debug = false;
 
     if (debug) {
-        vec3 debugColor = vec3(1, 0, 1);
+        vec3 debugColor = vec3(1); //vec3(randUniform_0_1(instanceSeed), randUniform_0_1(instanceSeed), randUniform_0_1(instanceSeed));
         vec4 newValue = vec4(debugColor, 1);
 
         imageStore(imgOutput, bufferCoords, newValue);
 
         posData[singleDimCoord] = vec4(1, 0, 1, 1);
+        dirData[singleDimCoord] = vec4(newDir.xyz, 1);
         mulData[singleDimCoord] = vec4(0);
         return;
     }
 
     posData[singleDimCoord] = newPos.xyzz;
-
     dirData[singleDimCoord] = newDir.xyzz;
     mulData[singleDimCoord] = mul.xyzz;
 }

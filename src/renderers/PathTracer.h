@@ -4,7 +4,7 @@
 #include "GL/glew.h"
 #include "glWrappers/Texture.h"
 #include "glWrappers/shaders/ComputeShader.h"
-#include "utils/UniformDistribution.h"
+#include "utils/RandomEngine.h"
 #include "scene/Scene.h"
 #include "glWrappers/TextureBuffer.h"
 #include "glWrappers/ShaderStorageBuffer.h"
@@ -107,7 +107,7 @@ private:
 
     PathTraceSettings mPathTraceSettings;
 
-    UniformDistribution dist;
+    RandomEngine dist;
 
     int mSppCount = 0;
 
