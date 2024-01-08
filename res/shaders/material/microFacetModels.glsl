@@ -28,7 +28,8 @@ float GGXNormalDistFunc(float alpha, vec3 m, vec3 n, float thetaM) {
 
     float xi = max(dot(n, m), 0.0f);
     float cosThetaM = cos(thetaM);
-    float tanThetaM = tan(thetaM);
+
+    float tanThetaM = max(1e-3, tan(thetaM));
 
     return alpha_2 * xi / (PI * pow(cosThetaM, 4.0f) * pow(alpha_2 + pow(tanThetaM, 2.0f), 2.0f));
     // NDF in desmos f\left(x\right)=\{t\cdot t\cdot\max\left(\cos\left(x\right),\ 0\right)}{\pi\left(\cos\left(x\right)\right)^{4}\left(t^{2}+\tan^{2}\left(x\right)\right)^{2}}\left\{-\frac{\pi}{2}\le x\le\ \frac{\pi}{2}\right\}
@@ -42,7 +43,7 @@ float shadowingFunction(float alpha, vec3 m, vec3 n, vec3 i, float thetaV) {
 
     float xi = max(vDotM / vDotN, 0.0f);
 
-    float tanThetaV = tan(thetaV);
+    float tanThetaV = max(1e-3, tan(thetaV));
 
     return xi * 2 / (1 + sqrt(1.0f + alpha_2 * pow(tanThetaV, 2.0f)));
 }
@@ -61,7 +62,7 @@ vec3 sampleGGX(float roughness, inout uint seed, out float thetaM) {
     float eta2 = randUniform_0_1(seed);
 
     float eps = 1e-4;
-    thetaM = atan(roughness * sqrt(eta1), sqrt(1.0f - eta1));
+    thetaM = atan(roughness * sqrt(eta1), sqrt(1.0f - eta1) + 1e-5);
     float phi_m = 2 * PI * eta2;
 
     float sin_theta_m = sin(thetaM);
@@ -72,48 +73,37 @@ vec3 sampleGGX(float roughness, inout uint seed, out float thetaM) {
     return vec3(sin_theta_m * cos_phi_m, cos_theta_m, sin_theta_m * sin_phi_m);
 }
 
-vec3 evaluateBRDF(vec3 i, vec3 n, out vec3 o, out float pdf, inout uint seed, Material material) {
-    vec3 brdf = vec3(1);
-    if (material.metallic < 1.0 /* TODO && material.transmission < 1.0 */) {
-        brdf = material.albedo.xyz; // diffuse term here
-    }
-
-    if (abs(material.roughness) < 1e-3) {
-        o = reflect(i, n);
-        pdf = 1;
-        return material.albedo.xyz / max(1e-3, dot(n, o)); // TODO which mirror color ?
-    }
-
-    // STEP 1. sample microsurface normal m
-    float thetaM = 0;
-    vec3 tangentM = sampleGGX(material.roughness, seed, thetaM);
+void sampleMicronormal(vec3 N, float roughness, inout uint seed, out vec3 m, out float thetaM, out float NDF, out float pdf) {
+    vec3 tangentM = sampleGGX(roughness, seed, thetaM);
 
     // only do isotropic material models for now, the tangent space doesn't matter
-    vec3 tangent = vec3(n.y, n.z, -n.x);
-    vec3 cotangent = cross(n, tangent);
+    vec3 tangent = vec3(N.y, N.z, -N.x);
+    vec3 cotangent = cross(N, tangent);
 
     // transform sampled micronormal into world space
-    vec3 m = normalize(mat3(tangent, n, cotangent) * tangentM);
+    m = normalize(mat3(tangent, N, cotangent) * tangentM);
 
-    // STEP 2. compute outgoing direction o
-    o = reflect(i, m); // reflection along microsurface normal
-    // STEP 3. compute Fresnel, NDF, G
+    NDF = GGXNormalDistFunc(roughness, m, N, thetaM);
+    pdf = NDF * dot(m, N);
+}
+
+void evaluateBRDF(vec3 inDir, vec3 N, vec3 m, float thetaM, float NDF, vec3 outDir, Material material, out vec3 brdf) {
+    vec3 albedo = vec3(1);
+    if (material.metallic < 1.0 /* TODO && material.transmission < 1.0 */) {
+        albedo = material.albedo.xyz; // diffuse term here
+    }
 
     vec3 F0 = mix(vec3(0.04f), material.albedo.xyz, material.metallic);
 
-    vec3 fresnel = schlickFresnel(F0, m, i);
+    vec3 fresnel = schlickFresnel(F0, m, inDir);
 
-    float NDF = GGXNormalDistFunc(material.roughness, m, n, thetaM);
+    // float NDF = GGXNormalDistFunc(material.roughness, m, N, thetaM);
 
-    float thetaV = acos(dot(n, -i));
-    float G = shadowingFunction(material.roughness, m, n, i, thetaV);
-
-    // STEP 4. compute pdf
-    pdf = NDF * dot(m, n);
+    float thetaV = acos(dot(N, -inDir));
+    float G = shadowingFunction(material.roughness, m, N, inDir, thetaV);
 
     // STEP 5. compute brdf
-    float demon = 4 * abs(dot(i, n)) * abs(dot(o, n));
+    float demon = 4 * abs(dot(inDir, N)) * abs(dot(outDir, N));
 
-    return brdf * fresnel * NDF * G / demon;
+    brdf = albedo * fresnel * NDF * G / demon;
 }
-

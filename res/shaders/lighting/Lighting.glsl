@@ -34,16 +34,26 @@ void evaluateLighting(Ray inRay, RayHit rayHit, inout vec3 mul, inout uint seed,
         hasDirect = true;
         mul = vec3(0);
     } else /* Diffuse */ {
-        // TODO sample brdf
-        // TODO evaluate brdf
         float pdf = 1;
-        vec3 brdf = evaluateBRDF(inRay.direction, N, outRay.direction, pdf, seed, rayHit.mat);
+        vec3 m = vec3(0);
+        float thetaM = 0;
+        float NDF = 0;
+        sampleMicronormal(N, rayHit.mat.roughness, seed, m, thetaM, NDF, pdf);
+
+
+        outRay.direction = reflect(inRay.direction, m);
+        vec3 brdf = vec3(0);
+        evaluateBRDF(inRay.direction, N, m, thetaM, NDF, outRay.direction, rayHit.mat, brdf);
 
         float newDirLambert = max(0.0f, dot(N, outRay.direction));
         mul *= newDirLambert * brdf / pdf;
+
+
+
+
+        // TODO NEE
     }
 
-    // TODO NEE
 
 
     outRay.origin += outRay.direction * eps;
