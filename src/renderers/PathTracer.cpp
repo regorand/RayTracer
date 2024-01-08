@@ -12,7 +12,7 @@ PathTracer::PathTracer(int width, int height)
 
           buffers(mWidth * mHeight * sizeof(float) * 4, GL_DYNAMIC_DRAW),
 
-          mBounceShader(ComputeShader("res/shaders/compute/computeSingleBounceNewMat.comp")),
+          mBounceShader(ComputeShader("res/shaders/compute/computeSingleBounce.comp")),
           mNewPathShader(ComputeShader("res/shaders/compute/CreateNewPath.comp")),
           mClearTargetShader(ComputeShader("res/shaders/compute/clearColorBuffer.comp")) {
 }
