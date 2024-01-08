@@ -24,7 +24,7 @@ void createCornellBox(std::vector<MeshObject> &outObjects) {
 
     Material lowRoughWhite{};
     lowRoughWhite.albedo = glm::vec4(1.0f);
-    lowRoughWhite.roughness = 0.0f;
+    lowRoughWhite.roughness = 0.2f;
     lowRoughWhite.emission = 0.0f;
     lowRoughWhite.metallic = 1.0;
     lowRoughWhite.transparency = 0.0f;
@@ -118,46 +118,47 @@ void createSampleBoxes(std::vector<MeshObject> &outObjects) {
     glm::vec3 lowerBox(-7.5, -7.5, -5);
     glm::vec3 higherBox(-2.5, -2.5, 0);
 
-    std::vector<Triangle> boxTris;
-    createBox(boxTris, MAGENTA_ROUGH, lowerBox, higherBox, ALL_FACES);
+    std::vector<Triangle> magentaBox;
+    createBox(magentaBox, MAGENTA_ROUGH, lowerBox, higherBox, ALL_FACES);
 
-    for (Triangle &triangle: boxTris) {
+    for (Triangle &triangle: magentaBox) {
         box.addTriangle(triangle);
     }
 
-    MeshObject glasBox;
+    MeshObject thinBox;
     glm::vec3 lowerGlasBox( -8.5, -2.5, 4.5);
     glm::vec3 higherGlasBox(-1.5, 2.5, 5);
 
-    std::vector<Triangle> glasBoxTris;
-    createBox(glasBoxTris, YELLOW_ROUGH, lowerGlasBox, higherGlasBox, ALL_FACES);
+    std::vector<Triangle> thinBoxTris;
+    createBox(thinBoxTris, YELLOW_ROUGH, lowerGlasBox, higherGlasBox, ALL_FACES);
 
-    for (Triangle &triangle: glasBoxTris) {
-        glasBox.addTriangle(triangle);
+    for (Triangle &triangle: thinBoxTris) {
+        thinBox.addTriangle(triangle);
     }
 
-    glasBox.getTransformRef().transform = glm::vec3(0, -5, 0);
-    glasBox.getTransformRef().rotation = glm::vec3(0, -glm::quarter_pi<float>() / 4, 0);
+    thinBox.getTransformRef().transform = glm::vec3(0, -5, 0);
+    thinBox.getTransformRef().rotation = glm::vec3(0, -glm::quarter_pi<float>() / 4, 0);
 
     glm::vec3 lower(-1);
     glm::vec3 higher(1);
 
-    std::vector<Triangle> transformTestBox;
+    std::vector<Triangle> centerBox;
 
-    createBox(transformTestBox, CYAN_ROUGH, lower, higher, ALL_FACES);
-    MeshObject transformTest;
+    Material centerMaterial = WHITE_ROUGH;
 
+    createBox(centerBox, centerMaterial, lower, higher, ALL_FACES);
+    MeshObject centerBoxObject;
 
-    for (Triangle &triangle: transformTestBox) {
-        transformTest.addTriangle(triangle);
+    for (Triangle &triangle: centerBox) {
+        centerBoxObject.addTriangle(triangle);
     }
-    Transformation &transformation = transformTest.getTransformRef();
+    Transformation &transformation = centerBoxObject.getTransformRef();
     transformation.transform = glm::vec3(0, -6, -4);
     transformation.rotation = glm::vec3(0, 0.8 * glm::quarter_pi<float>(), 0);
     transformation.scale = glm::vec3(1);
 
-    outObjects.push_back(glasBox);
-    outObjects.push_back(transformTest);
+    outObjects.push_back(thinBox);
+    outObjects.push_back(centerBoxObject);
     outObjects.push_back(box);
 }
 

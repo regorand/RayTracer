@@ -19,6 +19,7 @@ void main() {
 
     vec4 bufferColor = imageLoad(renderBuffer, bufferCoords);
     vec3 color = bufferColor.rgb / bufferColor.a;
+    // color = clamp(color, vec3(0), vec3(10000000));
     if (checkBitFlag(postProcessFlags, GAMMA_CORRECT)) {
         applyGammaCorrection(color);
     }

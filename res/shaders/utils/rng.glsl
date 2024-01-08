@@ -52,12 +52,17 @@ float floatConstruct( uint m ) {
     return f - 1.0;                        // Range [0:1]
 }
 
-
 // This is my own, although I am sure this has been done before
 float randUniform_0_1(inout uint seed) {
     // uint intSeed = floatBitsToUint(seed);
     // seed = uintBitsToFloat(rand_lcg(intSeed));
     // seed = uintBitsToFloat(rand_xorshift(intSeed));
-    seed = wang_hash(seed);
+    seed = rand_lcg(seed);
+
     return floatConstruct(seed);
+}
+
+uint randUniform_uint_0_n(inout uint seed, uint n) {
+    seed = rand_lcg(seed);
+    return seed % n;
 }

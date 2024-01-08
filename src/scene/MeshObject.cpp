@@ -123,8 +123,9 @@ bool MeshObject::isTransmissive() {
 }
 
 bool MeshObject::isEmissive() {
-    // return mIsEmissive;
-
+    return mIsEmissive;
+    /*
     if (mTriangles.empty()) return false;
     return mTriangles.front().material.emission;
+     */
 }

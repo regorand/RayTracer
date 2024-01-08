@@ -3,10 +3,10 @@
 #include "PostProcessor.h"
 #include "deviceShared/PostProcessFlags.h"
 #include "deviceShared/BufferBindings.h"
+#include "imgui.h"
 
 PostProcessor::PostProcessor()
-    : mShader("res/shaders/postProcessing/PostProcess.comp")
-{ }
+        : mShader("res/shaders/postProcessing/PostProcess.comp") {}
 
 void PostProcessor::applyPostProcessing(Texture &source, Texture &target) {
     applyPostProcessing(source, target, PostProcSettings());
@@ -38,4 +38,19 @@ unsigned int PostProcessor::getSettingsBitFlag(PostProcSettings settings) {
     if (settings.tonemap) val += TONEMAP;
 
     return val;
+}
+
+void PostProcessor::buildImgui(PostProcSettings &postProcSettings, DataStore &settings) {
+    if (ImGui::CollapsingHeader("Path Tracer Control")) {
+
+        ImVec2 windowSize = ImGui::GetWindowSize();
+        ImVec2 buttonSize = ImVec2(windowSize.x * 0.9, 25);
+
+        if (ImGui::Button("Reload post Proc shaders", buttonSize)) {
+            mShader.reloadShader();
+        }
+
+        ImGui::Checkbox("Gamma Correction", &postProcSettings.gammaCorrect);
+        ImGui::Checkbox("tonemapping", &postProcSettings.tonemap);
+    }
 }

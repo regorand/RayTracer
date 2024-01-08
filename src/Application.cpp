@@ -163,7 +163,7 @@ int Application::run() {
 
         if (settings.getOrElse<bool>(SHOW_CONTROL_PANEL, false)) {
             buildImguiControlSideBar(glm::vec2(displayWidth, displayHeight), pathTracer, br,
-                                     rasterizer, postProcSettings);
+                                     rasterizer, postProcessor, postProcSettings);
 
             if (state != RenderState::IDLE) pathTracer.buildImGuiProgressBar(glm::vec2(displayWidth, displayHeight));
 
@@ -221,6 +221,7 @@ int Application::run() {
 
 void Application::buildImguiControlSideBar(glm::vec2 displaySize, PathTracer &pt,
                                            BufferRenderer &br, Rasterizer &rasterizer,
+                                           PostProcessor &postProcessor,
                                            PostProcSettings &postProcSettings) {
 
     float windowWidth = displaySize.x / 6.0f;
@@ -282,10 +283,7 @@ void Application::buildImguiControlSideBar(glm::vec2 displaySize, PathTracer &pt
 
     ImGui::Indent(8.0f);
 
-    if (ImGui::CollapsingHeader("Post Processing")) {
-        ImGui::Checkbox("Gamma Correction", &postProcSettings.gammaCorrect);
-        ImGui::Checkbox("tonemapping", &postProcSettings.tonemap);
-    }
+    postProcessor.buildImgui(postProcSettings, settings);
 
     ImGui::Unindent(8.0f);
 

@@ -66,6 +66,7 @@ void main() {
     RayHit rayHit;
     bool hit = getClosestHit(ray, rayHit);
 
+
     if (!hit) {
         posData[singleDimCoord] = vec4(ray.origin + 10000 * ray.direction, 0);
         mulData[singleDimCoord] = vec4(0);
@@ -98,13 +99,13 @@ void main() {
     const bool debug = false;
 
     if (debug) {
-        vec3 debugColor = vec3(1); //vec3(randUniform_0_1(instanceSeed), randUniform_0_1(instanceSeed), randUniform_0_1(instanceSeed));
+        vec3 debugColor = vec3(randUniform_0_1(instanceSeed));
         vec4 newValue = vec4(debugColor, 1);
 
         imageStore(imgOutput, bufferCoords, newValue);
 
-        posData[singleDimCoord] = vec4(1, 0, 1, 1);
-        dirData[singleDimCoord] = vec4(newDir.xyz, 1);
+        posData[singleDimCoord] = vec4(0);
+        dirData[singleDimCoord] = vec4(0);
         mulData[singleDimCoord] = vec4(0);
         return;
     }

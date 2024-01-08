@@ -189,7 +189,7 @@ void PathTracer::bindBounce() {
     mBounceShader.bind();
 
     mBounceShader.setUniform1ui("objectCount", mScene.getObjectCount());
-    // mBounceShader.setUniform1ui("emissiveCount", mScene.getEmissiveCount());
+    mBounceShader.setUniform1ui("emissiveCount", mScene.getEmissiveCount());
     mBounceShader.setUniform1f("alphaRR", mPathTraceSettings.pathSettings.alphaRR);
 
     mBounceShader.setUniform1i("width", mWidth);

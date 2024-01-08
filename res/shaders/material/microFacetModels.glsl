@@ -112,7 +112,7 @@ vec3 evaluateBRDF(vec3 i, vec3 n, out vec3 o, out float pdf, inout uint seed, Ma
     pdf = NDF * dot(m, n);
 
     // STEP 5. compute brdf
-    float demon = 4 * dot(i, n) * dot(o, n);
+    float demon = 4 * abs(dot(i, n)) * abs(dot(o, n));
 
     return brdf * fresnel * NDF * G / demon;
 }

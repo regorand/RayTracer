@@ -44,7 +44,7 @@ public:
 private:
     void
     buildImguiControlSideBar(glm::vec2 displaySize, PathTracer &pt, BufferRenderer &br,
-                             Rasterizer &rasterizer, PostProcSettings &postProcSettings);
+                             Rasterizer &rasterizer, PostProcessor &postProcessor, PostProcSettings &postProcSettings);
 
     void buildImguiCameraControls(PathTracer &pt, Rasterizer &rasterizer);
 };
