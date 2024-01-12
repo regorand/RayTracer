@@ -7,6 +7,7 @@ bool SceneBuffers::createGPUBuffers(std::vector<Triangle> &triangles, std::vecto
     mTriangleSSBO = SSBO(triangles.data(), sizeof(Triangle) * triangles.size(), GL_STATIC_READ,
                          TRIANGLE_BUFFER_BINDING);
 
+    // TODO write size of buffer at the very beginning, I think that works in openGL
     mObjectSSBO = SSBO(objectIds.data(), sizeof(BufferMeshObject) * objectIds.size(), GL_STATIC_READ,
                        OBJECT_BUFFER_BINDING);
 

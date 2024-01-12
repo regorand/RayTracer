@@ -107,3 +107,9 @@ void evaluateBRDF(vec3 inDir, vec3 N, vec3 m, float thetaM, float NDF, vec3 outD
 
     brdf = albedo * fresnel * NDF * G / demon;
 }
+
+void evaluateBRDF(vec3 inDir, vec3 N, vec3 m, float thetaM, vec3 outDir, Material material, out vec3 brdf) {
+    float NDF = GGXNormalDistFunc(material.roughness, m, N, thetaM);
+
+    evaluateBRDF(inDir, N, m, thetaM, NDF, outDir, material, brdf);
+}

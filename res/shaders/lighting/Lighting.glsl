@@ -2,6 +2,8 @@
 #include "res/shaders/utils/samplingUtils.glsl"
 #include "res/shaders/material/microFacetModels.glsl"
 
+#include "res/shaders/lighting/NEE.glsl"
+
 /*  *
     * Evaluates lighting and samples the next ray.
     * Params:
@@ -25,7 +27,9 @@ void evaluateLighting(Ray inRay, RayHit rayHit, inout vec3 mul, inout uint seed,
     // TODO direct lighting
     hasDirect = false;
     outDirect = vec3(0);
-    if (rayHit.mat.emission > 0.0f) {
+
+    const bool doDirect = true;
+    if (doDirect && rayHit.mat.emission > 0.0f) {
         const vec3 LIGHT_INTENSITY = vec3(15);
 
         float emissionLambert = max(0.0f, dot(N, -inRay.direction));
@@ -48,13 +52,16 @@ void evaluateLighting(Ray inRay, RayHit rayHit, inout vec3 mul, inout uint seed,
         float newDirLambert = max(0.0f, dot(N, outRay.direction));
         mul *= newDirLambert * brdf / pdf;
 
-
-
-
+        /*
         // TODO NEE
+        vec3 contribNEE;
+        float pdfNEE;
+        sampleLightsourceNEE(rayHit.position, N, inRay.direction, rayHit.mat, seed, contribNEE, pdfNEE);
+
+        outDirect += contribNEE;
+        hasDirect = true;
+*/
     }
-
-
 
     outRay.origin += outRay.direction * eps;
 }

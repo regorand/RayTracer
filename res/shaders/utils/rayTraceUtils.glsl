@@ -25,6 +25,20 @@ bool getClosestHit(Ray ray, out RayHit rayhit) {
     return anyHit;
 }
 
+bool anyHit(Ray ray, float maxDist) {
+    for (int i = 0; i < objectCount; i++) {
+        MeshObject meshObject = meshObjects[i];
+
+        // reduce maxDist by eps value, so that if maxDist is given by a known position on geometry,
+        // that geometry does not shadow itself
+        RayHit dummy;
+        if (intersectObject(ray, meshObject, maxDist - 1e-3, dummy)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /*
 vec3 getTransmittedDir(float oldIOR, float newIOR, vec3 N, vec3 dir) {
     float R_0 = pow((oldIOR - newIOR) / (oldIOR + newIOR), 2.0f);

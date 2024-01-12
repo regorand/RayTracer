@@ -44,9 +44,9 @@ vec3 getNewDirection(inout uint seed, vec3 normal) {
     return normalize(rot * tangentSpaceDir);
 }
 
-vec3 sampleTrianglePos(Triangle triangle, vec2 seed) {
-    float xi1 = rand(seed);
-    float xi2 = rand(seed);
+vec3 sampleTrianglePos(Triangle triangle, uint seed) {
+    float xi1 = randUniform_0_1(seed);
+    float xi2 = randUniform_0_1(seed);
 
     if (xi1 + xi2 > 1) {
         xi1 = 1 - xi1;
