@@ -27,11 +27,18 @@ float GGXNormalDistFunc(float alpha, vec3 m, vec3 n, float thetaM) {
     float alpha_2 = alpha * alpha;
 
     float xi = max(dot(n, m), 0.0f);
-    float cosThetaM = cos(thetaM);
+    float cosThetaM = max(EPS_3, cos(thetaM));
 
     float tanThetaM = max(1e-3, tan(thetaM));
 
-    return alpha_2 * xi / (PI * pow(cosThetaM, 4.0f) * pow(alpha_2 + pow(tanThetaM, 2.0f), 2.0f));
+    float cosThetaPow4 = pow(cosThetaM, 4.0f);
+    float tanThetaPow2 = pow(tanThetaM, 2.0f);
+    float alpha2PlusTanPow2 = pow(alpha_2 + tanThetaPow2, 2.0f);
+
+    float denom = (PI * cosThetaPow4 * alpha2PlusTanPow2);
+
+    return alpha_2 * xi / denom;
+    // return 1 / denom;
     // NDF in desmos f\left(x\right)=\{t\cdot t\cdot\max\left(\cos\left(x\right),\ 0\right)}{\pi\left(\cos\left(x\right)\right)^{4}\left(t^{2}+\tan^{2}\left(x\right)\right)^{2}}\left\{-\frac{\pi}{2}\le x\le\ \frac{\pi}{2}\right\}
 }
 
@@ -39,7 +46,7 @@ float shadowingFunction(float alpha, vec3 m, vec3 n, vec3 i, float thetaV) {
     float alpha_2 = alpha * alpha;
 
     float vDotM = dot(i, m);
-    float vDotN = dot(i, n);
+    float vDotN = dot(i, n) + EPS_4;
 
     float xi = max(vDotM / vDotN, 0.0f);
 
@@ -61,8 +68,7 @@ vec3 sampleGGX(float roughness, inout uint seed, out float thetaM) {
     float eta1 = randUniform_0_1(seed);
     float eta2 = randUniform_0_1(seed);
 
-    float eps = 1e-4;
-    thetaM = atan(roughness * sqrt(eta1), sqrt(1.0f - eta1) + 1e-5);
+    thetaM = atan(roughness * sqrt(eta1), sqrt(1.0f - eta1) + EPS_5);
     float phi_m = 2 * PI * eta2;
 
     float sin_theta_m = sin(thetaM);
@@ -84,7 +90,8 @@ void sampleMicronormal(vec3 N, float roughness, inout uint seed, out vec3 m, out
     m = normalize(mat3(tangent, N, cotangent) * tangentM);
 
     NDF = GGXNormalDistFunc(roughness, m, N, thetaM);
-    pdf = NDF * dot(m, N);
+
+    pdf = NDF * dot(m, N) + EPS_4;
 }
 
 void evaluateBRDF(vec3 inDir, vec3 N, vec3 m, float thetaM, float NDF, vec3 outDir, Material material, out vec3 brdf) {
@@ -97,15 +104,14 @@ void evaluateBRDF(vec3 inDir, vec3 N, vec3 m, float thetaM, float NDF, vec3 outD
 
     vec3 fresnel = schlickFresnel(F0, m, inDir);
 
-    // float NDF = GGXNormalDistFunc(material.roughness, m, N, thetaM);
-
     float thetaV = acos(dot(N, -inDir));
     float G = shadowingFunction(material.roughness, m, N, inDir, thetaV);
 
     // STEP 5. compute brdf
-    float demon = 4 * abs(dot(inDir, N)) * abs(dot(outDir, N));
+    float denom = 4 * abs(dot(inDir, N)) * abs(dot(outDir, N)) + EPS_4;
 
-    brdf = albedo * fresnel * NDF * G / demon;
+    brdf = albedo * fresnel * NDF * G / denom;
+    // brdf = vec3(NDF);
 }
 
 void evaluateBRDF(vec3 inDir, vec3 N, vec3 m, float thetaM, vec3 outDir, Material material, out vec3 brdf) {

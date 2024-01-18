@@ -24,7 +24,7 @@ void createCornellBox(std::vector<MeshObject> &outObjects) {
 
     Material lowRoughWhite{};
     lowRoughWhite.albedo = glm::vec4(1.0f);
-    lowRoughWhite.roughness = 0.2f;
+    lowRoughWhite.roughness = 0.001f;
     lowRoughWhite.emission = 0.0f;
     lowRoughWhite.metallic = 1.0;
     lowRoughWhite.transparency = 0.0f;
@@ -54,8 +54,8 @@ void createCornellBox(std::vector<MeshObject> &outObjects) {
 
     // back wall
     MeshObject backWall;
-    backWall.addTriangle(createTriangle(wallVertices, 0, 4, 6, WHITE_ROUGH));
-    backWall.addTriangle(createTriangle(wallVertices, 0, 6, 2, WHITE_ROUGH));
+    backWall.addTriangle(createTriangle(wallVertices, 0, 4, 6, RED_ROUGH));
+    backWall.addTriangle(createTriangle(wallVertices, 0, 6, 2, RED_ROUGH));
     outObjects.push_back(backWall);
 
     // ceiling
@@ -69,7 +69,7 @@ void createCornellBox(std::vector<MeshObject> &outObjects) {
     float xDiff = higher.x - lower.x;
     float zDiff = higher.z - lower.z;
 
-    float percentage = 0.5;
+    float percentage = 0.1;
     float eps = 1e-1;
 
     glm::vec2 lightLower =
@@ -91,6 +91,7 @@ void createCornellBox(std::vector<MeshObject> &outObjects) {
 
     Material lightMat = WHITE_ROUGH;
     lightMat.emission = 1.0;
+    lightMat.emissionColor = glm::vec4(45, 45, 45, 1);
 
     Triangle lightTri1;
     lightTri1.V0 = LL;

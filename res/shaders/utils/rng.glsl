@@ -57,12 +57,12 @@ float randUniform_0_1(inout uint seed) {
     // uint intSeed = floatBitsToUint(seed);
     // seed = uintBitsToFloat(rand_lcg(intSeed));
     // seed = uintBitsToFloat(rand_xorshift(intSeed));
-    seed = rand_lcg(seed);
+    seed = wang_hash(seed);
 
     return floatConstruct(seed);
 }
 
 uint randUniform_uint_0_n(inout uint seed, uint n) {
-    seed = rand_lcg(seed);
+    seed = wang_hash(seed);
     return seed % n;
 }

@@ -2,6 +2,7 @@
 
 #include <map>
 #include <string>
+#include <optional>
 #include "glm/vec2.hpp"
 
 class DataStore {
@@ -86,10 +87,26 @@ private:
     std::map<int, DataElement<T>> *getMapP() {
         std::optional<std::map<int, DataElement<T>> *> mapOpt = getMap<T>();
         if (!mapOpt.has_value()) {
-            throwError(typeid(T).name());
+            // throwError(typeid(T).name());
+            throwError("unknown type");
         }
         return mapOpt.value();
     }
 
     static void throwError(const std::string& typeName);
 };
+
+template<>
+inline std::optional<std::map<int, DataStore::DataElement<bool>> *> DataStore::getMap() {
+    return { &boolStore };
+}
+
+template<>
+inline std::optional<std::map<int, DataStore::DataElement<int>> *> DataStore::getMap() {
+    return { &intStore };
+}
+
+template<>
+inline std::optional<std::map<int, DataStore::DataElement<glm::vec2>> *> DataStore::getMap() {
+    return { &vec2Store };
+}

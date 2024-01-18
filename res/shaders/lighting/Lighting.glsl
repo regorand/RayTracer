@@ -4,6 +4,11 @@
 
 #include "res/shaders/lighting/NEE.glsl"
 
+struct LightingSettings {
+    bool evaluateDirect;
+    bool evaluateNEE;
+};
+
 /*  *
     * Evaluates lighting and samples the next ray.
     * Params:
@@ -17,8 +22,8 @@
             hitting an emissive object.
     *   outDirect: Direct light contribution
     */
-void evaluateLighting(Ray inRay, RayHit rayHit, inout vec3 mul, inout uint seed, out Ray outRay, out bool hasDirect, out vec3 outDirect) {
-    const float eps = 1e-4;
+void evaluateLighting(Ray inRay, RayHit rayHit, LightingSettings settings, inout vec3 mul, inout uint seed, out Ray outRay, out bool hasDirect, out vec3 outDirect) {
+    float eta = randUniform_0_1(seed);
 
     vec3 N = rayHit.hitBackface ? -rayHit.normal : rayHit.normal;
     Ray newRay;
@@ -28,40 +33,40 @@ void evaluateLighting(Ray inRay, RayHit rayHit, inout vec3 mul, inout uint seed,
     hasDirect = false;
     outDirect = vec3(0);
 
-    const bool doDirect = true;
-    if (doDirect && rayHit.mat.emission > 0.0f) {
-        const vec3 LIGHT_INTENSITY = vec3(15);
+    if (settings.evaluateDirect && rayHit.mat.emission > 0.0f) {
+        const vec3 LIGHT_INTENSITY = rayHit.mat.emissionColor.xyz;
 
-        float emissionLambert = max(0.0f, dot(N, -inRay.direction));
+        float emissionLambert = 1;// max(0.0f, dot(N, -inRay.direction));
 
-        outDirect = emissionLambert * mul * LIGHT_INTENSITY;
+        outDirect += emissionLambert * mul * LIGHT_INTENSITY;
         hasDirect = true;
         mul = vec3(0);
-    } else /* Diffuse */ {
-        float pdf = 1;
-        vec3 m = vec3(0);
-        float thetaM = 0;
-        float NDF = 0;
-        sampleMicronormal(N, rayHit.mat.roughness, seed, m, thetaM, NDF, pdf);
-
-
-        outRay.direction = reflect(inRay.direction, m);
-        vec3 brdf = vec3(0);
-        evaluateBRDF(inRay.direction, N, m, thetaM, NDF, outRay.direction, rayHit.mat, brdf);
-
-        float newDirLambert = max(0.0f, dot(N, outRay.direction));
-        mul *= newDirLambert * brdf / pdf;
-
-        /*
-        // TODO NEE
-        vec3 contribNEE;
-        float pdfNEE;
-        sampleLightsourceNEE(rayHit.position, N, inRay.direction, rayHit.mat, seed, contribNEE, pdfNEE);
-
-        outDirect += contribNEE;
-        hasDirect = true;
-*/
     }
 
-    outRay.origin += outRay.direction * eps;
+    float pdf = 1;
+    vec3 m = vec3(0);
+    float thetaM = 0;
+    float NDF = 0;
+    sampleMicronormal(N, rayHit.mat.roughness, seed, m, thetaM, NDF, pdf);
+
+
+    outRay.direction = reflect(inRay.direction, m);
+    vec3 brdf = vec3(0);
+    evaluateBRDF(inRay.direction, N, m, thetaM, NDF, outRay.direction, rayHit.mat, brdf);
+
+    float newDirLambert = max(0.0f, dot(N, outRay.direction));
+    mul *= newDirLambert * brdf / pdf;
+
+    if (settings.evaluateNEE) {
+        vec3 contribNEE = vec3(0);
+        float pdfNEE = 1;
+        sampleLightsourceNEE(rayHit.position, N, inRay.direction, rayHit.mat, seed, contribNEE, pdfNEE);
+
+        outDirect += contribNEE / pdfNEE;
+        hasDirect = true;
+
+
+    }
+
+    outRay.origin += outRay.direction * EPS_4;
 }

@@ -1,17 +1,17 @@
 #include "res/shaders/utils/MeshTypes.glsl"
 #include "res/shaders/utils/RayTypes.glsl"
 #include "res/shaders/scenes/CPUScene.glsl"
+#include "res/shaders/utils/Constants.glsl"
 
 bool intersectTriangle(Ray ray, Triangle triangle, out RayHit rayhit) {
     // algorithm modified from C++ example on https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
 
-    const float eps = 1e-5;
     vec3 edge1 = triangle.V1.pos.xyz - triangle.V0.pos.xyz;
     vec3 edge2 = triangle.V2.pos.xyz - triangle.V0.pos.xyz;
     vec3 h = cross(ray.direction, edge2);
     float a = dot(edge1, h);
 
-    if (abs(a) < eps) return false;
+    if (abs(a) < EPS_5) return false;
 
     float f = 1.0f / a;
     vec3 s = ray.origin - triangle.V0.pos.xyz;
@@ -26,7 +26,7 @@ bool intersectTriangle(Ray ray, Triangle triangle, out RayHit rayhit) {
 
     rayhit.dist = f * dot(edge2, q);
 
-    if (rayhit.dist > eps) {
+    if (rayhit.dist > EPS_5) {
         rayhit.mat = triangle.mat;
         rayhit.position = ray.origin + ray.direction * rayhit.dist;
         rayhit.normal = normalize(cross(edge1, edge2)); // TODO replace with interpolated normal for smooth shading ?

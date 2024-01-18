@@ -1,5 +1,6 @@
 struct Material {
     vec4 albedo;
+    vec4 emissionColor;
     float roughness;
     float metallic;
     float transparency;

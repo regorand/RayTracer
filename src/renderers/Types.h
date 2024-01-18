@@ -28,6 +28,7 @@ struct Material
 
 struct Material {
     glm::vec4 albedo;
+    glm::vec4 emissionColor;
     float roughness;
     float metallic;
     float transparency;

@@ -6,17 +6,17 @@ layout (rgba32f, binding = 0) uniform image2D imgOutput;
 
 #include "src/deviceShared/BufferBindings.h"
 
-layout(std430, binding = POS_BUFFER_TARGET) buffer positionBuffer
+layout (std430, binding = POS_BUFFER_TARGET) buffer positionBuffer
 {
     vec4 posData[];
 };
 
-layout(std430, binding = DIR_BUFFER_TARGET) buffer directionBuffer
+layout (std430, binding = DIR_BUFFER_TARGET) buffer directionBuffer
 {
     vec4 dirData[];
 };
 
-layout(std430, binding = MULT_BUFFER_TARGET) buffer multiplierData
+layout (std430, binding = MULT_BUFFER_TARGET) buffer multiplierData
 {
     vec4 mulData[];
 };
@@ -36,18 +36,18 @@ uniform uint seed;
 #include "res/shaders/utils/FlagUtils.glsl"
 #include "src/deviceShared/MaterialFlags.h"
 #include "res/shaders/lighting/Lighting.glsl"
+#include "res/shaders/utils/Constants.glsl"
 
 void main() {
     vec2 texelCoord = vec2(gl_GlobalInvocationID.xy);
     ivec2 bufferCoords = ivec2(texelCoord);
 
-    const float eps = 1e-4;
-
     int singleDimCoord = bufferCoords.y * width + bufferCoords.x;
 
-    vec3 mul = mulData[singleDimCoord].xyz;
+    vec4 mulBufVal = mulData[singleDimCoord];
+    vec3 mul = mulBufVal.xyz;
 
-    if (length(mul) < eps) {
+    if (length(mul) < EPS_4) {
         return;
     }
 
@@ -66,16 +66,37 @@ void main() {
     if (!hit) {
         // TODO when present, evaluate environment map
 
+        /*
+        vec4 prevBufferContent = imageLoad(imgOutput, bufferCoords);
+
+        float dotVal = dot(dir, vec3(0, 1, 0));
+        vec3 skyColor = vec3(0.23, 0.62, 0.85);
+        vec3 groundColor = vec3(0.07, 0.54, 0.04);
+
+        float interpolator = (dotVal * 10 + 1) / 2;
+        vec3 envColor = mix(groundColor, skyColor, interpolator);
+
+        vec4 newValue = prevBufferContent + vec4(envColor, 1) * vec4(mul, 1);
+
+        imageStore(imgOutput, bufferCoords, newValue);
+        */
+
         posData[singleDimCoord] = vec4(ray.origin + 10000 * ray.direction, 0);
         mulData[singleDimCoord] = vec4(0);
         return;
     }
 
     Ray newRay;
-    bool hasDirect;
-    vec3 directColor;
+    bool hasDirect = false;
+    vec3 directColor = vec3(0);
 
-    evaluateLighting(ray, rayHit, mul, instanceSeed, newRay, hasDirect, directColor);
+    LightingSettings lightingSettings;
+
+    bool doNEE = randUniform_0_1(instanceSeed) < rayHit.mat.roughness;
+
+    lightingSettings.evaluateDirect = mulBufVal.a > 0;
+    lightingSettings.evaluateNEE = doNEE;
+    evaluateLighting(ray, rayHit, lightingSettings, mul, instanceSeed, newRay, hasDirect, directColor);
 
     const bool debug = false;
 
@@ -93,13 +114,16 @@ void main() {
 
     if (hasDirect) {
         vec4 prevBufferContent = imageLoad(imgOutput, bufferCoords);
-        vec4 newValue = prevBufferContent + vec4(directColor, 0);
 
-        imageStore(imgOutput, bufferCoords, newValue);
+        float cutoff = 1000;
+        if (length(directColor) < cutoff) {
+            vec4 newValue = prevBufferContent + vec4(directColor, 0);
 
+            imageStore(imgOutput, bufferCoords, newValue);
+        }
     }
 
     posData[singleDimCoord] = newRay.origin.xyzz; // newPos.xyzz;
     dirData[singleDimCoord] = newRay.direction.xyzz; // newDir.xyzz;
-    mulData[singleDimCoord] = mul.xyzz;
+    mulData[singleDimCoord] = vec4(mul, doNEE ? 0 : 1);
 }

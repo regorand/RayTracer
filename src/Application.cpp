@@ -142,6 +142,7 @@ int Application::run() {
     settings.store(SHOW_PATHTRACE_OUTPUT, false);
     settings.store(SHOW_PATHTRACE_DEBUG, false);
 
+
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
