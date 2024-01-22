@@ -91,7 +91,7 @@ void createCornellBox(std::vector<MeshObject> &outObjects) {
 
     Material lightMat = WHITE_ROUGH;
     lightMat.emission = 1.0;
-    lightMat.emissionColor = glm::vec4(45, 45, 45, 1);
+    lightMat.emissionColor = glm::vec4(15, 15, 15, 1);
 
     Triangle lightTri1;
     lightTri1.V0 = LL;
@@ -145,7 +145,7 @@ void createSampleBoxes(std::vector<MeshObject> &outObjects) {
 
     std::vector<Triangle> centerBox;
 
-    Material centerMaterial = WHITE_ROUGH;
+    Material centerMaterial = CYAN_ROUGH;
 
     createBox(centerBox, centerMaterial, lower, higher, ALL_FACES);
     MeshObject centerBoxObject;
@@ -153,6 +153,7 @@ void createSampleBoxes(std::vector<MeshObject> &outObjects) {
     for (Triangle &triangle: centerBox) {
         centerBoxObject.addTriangle(triangle);
     }
+
     Transformation &transformation = centerBoxObject.getTransformRef();
     transformation.transform = glm::vec3(0, -6, -4);
     transformation.rotation = glm::vec3(0, 0.8 * glm::quarter_pi<float>(), 0);

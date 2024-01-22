@@ -29,7 +29,6 @@ void evaluateLighting(Ray inRay, RayHit rayHit, LightingSettings settings, inout
     Ray newRay;
     outRay.origin = rayHit.position;
 
-    // TODO direct lighting
     hasDirect = false;
     outDirect = vec3(0);
 
