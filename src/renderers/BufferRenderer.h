@@ -8,9 +8,10 @@
 #include "glWrappers/Texture.h"
 #include "glWrappers/VertexArray.h"
 #include "glWrappers/shaders/Shader.h"
+#include "gui/ImGuiSidebarTab.h"
 #include <memory>
 
-class BufferRenderer {
+class BufferRenderer : public ImGuiSidebarTab  {
 
 private:
     const glm::vec3 VERTICES[4] = {glm::vec3(0, 0, 0), glm::vec3(0, 1, 0), glm::vec3(1, 0, 0), glm::vec3(1, 1, 0)};
@@ -32,6 +33,9 @@ public:
     void renderStorageBuffer(ShaderStorageBuffer &buffer, glm::vec2 extents);
 
     void buildImGuiWindow();
+
+    void buildImguiTab(DataStore &settings, std::vector<Event> &events) override;
+
 
 };
 

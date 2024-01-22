@@ -2,5 +2,5 @@
 #pragma once
 #endif
 
-#define GAMMA_CORRECT (1)
-#define TONEMAP (1 << 1)
+#define GAMMA_CORRECT_BIT_FLAG (1)
+#define TONEMAP_BIT_FLAG (1 << 1)

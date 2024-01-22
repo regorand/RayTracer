@@ -2,7 +2,8 @@
 
 #include "glWrappers/shaders/ComputeShader.h"
 #include "glWrappers/Texture.h"
-#include "settings/DataStore.h"
+#include "dataStructures//DataStore.h"
+#include "gui/ImGuiSidebarTab.h"
 
 typedef struct PostProcSettings_s {
     bool gammaCorrect;
@@ -14,7 +15,7 @@ typedef struct PostProcSettings_s {
     }
 } PostProcSettings;
 
-class PostProcessor {
+class PostProcessor : public ImGuiSidebarTab {
 
 private:
     ComputeShader mShader;
@@ -22,11 +23,11 @@ private:
 public:
     PostProcessor();
 
-    void applyPostProcessing(Texture &source, Texture &target);
-    void applyPostProcessing(Texture &source, Texture &target, PostProcSettings settings);
+    void applyPostProcessing(Texture &source, Texture &target, DataStore &settings);
 
-    void buildImgui(PostProcSettings &postProcSettings, DataStore &settings);
+    void buildImguiTab(DataStore &settings, std::vector<Event> &events) override;
+
 private:
-    unsigned int getSettingsBitFlag(PostProcSettings settings);
+    unsigned int getSettingsBitFlag(DataStore &settings);
 
 };

@@ -4,15 +4,12 @@
 #include "deviceShared/PostProcessFlags.h"
 #include "deviceShared/BufferBindings.h"
 #include "imgui.h"
+#include "dataStructures/SettingIndex.h"
 
 PostProcessor::PostProcessor()
         : mShader("res/shaders/postProcessing/PostProcess.comp") {}
 
-void PostProcessor::applyPostProcessing(Texture &source, Texture &target) {
-    applyPostProcessing(source, target, PostProcSettings());
-}
-
-void PostProcessor::applyPostProcessing(Texture &source, Texture &target, PostProcSettings settings) {
+void PostProcessor::applyPostProcessing(Texture &source, Texture &target, DataStore &settings) {
     if (source.getWidth() != target.getWidth() || source.getHeight() != target.getHeight()) {
         std::cerr << "Can't apply post processing if source and target buffer are not the same size" << std::endl;
     }
@@ -32,16 +29,16 @@ void PostProcessor::applyPostProcessing(Texture &source, Texture &target, PostPr
     target.unbind();
 }
 
-unsigned int PostProcessor::getSettingsBitFlag(PostProcSettings settings) {
+unsigned int PostProcessor::getSettingsBitFlag(DataStore &settings) {
     unsigned int val = 0;
-    if (settings.gammaCorrect) val += GAMMA_CORRECT;
-    if (settings.tonemap) val += TONEMAP;
+    if (settings.getOrElse(GAMMA_CORRECT, false)) val += GAMMA_CORRECT_BIT_FLAG;
+    if (settings.getOrElse(TONEMAP, false)) val += TONEMAP_BIT_FLAG;
 
     return val;
 }
 
-void PostProcessor::buildImgui(PostProcSettings &postProcSettings, DataStore &settings) {
-    if (ImGui::CollapsingHeader("Path Tracer Control")) {
+void PostProcessor::buildImguiTab(DataStore &settings, std::vector<Event> &events) {
+    if (ImGui::CollapsingHeader("Post Processor")) {
 
         ImVec2 windowSize = ImGui::GetWindowSize();
         ImVec2 buttonSize = ImVec2(windowSize.x * 0.9, 25);
@@ -50,7 +47,7 @@ void PostProcessor::buildImgui(PostProcSettings &postProcSettings, DataStore &se
             mShader.reloadShader();
         }
 
-        ImGui::Checkbox("Gamma Correction", &postProcSettings.gammaCorrect);
-        ImGui::Checkbox("tonemapping", &postProcSettings.tonemap);
+        ImGui::Checkbox("Gamma Correction", settings.getPointer<bool>(GAMMA_CORRECT));
+        ImGui::Checkbox("tonemapping", settings.getPointer<bool>(TONEMAP));
     }
 }

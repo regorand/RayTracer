@@ -265,13 +265,13 @@ publish/
 # Publish Web Output
 *.[Pp]ublish.xml
 *.azurePubxml
-# Note: Comment the next line if you want to checkin your web deploy settings,
+# Note: Comment the next line if you want to checkin your web deploy dataStructures,
 # but database connection strings (with potential passwords) will be unencrypted
 *.pubxml
 *.publishproj
 
-# Microsoft Azure Web App publish settings. Comment the next line if you want to
-# checkin your Azure Web App publish settings, but sensitive information contained
+# Microsoft Azure Web App publish dataStructures. Comment the next line if you want to
+# checkin your Azure Web App publish dataStructures, but sensitive information contained
 # in these scripts will be unencrypted
 PublishScripts/
 
@@ -403,7 +403,7 @@ paket-files/
 # FAKE - F# Make
 .fake/
 
-# CodeRush personal settings
+# CodeRush personal dataStructures
 .cr/personal
 
 # Python Tools for Visual Studio (PTVS)

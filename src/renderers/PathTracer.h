@@ -8,7 +8,8 @@
 #include "scene/Scene.h"
 #include "glWrappers/TextureBuffer.h"
 #include "glWrappers/ShaderStorageBuffer.h"
-#include "settings/DataStore.h"
+#include "dataStructures/DataStore.h"
+#include "gui/ImGuiSidebarTab.h"
 
 typedef struct path_s {
     std::vector<glm::vec3> vertices;
@@ -91,7 +92,7 @@ typedef struct ptBuffers_s {
 
 using namespace std::chrono;
 
-class PathTracer {
+class PathTracer : public ImGuiSidebarTab {
 private:
     const unsigned int TARGET_TEXTURE_TARGET = 0;
 
@@ -163,6 +164,8 @@ public:
     Scene &getSceneRef();
 
     PathTracerBuffers &getBuffers();
+
+    virtual void buildImguiTab(DataStore &settings, std::vector<Event> &events) override;
 
 private:
     bool renderFenceSignalled();

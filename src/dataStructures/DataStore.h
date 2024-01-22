@@ -74,6 +74,11 @@ public:
     T *getPointer(int index) {
         std::map<int, DataElement<T>> *map = getMapP<T>();
 
+        // (*map)[index];
+        if (!exists<T>(index)) {
+            store(index, T());
+        }
+
         return (*map)[index].value;
     }
 

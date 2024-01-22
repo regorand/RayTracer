@@ -90,3 +90,7 @@ void BufferRenderer::renderStorageBuffer(ShaderStorageBuffer &buffer,
     mVerts->unbind();
     mShader.unbind();
 }
+
+void BufferRenderer::buildImguiTab(DataStore &settings, std::vector<Event> &events) {
+    buildImGuiWindow();
+}

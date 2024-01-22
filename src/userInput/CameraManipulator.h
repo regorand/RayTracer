@@ -2,7 +2,7 @@
 
 #include "utils/glewIncludeUtils.h"
 #include "KeyStateManager.h"
-#include "scene/Camera.h"
+#include "scene/camera/Camera.h"
 
 class CameraManipulator {
 

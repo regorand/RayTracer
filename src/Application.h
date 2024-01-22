@@ -4,12 +4,13 @@
 #include "utils/glewIncludeUtils.h"
 #include "renderers/PathTracer.h"
 #include "renderers/BufferRenderer.h"
-#include "ImguiUtils.h"
+#include "gui/ImguiUtils.h"
 #include "renderers/PostProcessor.h"
 #include "userInput/KeyStateManager.h"
 #include "renderers/Rasterizer.h"
 #include "userInput/CameraManipulator.h"
-#include "settings/DataStore.h"
+#include "dataStructures/DataStore.h"
+#include "dataStructures/Events.h"
 #include <GLFW/glfw3.h>
 
 typedef struct RenderSettings_s {
@@ -32,6 +33,7 @@ private:
     int displayWidth, displayHeight;
 
     DataStore settings;
+    std::vector<Event> events;
 
     KeyStateManager *keyStateManager = KeyStateManager::getInstance();
     CameraManipulator cameraManipulator;
@@ -43,8 +45,7 @@ public:
 
 private:
     void
-    buildImguiControlSideBar(glm::vec2 displaySize, PathTracer &pt, BufferRenderer &br,
-                             Rasterizer &rasterizer, PostProcessor &postProcessor, PostProcSettings &postProcSettings);
+    buildImguiControlSideBar(glm::vec2 displaySize, std::vector<ImGuiSidebarTab*> &sideBarTabs);
 
     void buildImguiCameraControls(PathTracer &pt, Rasterizer &rasterizer);
 };

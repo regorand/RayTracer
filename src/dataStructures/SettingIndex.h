@@ -5,20 +5,20 @@ enum SettingIndex {
     NONE = 0,
 
     /*
-     * Config DataStore
+     * Config Settings
      *
      */
 
     /*
-     * User DataStore
+     * User Settings
      */
 
     /*
-     * Interaction DataStore
+     * Interaction Settings
      */
 
     /*
-     * Window DataStore
+     * Window Settings
      */
 
     SHOW_PATHTRACE_OUTPUT,
@@ -27,5 +27,12 @@ enum SettingIndex {
     SHOW_STATS_WINDOW,
     SHOW_CONTROL_PANEL,
     MENU_BAR_SIZE,
+
+    /*
+     * Rendering Settings
+     */
+
+    GAMMA_CORRECT,
+    TONEMAP
 
 };

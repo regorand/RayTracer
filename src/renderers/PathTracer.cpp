@@ -4,7 +4,7 @@
 #include "PathTracer.h"
 #include "imgui.h"
 #include "deviceShared/BufferBindings.h"
-#include "settings/SettingIndex.h"
+#include "dataStructures/SettingIndex.h"
 
 PathTracer::PathTracer(int width, int height)
         : mWidth(width),
@@ -307,7 +307,7 @@ void PathTracer::buildImGuiWindow(DataStore &settings) {
         std::string sppString = "SPP of current image: " + std::to_string(mSppCount);
         ImGui::Text("%s", sppString.c_str());
 
-        if (ImGui::CollapsingHeader("Path DataStore")) {
+        if (ImGui::CollapsingHeader("Path Settings")) {
             ImGui::Indent(8.0f);
             ImGui::Checkbox("Russian Roulette", &pathSettings.russianRoulette);
             if (pathSettings.russianRoulette) {
@@ -367,4 +367,8 @@ Scene &PathTracer::getSceneRef() {
 }
 PathTracerBuffers &PathTracer::getBuffers() {
     return buffers;
+}
+
+void PathTracer::buildImguiTab(DataStore &settings, std::vector<Event> &events) {
+    buildImGuiWindow(settings);
 }

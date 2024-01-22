@@ -1,6 +1,6 @@
 #include "ImguiUtils.h"
 #include "imgui.h"
-#include "settings/SettingIndex.h"
+#include "dataStructures/SettingIndex.h"
 
 void buildImguiMenu(DataStore &settings) {
     if (ImGui::BeginMainMenuBar()) {
@@ -42,4 +42,24 @@ void buildImguiAppStats(DataStore &settings) {
 
 glm::vec2 ImVec2ToGlmVec2(ImVec2 vec) {
     return {vec.x, vec.y};
+}
+
+void startIndent() {
+    ImGui::Indent(INDENT_DEPTH);
+}
+
+void endIndent() {
+    ImGui::Unindent(INDENT_DEPTH);
+}
+
+void spacingAndSeperator() {
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Spacing();
+}
+
+void endAndNewIndent() {
+    startIndent();
+    spacingAndSeperator();
+    endIndent();
 }
