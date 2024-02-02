@@ -11,6 +11,7 @@ struct Triangle {
     Vertex V1;
     Vertex V2;
 
+    uint materialIndex;
     Material mat;
 };
 

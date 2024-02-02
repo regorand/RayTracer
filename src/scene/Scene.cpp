@@ -45,7 +45,6 @@ void Scene::createGPUBuffers() {
         triangles.insert(triangles.end(), objectTriangles.begin(), objectTriangles.end());
 
         objects.push_back(bmo);
-
         // TODO materials
 
         if (bmo.emissive) {

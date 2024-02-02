@@ -13,6 +13,7 @@
 class MeshObject {
 private:
     std::vector<Triangle> mTriangles;
+    std::vector<Material> mMaterials;
 
     // TODO best option would be to have mapping from triangles into local material list, save local indices in \
         the triangles GPU buffer and store a constant offset in object buffer

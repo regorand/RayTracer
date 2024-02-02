@@ -3,8 +3,21 @@
 #include "glm/ext/matrix_transform.hpp"
 #include "deviceShared/MaterialFlags.h"
 #include <array>
+#include <algorithm>
 
 void MeshObject::addTriangle(Triangle triangle) {
+    auto iterator = std::find(mMaterials.begin(), mMaterials.end(), triangle.material);
+    if (iterator == mMaterials.end()) {
+        triangle.materialIndex = mMaterials.size();
+        mMaterials.push_back(triangle.material);
+
+        // TODO add index to triangle
+        // TODO count distinct materials per object, to be able to compute an offset into combined material buffer
+        // TODO maybe create another datastructure which holds the triangles for a given material
+    } else {
+        triangle.materialIndex = iterator - mMaterials.begin();
+    }
+
     mTriangles.push_back(triangle);
 }
 
