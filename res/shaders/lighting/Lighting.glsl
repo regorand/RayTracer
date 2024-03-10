@@ -53,19 +53,20 @@ void evaluateLighting(Ray inRay, RayHit rayHit, LightingSettings settings, inout
     vec3 brdf = vec3(0);
     evaluateBRDF(inRay.direction, N, m, thetaM, NDF, outRay.direction, rayHit.mat, brdf);
 
+
+    outRay.origin += outRay.direction * EPS_4;
+
     float newDirLambert = max(0.0f, dot(N, outRay.direction));
     mul *= newDirLambert * brdf / pdf;
 
     if (settings.evaluateNEE) {
         vec3 contribNEE = vec3(0);
         float pdfNEE = 1;
-        sampleLightsourceNEE(rayHit.position, N, inRay.direction, rayHit.mat, seed, contribNEE, pdfNEE);
+        sampleLightsourceNEE(outRay.origin, N, inRay.direction, rayHit.mat, seed, contribNEE, pdfNEE);
 
         outDirect += contribNEE / pdfNEE;
         hasDirect = true;
 
 
     }
-
-    outRay.origin += outRay.direction * EPS_4;
 }
