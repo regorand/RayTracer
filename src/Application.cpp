@@ -76,7 +76,8 @@ int Application::run() {
     Texture renderTarget(&buffer);
     renderTarget.setAccessType(GL_READ_WRITE);
 
-    Texture displayBuffer(&buffer);
+    // Texture displayBuffer(&buffer);
+    Texture displayBuffer(renderTarget.getWidth(), renderTarget.getHeight());
     displayBuffer.setAccessType(GL_READ_WRITE);
 
     Scene scene;
@@ -94,7 +95,7 @@ int Application::run() {
     scene.createGPUBuffers();
     scene.buildRasterizeBuffers();
 
-    PostProcessor postProcessor;
+    PostProcessor postProcessor(displayWidth, displayHeight);
 
     Rasterizer rasterizer;
     rasterizer.setScene(scene);

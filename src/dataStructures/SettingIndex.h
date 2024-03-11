@@ -31,7 +31,11 @@ enum SettingIndex {
     /*
      * Rendering Settings
      */
+    DENOISE_KERNEL_SIZE,
 
+    CONTINUALLY_APPLY_POSTPROC,
+    DO_DENOISE,
+    DENOISER_CHOICE_INDEX,
     GAMMA_CORRECT,
     TONEMAP
 

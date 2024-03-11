@@ -13,7 +13,7 @@ Texture::Texture(int width, int height)
           mInternalFormat(GL_RGBA32F),
           mType(GL_FLOAT),
           mAccessType(GL_READ_WRITE) {
-
+    createTexture(mInternalFormat, mWidth, mHeight, mFormat, mType, GL_NONE);
 }
 
 Texture::Texture(HostBuffer *buffer)

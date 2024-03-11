@@ -27,6 +27,7 @@ private:
     };
 
     std::map<int, DataElement<bool>> boolStore;
+    std::map<int, DataElement<float>> floatStore;
     std::map<int, DataElement<int>> intStore;
     std::map<int, DataElement<glm::vec2>> vec2Store;
 
@@ -53,6 +54,10 @@ public:
     template<typename T>
     T getOrInit(int index) {
         std::map<int, DataElement<T>> *map = getMapP<T>();
+
+        if (!exists<T>(index)) {
+            store(index, T());
+        }
 
         return *(*map)[index].value;
     }
@@ -104,6 +109,11 @@ private:
 template<>
 inline std::optional<std::map<int, DataStore::DataElement<bool>> *> DataStore::getMap() {
     return { &boolStore };
+}
+
+template<>
+inline std::optional<std::map<int, DataStore::DataElement<float>> *> DataStore::getMap() {
+    return { &floatStore};
 }
 
 template<>

@@ -115,7 +115,7 @@ void main() {
     if (hasDirect) {
         vec4 prevBufferContent = imageLoad(imgOutput, bufferCoords);
 
-        float cutoff = 1000;
+        float cutoff = 50;
         if (length(directColor) < cutoff) {
             vec4 newValue = prevBufferContent + vec4(directColor, 0);
 
