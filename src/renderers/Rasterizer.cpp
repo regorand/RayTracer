@@ -1,15 +1,16 @@
 #include "Rasterizer.h"
 #include "glm/gtc/matrix_inverse.hpp"
+#include "glWrappers/Texture.h"
+#include "deviceShared/BufferBindings.h"
 
 Rasterizer::Rasterizer()
         : mShader("res/shaders/raster/simpleScene.vert", "res/shaders/raster/simpleScene.frag"),
-          mPathVisShader("res/shaders/raster/rasterizePath.vert", "res/shaders/raster/rasterizePath.frag") {
+          mPathVisShader("res/shaders/raster/rasterizePath.vert", "res/shaders/raster/rasterizePath.frag"),
+          mGeometryPhaseShader("res/shaders/raster/simpleScene.vert", "res/shaders/raster/saveToBuffers.frag") {
 
 }
 
 void Rasterizer::render() {
-
-
     Camera &camera = mScene.getCamera();
 
     glm::mat4 cameraMat = camera.getTransformation();
@@ -98,5 +99,47 @@ void Rasterizer::renderCameraFrustum(CameraVisBuffers &buffers) {
 
     glDrawElements(GL_LINES, buffers.indexBuffer.getCount(), GL_UNSIGNED_INT, nullptr);
     mPathVisShader.unbind();
+}
+
+void Rasterizer::saveToBuffers(Camera &pathTraceCamera) {
+    /*
+    glm::mat4 cameraMat = pathTraceCamera.getTransformation();
+    glm::mat4 projectionMat = pathTraceCamera.getProjection();
+    */
+    glm::mat4 cameraMat = mScene.getCamera().getTransformation();
+    glm::mat4 projectionMat = mScene.getCamera().getProjection();
+
+    glm::mat4 VP = projectionMat * cameraMat;
+
+    glEnable(GL_DEPTH_TEST);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    /*
+    posBuffer.bindAsImage(RAST_POS_BUFFER_BINDING);
+    normalBuffer.bindAsImage(RAST_NORMAL_BUFFER_BINDING);
+    albedoBuffer.bindAsImage(RAST_ALBEDO_BUFFER_BINDING);
+    */
+
+    mGeometryPhaseShader.bind();
+    for (auto &object: mScene.getObjects()) {
+
+        object.getVertexArray().bind();
+        object.getIndexBuffer().bind();
+
+        glm::mat4 model = object.getTransformRef().getMatrix();
+        glm::mat4 MVP = VP * model;
+        glm::mat4 normalTransform = glm::inverseTranspose(model);
+
+        mGeometryPhaseShader.setUniformMat4f("transform", model);
+        mGeometryPhaseShader.setUniformMat4f("MVP", MVP);
+        mGeometryPhaseShader.setUniformMat4f("normalTransform", normalTransform);
+
+        unsigned int attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+        glDrawBuffers(3, attachments);
+
+        glDrawElements(GL_TRIANGLES, object.getIndexBuffer().getCount(), GL_UNSIGNED_INT, nullptr);
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+    }
+    mGeometryPhaseShader.unbind();
 }
 

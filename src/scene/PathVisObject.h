@@ -2,9 +2,9 @@
 
 #include <vector>
 #include "glm/vec3.hpp"
-#include "glWrappers/VertexArray.h"
-#include "glWrappers/ArrayBuffer.h"
-#include "glWrappers/IndexBuffer.h"
+#include "glWrappers/rasterization/VertexArray.h"
+#include "glWrappers/rasterization/ArrayBuffer.h"
+#include "glWrappers/rasterization/IndexBuffer.h"
 
 class PathVisObject {
     std::vector<glm::vec3> mVertices;

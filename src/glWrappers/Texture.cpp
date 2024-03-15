@@ -2,17 +2,17 @@
 #include "Texture.h"
 #include "GL/glew.h"
 
-Texture::Texture(int width, int height)
+Texture::Texture(int width, int height, GLenum format, GLint internalFormat, GLenum type, GLenum accessType)
         : mGlId(),
           mFilePath(""),
           mLoadedFromFile(false),
           m_bytesPerPixel(0),
           mWidth(width),
           mHeight(height),
-          mFormat(GL_RGB),
-          mInternalFormat(GL_RGBA32F),
-          mType(GL_FLOAT),
-          mAccessType(GL_READ_WRITE) {
+          mFormat(format),
+          mInternalFormat(internalFormat),
+          mType(type),
+          mAccessType(accessType) {
     createTexture(mInternalFormat, mWidth, mHeight, mFormat, mType, GL_NONE);
 }
 
@@ -102,4 +102,8 @@ void Texture::setAccessType(GLenum newType) {
 
 GLenum Texture::getAccessType() {
     return mAccessType;
+}
+
+unsigned int Texture::getGlID() {
+    return mGlId;
 }

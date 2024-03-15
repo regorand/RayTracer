@@ -24,7 +24,7 @@ private:
 
     unsigned char* m_Buf;
 public:
-    Texture(int mWidth, int mHeight);
+    Texture(int mWidth, int mHeight, GLenum format, GLint internalFormat, GLenum type, GLenum accessType);
     Texture(const std::string& path);
     Texture(HostBuffer *buffer);
     ~Texture();
@@ -34,6 +34,8 @@ public:
 
     unsigned int getWidth();
     unsigned int getHeight();
+
+    unsigned int getGlID();
 
     void setAccessType(GLenum newType);
     GLenum getAccessType();

@@ -3,10 +3,10 @@
 #define RAYTRACER_BUFFERRENDERER_H
 
 #include "HostBuffer.h"
-#include "glWrappers/ArrayBuffer.h"
+#include "glWrappers/rasterization/ArrayBuffer.h"
 #include "glWrappers/ShaderStorageBuffer.h"
 #include "glWrappers/Texture.h"
-#include "glWrappers/VertexArray.h"
+#include "glWrappers/rasterization/VertexArray.h"
 #include "glWrappers/shaders/Shader.h"
 #include "gui/ImGuiSidebarTab.h"
 #include <memory>

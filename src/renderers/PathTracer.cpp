@@ -75,6 +75,21 @@ RenderState PathTracer::doRenderStep() {
 
     if (status.state == RenderState::DUE_NEW_PATH) {
         newPath();
+
+        /*
+         * Required for denoiser
+         * 1. pos
+         * 2. normal
+         * 3. albedo
+         *
+         * Required for bounce
+         * 1.
+         *
+         * TODO
+         * 1. rasterize, store values for denoiser in buffers
+         * 2. call compute shader to use denoiser buffer values to create bounce values, store in pathtracer buffers
+         * 3. call bounces as usual
+         */
     }
 
     bindBounce();
@@ -150,6 +165,8 @@ void PathTracer::renderSingleBounce() {
 }
 
 void PathTracer::clearTarget() {
+    // TODO extract to TextureUtils or smth
+
     mSppCount = 0;
     mCurrentTarget->bindAsImage(TARGET_TEXTURE_TARGET);
     mClearTargetShader.bind();

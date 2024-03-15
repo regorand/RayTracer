@@ -5,9 +5,9 @@
 
 #include "glm/vec3.hpp"
 #include "glm/mat4x4.hpp"
-#include "glWrappers/ArrayBuffer.h"
-#include "glWrappers/VertexArray.h"
-#include "glWrappers/IndexBuffer.h"
+#include "glWrappers/rasterization/ArrayBuffer.h"
+#include "glWrappers/rasterization/VertexArray.h"
+#include "glWrappers/rasterization/IndexBuffer.h"
 
 typedef struct {
     ArrayBuffer arrayBuffer;

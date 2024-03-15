@@ -3,9 +3,9 @@
 #include <vector>
 #include "renderers/Types.h"
 #include "scene/Transformation.h"
-#include "glWrappers/IndexBuffer.h"
-#include "glWrappers/VertexArray.h"
-#include "glWrappers/ArrayBuffer.h"
+#include "glWrappers/rasterization/IndexBuffer.h"
+#include "glWrappers/rasterization/VertexArray.h"
+#include "glWrappers/rasterization/ArrayBuffer.h"
 
 /**
  * Represents a single, usually continous object made of triangles

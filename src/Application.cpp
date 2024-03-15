@@ -12,6 +12,8 @@
 #include "dataStructures/SettingIndex.h"
 #include "gui/ImGuiSidebarTab.h"
 #include "scene/camera/CameraController.h"
+#include "glWrappers/TextureFactory.h"
+#include "glWrappers/FrameBufferObject.h"
 #include <imgui.h>
 
 Application::Application() {
@@ -77,8 +79,7 @@ int Application::run() {
     renderTarget.setAccessType(GL_READ_WRITE);
 
     // Texture displayBuffer(&buffer);
-    Texture displayBuffer(renderTarget.getWidth(), renderTarget.getHeight());
-    displayBuffer.setAccessType(GL_READ_WRITE);
+    Texture displayBuffer = createPathTraceBuffer(renderTarget.getWidth(), renderTarget.getHeight());
 
     Scene scene;
     Camera camera(glm::vec3(0, 0, 30), glm::vec3(0, 0, -1));
@@ -99,6 +100,18 @@ int Application::run() {
 
     Rasterizer rasterizer;
     rasterizer.setScene(scene);
+
+    Texture posBuffer = createPathTraceBuffer(displayWidth, displayHeight);
+    Texture normalBuffer = createPathTraceBuffer(displayWidth, displayHeight);
+    Texture albedoBuffer = createPathTraceBuffer(displayWidth, displayHeight);
+
+    Texture depthBuffer = createDepthBuffer(displayWidth, displayHeight);
+
+    FrameBufferObject fbo;
+    fbo.addTextureAttachment(posBuffer, GL_COLOR_ATTACHMENT0);
+    fbo.addTextureAttachment(normalBuffer, GL_COLOR_ATTACHMENT1);
+    fbo.addTextureAttachment(albedoBuffer, GL_COLOR_ATTACHMENT2);
+    fbo.addTextureAttachment(depthBuffer, GL_DEPTH_ATTACHMENT);
 
     PathTracer pathTracer(displayWidth, displayHeight);
     pathTracer.setScene(scene);
@@ -147,7 +160,6 @@ int Application::run() {
             buildImguiAppStats(settings);
         }
 
-
         if (settings.getOrElse<bool>(SHOW_CONTROL_PANEL, false)) {
             buildImguiControlSideBar(glm::vec2(displayWidth, displayHeight), sideBarTabs);
         }
@@ -179,11 +191,24 @@ int Application::run() {
             cameraManipulator.updateCamera(rasterizer.getSceneRef().getCamera(), keyStateManager, diff,
                                            glm::vec2(displayWidth, displayHeight));
 
-            rasterizer.render();
-            rasterizer.renderPaths();
+            fbo.bind();
+
+            posBuffer.bind();
+            normalBuffer.bind(1);
+            albedoBuffer.bind(2);
+
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            rasterizer.saveToBuffers(pathTracer.getSceneRef().getCamera());
+            fbo.unbind();
+
+            br.render(&normalBuffer);
+
+            // rasterizer.render();
+            // rasterizer.renderPaths();
+            // rasterizer.renderCameraFrustum(buffers);
             CameraVisBuffers buffers;
             pathTracer.getSceneRef().getCamera().buildCameraVisBuffers(buffers);
-            rasterizer.renderCameraFrustum(buffers);
         }
 
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -256,4 +281,13 @@ void Application::buildImguiCameraControls(PathTracer &pt, Rasterizer &rasterize
         }
 
     }
+}
+
+void Application::clearTexture(Texture &texture, ComputeShader shader) {
+    texture.bindAsImage(0);
+    shader.bind();
+
+    glDispatchCompute(texture.getWidth(), texture.getHeight(), 1);
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
 }

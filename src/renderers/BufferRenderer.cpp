@@ -1,8 +1,8 @@
 
 #include <memory>
 #include "BufferRenderer.h"
-#include "glWrappers/VertexArray.h"
-#include "glWrappers/ArrayBuffer.h"
+#include "glWrappers/rasterization/VertexArray.h"
+#include "glWrappers/rasterization/ArrayBuffer.h"
 #include "glWrappers/shaders/Shader.h"
 #include "glWrappers/TextureBuffer.h"
 #include "glWrappers/Texture.h"

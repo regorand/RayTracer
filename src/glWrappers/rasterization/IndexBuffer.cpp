@@ -1,6 +1,6 @@
 #include "IndexBuffer.h"
 
-#include <GL/glew.h>
+#include "GL/glew.h"
 
 IndexBuffer::IndexBuffer()
     : m_GLId(0), count(0), mValid(false)
