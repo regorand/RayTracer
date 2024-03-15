@@ -4,11 +4,19 @@ layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 uniform int iteration;
 
-layout (rgba32f, binding = 0) uniform image2D renderBuffer;
+uniform float colorStdDev;
+uniform float posStdDev;
+uniform float normalStdDev;
 
+layout (rgba32f, binding = 0) uniform image2D inputBuffer;
 layout (rgba32f, binding = 1) uniform image2D outputBuffer;
 
+layout (rgba32f, binding = 2) uniform image2D positionBuffer;
+layout (rgba32f, binding = 3) uniform image2D normalBuffer;
 
+float getEdgeWeight(vec3 val1, vec3 val2, float stdDev) {
+    return exp(-pow(distance(val1, val2), 2) / (2 * stdDev));
+}
 
 void main() {
     vec3 sum = vec3(0);
@@ -18,20 +26,36 @@ void main() {
 
     const float weights[3] = float[](3.0f/8, 1.0f/4, 1.0f/16);
 
+    vec3 thisColor = imageLoad(inputBuffer, bufferCoords).xyz;
+    vec3 thisPos = imageLoad(positionBuffer, bufferCoords).xyz;
+    vec3 thisNormal = imageLoad(normalBuffer, bufferCoords).xyz;
+
+    float normalizer = 0;
+
     for (int x = -2; x <= 2; x++) {
         for (int y = -2; y <= 2; y++) {
             int dx = x * int(pow(2, iteration));
             int dy = y * int(pow(2, iteration));
 
+            vec3 color = imageLoad(inputBuffer, bufferCoords + ivec2(dx, dy)).xyz;
+            vec3 pos = imageLoad(positionBuffer, bufferCoords + ivec2(dx, dy)).xyz;
+            vec3 normal = imageLoad(normalBuffer, bufferCoords + ivec2(dx, dy)).xyz;
 
-            vec4 bufferColor = imageLoad(renderBuffer, bufferCoords + ivec2(dx, dy));
+            float colorEdgeWeight = getEdgeWeight(thisColor, color, colorStdDev);
+            float posEdgeWeight = getEdgeWeight(thisPos, pos, posStdDev);
+            float normalEdgeWeight = getEdgeWeight(thisNormal, normal, normalStdDev);
+
+            float edgeWeight = colorEdgeWeight * posEdgeWeight * normalEdgeWeight;
 
             float weight_x = weights[abs(x)];
             float weight_y = weights[abs(y)];
 
-            sum += weight_x * weight_y * bufferColor.xyz;
+            float totalWeight = weight_x * weight_y * edgeWeight;
+            normalizer += totalWeight;
+
+            sum += totalWeight * color;
         }
     }
 
-    imageStore(outputBuffer, bufferCoords, vec4(sum, 1));
+    imageStore(outputBuffer, bufferCoords, vec4(sum / normalizer, 1));
 }

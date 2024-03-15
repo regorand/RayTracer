@@ -26,7 +26,6 @@ private:
     ComputeShader mGammaTonemapShader;
 
     std::vector<Denoiser *> denoisers;
-    AtrousDenoiser atrousDenoiser;
 
     bool mWorkToDo;
     TmpBuffers mTmpBuffers;
