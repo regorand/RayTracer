@@ -1,0 +1,37 @@
+#version 430 core
+
+layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+uniform int iteration;
+
+layout (rgba32f, binding = 0) uniform image2D renderBuffer;
+
+layout (rgba32f, binding = 1) uniform image2D outputBuffer;
+
+
+
+void main() {
+    vec3 sum = vec3(0);
+
+    vec2 texelCoord = vec2(gl_GlobalInvocationID.xy);
+    ivec2 bufferCoords = ivec2(texelCoord);
+
+    const float weights[3] = float[](3.0f/8, 1.0f/4, 1.0f/16);
+
+    for (int x = -2; x <= 2; x++) {
+        for (int y = -2; y <= 2; y++) {
+            int dx = x * int(pow(2, iteration));
+            int dy = y * int(pow(2, iteration));
+
+
+            vec4 bufferColor = imageLoad(renderBuffer, bufferCoords + ivec2(dx, dy));
+
+            float weight_x = weights[abs(x)];
+            float weight_y = weights[abs(y)];
+
+            sum += weight_x * weight_y * bufferColor.xyz;
+        }
+    }
+
+    imageStore(outputBuffer, bufferCoords, vec4(sum, 1));
+}

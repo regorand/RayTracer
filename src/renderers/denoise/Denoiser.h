@@ -19,7 +19,7 @@ public:
 
     virtual std::string getName() = 0;
     // virtual void performDenoise(TmpBuffers &buffers, DataStore &settings) = 0;
-    virtual void performDenoise(TmpBuffers &buffers, DataStore &settings);
+    virtual void performDenoise(TmpBuffers &buffers, std::map<int, Texture> &textureStore, DataStore &settings);
 
     virtual void buildImgui(DataStore &settings) = 0;
 
@@ -27,8 +27,10 @@ public:
 
 protected:
 
-    void performDenoiseIteration(TmpBuffers &buffers, DataStore &settings);
+    void performDenoiseIteration(TmpBuffers &buffers, std::map<int, Texture> &textureStore, DataStore &settings);
 
+    virtual void bindResources(TmpBuffers &buffers, std::map<int, Texture> &textureStore, DataStore &settings) = 0;
+    virtual void unBindResources(TmpBuffers &buffers, std::map<int, Texture> &textureStore, DataStore &settings) = 0;
 };
 
 

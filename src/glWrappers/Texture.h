@@ -21,13 +21,12 @@ private:
      * Access Type when the texture is bound as a buffer object
      */
     GLenum mAccessType;
-
-    unsigned char* m_Buf;
 public:
     Texture(int mWidth, int mHeight, GLenum format, GLint internalFormat, GLenum type, GLenum accessType);
     Texture(const std::string& path);
     Texture(HostBuffer *buffer);
-    ~Texture();
+
+    void destroy();
 
     void updateTexture(void *pixels);
     void updateTexture(GLint xOffset, GLint yOffset, GLsizei width, GLsizei height, void *pixels);

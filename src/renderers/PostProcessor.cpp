@@ -19,6 +19,7 @@ PostProcessor::PostProcessor(int textureWidth, int textureHeight)
 {
     denoisers.emplace_back(new BoxDenoiser());
     denoisers.emplace_back(new GaussDenoiser());
+    denoisers.emplace_back(new AtrousDenoiser());
 }
 
 PostProcessor::~PostProcessor() {
@@ -27,7 +28,7 @@ PostProcessor::~PostProcessor() {
     }
 }
 
-void PostProcessor::applyPostProcessing(Texture &source, Texture &target, DataStore &settings) {
+void PostProcessor::applyPostProcessing(Texture &source, Texture &target, std::map<int, Texture> textureStore, DataStore &settings) {
     if (!(mWorkToDo || settings.getOrElse(CONTINUALLY_APPLY_POSTPROC, false))) return;
 
     mWorkToDo = false;
@@ -44,7 +45,7 @@ void PostProcessor::applyPostProcessing(Texture &source, Texture &target, DataSt
 
     if (settings.getOrElse(DO_DENOISE, false)) {
         auto index = settings.getOrElse<int>(DENOISER_CHOICE_INDEX, 0);
-        denoisers[index]->performDenoise(mTmpBuffers, settings);
+        denoisers[index]->performDenoise(mTmpBuffers, textureStore, settings);
         mTmpBuffers.swap();
     }
 

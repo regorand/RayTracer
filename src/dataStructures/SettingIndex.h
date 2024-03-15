@@ -32,6 +32,7 @@ enum SettingIndex {
      * Rendering Settings
      */
     DENOISE_KERNEL_SIZE,
+    ATROUS_ITERATION_COUNT,
 
     CONTINUALLY_APPLY_POSTPROC,
     DO_DENOISE,

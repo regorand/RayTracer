@@ -6,6 +6,7 @@
 #include "gui/ImGuiSidebarTab.h"
 #include "TmpBuffers.h"
 #include "renderers/denoise/Denoiser.h"
+#include "renderers/denoise/AtrousDenoiser.h"
 
 typedef struct PostProcSettings_s {
     bool gammaCorrect;
@@ -25,6 +26,7 @@ private:
     ComputeShader mGammaTonemapShader;
 
     std::vector<Denoiser *> denoisers;
+    AtrousDenoiser atrousDenoiser;
 
     bool mWorkToDo;
     TmpBuffers mTmpBuffers;
@@ -33,7 +35,7 @@ public:
     PostProcessor(int textureWidth, int textureHeight);
     ~PostProcessor();
 
-    void applyPostProcessing(Texture &source, Texture &target, DataStore &settings);
+    void applyPostProcessing(Texture &source, Texture &target, std::map<int, Texture> textureStore, DataStore &settings);
 
     void noUniformsOperation(ComputeShader shader, Texture &source, Texture &target);
     void applyGammaAndTonemap(Texture &source, Texture &target, DataStore &settings);

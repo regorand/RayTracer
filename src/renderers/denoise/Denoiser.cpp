@@ -2,28 +2,17 @@
 #include "deviceShared/BufferBindings.h"
 #include "dataStructures/SettingIndex.h"
 
-void Denoiser::performDenoise(TmpBuffers &buffers, DataStore &settings) {
-    performDenoiseIteration(buffers, settings);
+void Denoiser::performDenoise(TmpBuffers &buffers, std::map<int, Texture> &textureStore, DataStore &settings) {
+    performDenoiseIteration(buffers, textureStore, settings);
 }
 
-void Denoiser::performDenoiseIteration(TmpBuffers &buffers, DataStore &settings) {
-    auto &source = buffers.getSourceTex();
-    auto &target = buffers.getTargetTex();
+void Denoiser::performDenoiseIteration(TmpBuffers &buffers, std::map<int, Texture> &textureStore, DataStore &settings) {
+    bindResources(buffers, textureStore, settings);
 
-    source.bindAsImage(POST_PROC_SOURCE_BINDING);
-    target.bindAsImage(POST_PROC_TARGET_BINDING);
-
-    mShader.bind();
-
-    int halfKernelSize = settings.getOrElse(DENOISE_KERNEL_SIZE, 0);
-    mShader.setUniform1i("halfKernelSize", halfKernelSize);
-
-    glDispatchCompute(source.getWidth(), source.getHeight(), 1);
+    glDispatchCompute(buffers.tmp1.getWidth(), buffers.tmp1.getHeight(), 1);
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-    mShader.unbind();
-    source.unbind();
-    target.unbind();
+    unBindResources(buffers, textureStore, settings);
 }
 
 void Denoiser::reloadShader() {

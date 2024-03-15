@@ -30,7 +30,7 @@ Texture::Texture(HostBuffer *buffer)
     createTexture(mInternalFormat, mWidth, mHeight, mFormat, mType, buffer->getData());
 }
 
-Texture::~Texture() {
+void Texture::destroy() {
     glDeleteTextures(1, &mGlId);
 }
 
@@ -55,8 +55,8 @@ void Texture::createTexture(GLint internalFormat,
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
 
     glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, data);
     unbind();

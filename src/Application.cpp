@@ -14,6 +14,7 @@
 #include "scene/camera/CameraController.h"
 #include "glWrappers/TextureFactory.h"
 #include "glWrappers/FrameBufferObject.h"
+#include "dataStructures/TextureNames.h"
 #include <imgui.h>
 
 Application::Application() {
@@ -75,11 +76,15 @@ int Application::run() {
 
     HostBuffer buffer(displayWidth, displayHeight);
 
-    Texture renderTarget(&buffer);
-    renderTarget.setAccessType(GL_READ_WRITE);
+    std::map<int, Texture> textureStore;
+    textureStore.insert({RENDER_TARGET, createPathTraceBuffer(displayWidth, displayHeight)});
+    textureStore.insert({DISPLAY_BUFFER, createPathTraceBuffer(displayWidth, displayHeight)});
 
-    // Texture displayBuffer(&buffer);
-    Texture displayBuffer = createPathTraceBuffer(renderTarget.getWidth(), renderTarget.getHeight());
+    textureStore.insert({POS_BUFFER, createPathTraceBuffer(displayWidth, displayHeight)});
+    textureStore.insert({NORMAL_BUFFER, createPathTraceBuffer(displayWidth, displayHeight)});
+    textureStore.insert({ALBEDO_BUFFER, createPathTraceBuffer(displayWidth, displayHeight)});
+
+    textureStore.insert({DEPTH_BUFFER, createDepthBuffer(displayWidth, displayHeight)});
 
     Scene scene;
     Camera camera(glm::vec3(0, 0, 30), glm::vec3(0, 0, -1));
@@ -101,22 +106,16 @@ int Application::run() {
     Rasterizer rasterizer;
     rasterizer.setScene(scene);
 
-    Texture posBuffer = createPathTraceBuffer(displayWidth, displayHeight);
-    Texture normalBuffer = createPathTraceBuffer(displayWidth, displayHeight);
-    Texture albedoBuffer = createPathTraceBuffer(displayWidth, displayHeight);
-
-    Texture depthBuffer = createDepthBuffer(displayWidth, displayHeight);
-
     FrameBufferObject fbo;
-    fbo.addTextureAttachment(posBuffer, GL_COLOR_ATTACHMENT0);
-    fbo.addTextureAttachment(normalBuffer, GL_COLOR_ATTACHMENT1);
-    fbo.addTextureAttachment(albedoBuffer, GL_COLOR_ATTACHMENT2);
-    fbo.addTextureAttachment(depthBuffer, GL_DEPTH_ATTACHMENT);
+    fbo.addTextureAttachment(textureStore.at(POS_BUFFER), GL_COLOR_ATTACHMENT0);
+    fbo.addTextureAttachment(textureStore.at(NORMAL_BUFFER), GL_COLOR_ATTACHMENT1);
+    fbo.addTextureAttachment(textureStore.at(ALBEDO_BUFFER), GL_COLOR_ATTACHMENT2);
+    fbo.addTextureAttachment(textureStore.at(DEPTH_BUFFER), GL_DEPTH_ATTACHMENT);
 
     PathTracer pathTracer(displayWidth, displayHeight);
     pathTracer.setScene(scene);
 
-    pathTracer.setTargetp(&renderTarget);
+    pathTracer.setTargetp(&textureStore.at(RENDER_TARGET));
     pathTracer.clearTarget();
 
     PathVisObject pathObj = PathVisObject(pathTracer.getRecordedPath().vertices);
@@ -172,9 +171,12 @@ int Application::run() {
         glViewport(0, 0, displayWidth, displayHeight);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
         if (settings.getOrElse(SHOW_PATHTRACE_OUTPUT, false)) {
-            postProcessor.applyPostProcessing(renderTarget, displayBuffer, settings);
+            // postProcessor.applyPostProcessing(renderTarget, displayBuffer, settings);
+            postProcessor.applyPostProcessing(textureStore.at(RENDER_TARGET),
+                                              textureStore.at(DISPLAY_BUFFER),
+                                              textureStore,
+                                              settings);
 
             if (settings.getOrElse(SHOW_PATHTRACE_DEBUG, false)) {
                 int currentIndex = settings.getOrElse(PATHTRACE_DEBUG_BUFFER_INDEX, 0);
@@ -184,7 +186,7 @@ int Application::run() {
                 br.renderStorageBuffer(pathTracer.getBuffers().getByIndex(currentIndex),
                                        glm::vec2(displayWidth, displayHeight));
             } else {
-                br.render(&displayBuffer);
+                br.render(&textureStore.at(DISPLAY_BUFFER));
             }
         } else {
             glm::vec2 diff = keyStateManager->getMouseAndGetDiff(window);
@@ -193,16 +195,18 @@ int Application::run() {
 
             fbo.bind();
 
+            /*
             posBuffer.bind();
             normalBuffer.bind(1);
             albedoBuffer.bind(2);
+            */
 
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             rasterizer.saveToBuffers(pathTracer.getSceneRef().getCamera());
             fbo.unbind();
 
-            br.render(&normalBuffer);
+            br.render(&textureStore.at(NORMAL_BUFFER));
 
             // rasterizer.render();
             // rasterizer.renderPaths();
@@ -218,6 +222,10 @@ int Application::run() {
 
         glfwSwapBuffers(window);
 
+    }
+
+    for (auto &texture : textureStore) {
+        texture.second.destroy();
     }
 
     ImGui_ImplOpenGL3_Shutdown();
