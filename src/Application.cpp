@@ -151,34 +151,20 @@ int Application::run() {
     sideBarTabs.push_back(&postProcessor);
 
 
-
-
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
-        /*
         RenderState state = pathTracer.getRenderState();
         if (state != RenderState::IDLE) {
             pathTracer.doRenderStep();
         }
-         */
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-
-        ImGui::Render();
-
         glViewport(0, 0, displayWidth, displayHeight);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        testScene.render(testScene.getActiveCamera());
-
-        glm::vec2 diff = keyStateManager->getMouseAndGetDiff(window);
-        cameraManipulator.updateCamera(testScene.getActiveCamera(), keyStateManager, diff,
-                                       glm::vec2(displayWidth, displayHeight));
-        /*
 
         buildImguiMenu(settings);
 
@@ -213,17 +199,23 @@ int Application::run() {
                 br.render(&textureStore.at(DISPLAY_BUFFER));
             }
         } else {
+            testScene.render(testScene.getActiveCamera());
+
+            glm::vec2 diff = keyStateManager->getMouseAndGetDiff(window);
+            cameraManipulator.updateCamera(testScene.getActiveCamera(), keyStateManager, diff,
+                                           glm::vec2(displayWidth, displayHeight));
+
+            /*
             glm::vec2 diff = keyStateManager->getMouseAndGetDiff(window);
             cameraManipulator.updateCamera(rasterizer.getSceneRef().getCamera(), keyStateManager, diff,
                                            glm::vec2(displayWidth, displayHeight));
 
             fbo.bind();
 
-            /*
+
             posBuffer.bind();
             normalBuffer.bind(1);
             albedoBuffer.bind(2);
-
 
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -237,14 +229,20 @@ int Application::run() {
             // rasterizer.renderCameraFrustum(buffers);
             CameraVisBuffers buffers;
             pathTracer.getSceneRef().getCamera().buildCameraVisBuffers(buffers);
+
+            */
         }
 
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-    */
 
+
+
+
+
+        ImGui::EndFrame();
+        ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
 
         glfwSwapBuffers(window);
     }
