@@ -7,5 +7,9 @@ in vec3 fragNormal;
 out vec4 outColor;
 
 void main() {
-    outColor = vec4(fragPos, 1);
+    const vec3 UP = vec3(0, 1, 0);
+    float normDot = dot(normalize(fragNormal), UP);
+    float val = (normDot + 1) / 2;
+
+    outColor = vec4(vec3(val), 1);
 }
