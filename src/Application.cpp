@@ -173,10 +173,10 @@ int Application::run() {
         glViewport(0, 0, displayWidth, displayHeight);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        testScene.render(camera);
+        testScene.render(testScene.getActiveCamera());
 
         glm::vec2 diff = keyStateManager->getMouseAndGetDiff(window);
-        cameraManipulator.updateCamera(rasterizer.getSceneRef().getCamera(), keyStateManager, diff,
+        cameraManipulator.updateCamera(testScene.getActiveCamera(), keyStateManager, diff,
                                        glm::vec2(displayWidth, displayHeight));
         /*
 

@@ -12,6 +12,8 @@
 class Scene {
     CameraController cameraController;
 
+    int activeCameraIndex = DEFAULT_CAMERA_INDEX;
+
     tinygltf::Model model;
     GraphNode sceneGraphRoot;
 
@@ -24,6 +26,8 @@ public:
     bool loadFile(std::string path);
 
     void addCamera(Camera camera);
+    Camera &getActiveCamera();
+
 
     void buildRasterBuffers();
     void buildPathtraceBuffers();

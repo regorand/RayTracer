@@ -5,13 +5,17 @@
 #include "renderers/Rasterizer.h"
 #include "renderers/PathTracer.h"
 
-class CameraController : public ImGuiSidebarTab {
+const int DEFAULT_CAMERA_INDEX = 0;
 
+class CameraController : public ImGuiSidebarTab {
 private:
     std::vector<Camera> cameras;
 
 
 public:
+    CameraController();
+
+    Camera &getCameraByIndex(int index);
 
     void addCamera(Camera camera);
     void addCameras(std::vector<Camera> &cameras);

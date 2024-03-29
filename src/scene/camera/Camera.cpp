@@ -123,3 +123,7 @@ std::string Camera::getName() {
 void Camera::setIntrinsics(const Intrinsics intrinsics) {
     mIntrinsics = intrinsics;
 }
+
+Camera Camera::getDefaultCamera() {
+    return {glm::vec3(0, 0, -25), glm::vec3(0, 0, 1)};
+}

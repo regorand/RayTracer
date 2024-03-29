@@ -40,6 +40,8 @@ private:
 public:
     Camera(glm::vec3 position, glm::vec3 viewDir, glm::vec3 up = glm::vec3(0, 1, 0));
 
+    static Camera getDefaultCamera();
+
     glm::mat4 getTransformation();
     glm::mat4 getProjection();
 

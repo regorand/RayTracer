@@ -136,3 +136,7 @@ void Scene::renderNode(GraphNode &node, Shader &shader, glm::mat4 transform, glm
 
     glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, (void *) (indexBufferIndex * sizeof(GLuint)));
 }
+
+Camera &Scene::getActiveCamera() {
+    return cameraController.getCameraByIndex(activeCameraIndex);
+}
