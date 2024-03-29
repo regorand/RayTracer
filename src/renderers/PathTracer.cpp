@@ -262,7 +262,7 @@ void PathTracer::buildImGuiProgressBar(glm::vec2 displaySize) {
     ImGui::End();
 }
 
-void PathTracer::setScene(Scene &scene) {
+void PathTracer::setScene(OldScene &scene) {
     mScene = scene;
 }
 
@@ -379,7 +379,7 @@ void PathTracer::recordPathVertex() {
     }
 }
 
-Scene &PathTracer::getSceneRef() {
+OldScene &PathTracer::getSceneRef() {
     return mScene;
 }
 PathTracerBuffers &PathTracer::getBuffers() {

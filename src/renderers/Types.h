@@ -1,7 +1,7 @@
 #pragma once
 #include "glm/glm.hpp"
 
-struct Vertex
+struct VertexOld
 {
     alignas(16) glm::vec3 pos{};
     alignas(16) glm::vec3 normal{};
@@ -26,7 +26,7 @@ struct Material
 };
  */
 
-struct Material {
+struct MaterialOld {
     glm::vec4 albedo;
     glm::vec4 emissionColor;
     float roughness;
@@ -46,11 +46,11 @@ struct Material {
 
 struct Triangle
 {
-    Vertex V0;
-    Vertex V1;
-    Vertex V2;
+    VertexOld V0;
+    VertexOld V1;
+    VertexOld V2;
 
-    Material material{};
+    MaterialOld material{};
 };
 
 struct AABB {

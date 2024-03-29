@@ -4,10 +4,13 @@
 #include "glm/gtc/matrix_transform.hpp"
 
 Camera::Camera(glm::vec3 position, glm::vec3 viewDir, glm::vec3 up) :
-        mPosition(position), mViewDir(glm::normalize(viewDir)), mCameraSpaceUp(up) {
+        mName("name"), mPosition(position), mViewDir(glm::normalize(viewDir)), mCameraSpaceUp(up) {
 
     mIntrinsics.aspectRatio = 16.0f / 9.0f;
     mIntrinsics.fovY = glm::pi<float>() / 3;
+
+    mIntrinsics.zNear = 0.1f;
+    mIntrinsics.zFar = 1000.0f;
     calculateLocalUp();
 }
 
@@ -72,7 +75,7 @@ void Camera::buildCameraVisBuffers(CameraVisBuffers &buffers) {
 }
 
 glm::mat4 Camera::getProjection() {
-    return glm::perspective(getIntrinsics().fovY, getIntrinsics().aspectRatio, 0.1f, 1000.0f);
+    return glm::perspective(getIntrinsics().fovY, getIntrinsics().aspectRatio, getIntrinsics().zNear, getIntrinsics().zFar);
 }
 
 void Camera::setAspect(float aspect) {
@@ -107,4 +110,16 @@ glm::vec3 Camera::getLocalUpVec() {
 void Camera::calculateLocalUp() {
     glm::vec3 tangent = glm::cross(mViewDir, mCameraSpaceUp);
     mLocalUp = glm::normalize(glm::cross(tangent, mViewDir));
+}
+
+void Camera::setName(std::string name) {
+    mName = name;
+}
+
+std::string Camera::getName() {
+    return mName;
+}
+
+void Camera::setIntrinsics(const Intrinsics intrinsics) {
+    mIntrinsics = intrinsics;
 }

@@ -5,7 +5,7 @@
 #include "renderers/BufferRenderer.h"
 #include "gui/ImguiUtils.h"
 #include "renderers/PathTracer.h"
-#include "scene/Scene.h"
+#include "scene/OldScene.h"
 #include "utils/SceneCreateUtils.h"
 #include "renderers/PostProcessor.h"
 #include "renderers/Rasterizer.h"
@@ -15,6 +15,9 @@
 #include "glWrappers/TextureFactory.h"
 #include "glWrappers/FrameBufferObject.h"
 #include "dataStructures/TextureNames.h"
+#include "scene/scene_loading/ModelLoader.h"
+#include "scene/buffers/SceneBuilder.h"
+#include "scene/Scene.h"
 #include <imgui.h>
 
 Application::Application() {
@@ -58,6 +61,12 @@ int Application::run() {
         throw std::runtime_error("Glew init failed");
     }
 
+    Scene testScene;
+    testScene.loadFile("res/models/donkey.gltf");
+
+    testScene.buildRasterBuffers();
+
+
     int major;
     int minor;
     glGetIntegerv(GL_MAJOR_VERSION, &major);
@@ -86,8 +95,8 @@ int Application::run() {
 
     textureStore.insert({DEPTH_BUFFER, createDepthBuffer(displayWidth, displayHeight)});
 
-    Scene scene;
-    Camera camera(glm::vec3(0, 0, 30), glm::vec3(0, 0, -1));
+    OldScene scene;
+    Camera camera(glm::vec3(0, 0, -25), glm::vec3(0, 0, 1));
     camera.setAspect((float) displayWidth / (float) displayHeight);
     scene.setCamera(camera);
 
@@ -132,26 +141,44 @@ int Application::run() {
 
     settings.store(GAMMA_CORRECT, true);
 
-    CameraController cameraController(pathTracer, rasterizer);
+    // CameraController cameraController(pathTracer, rasterizer);
 
     std::vector<ImGuiSidebarTab *> sideBarTabs;
     sideBarTabs.push_back(&br);
     sideBarTabs.push_back(&pathTracer);
     sideBarTabs.push_back(&scene);
-    sideBarTabs.push_back(&cameraController);
+    // sideBarTabs.push_back(&cameraController);
     sideBarTabs.push_back(&postProcessor);
+
+
+
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
+        /*
         RenderState state = pathTracer.getRenderState();
         if (state != RenderState::IDLE) {
             pathTracer.doRenderStep();
         }
+         */
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+
+
+        ImGui::Render();
+
+        glViewport(0, 0, displayWidth, displayHeight);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        testScene.render(camera);
+
+        glm::vec2 diff = keyStateManager->getMouseAndGetDiff(window);
+        cameraManipulator.updateCamera(rasterizer.getSceneRef().getCamera(), keyStateManager, diff,
+                                       glm::vec2(displayWidth, displayHeight));
+        /*
 
         buildImguiMenu(settings);
 
@@ -165,11 +192,8 @@ int Application::run() {
 
         if (state != RenderState::IDLE) pathTracer.buildImGuiProgressBar(glm::vec2(displayWidth, displayHeight));
 
-        ImGui::Render();
 
 
-        glViewport(0, 0, displayWidth, displayHeight);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         if (settings.getOrElse(SHOW_PATHTRACE_OUTPUT, false)) {
             // postProcessor.applyPostProcessing(renderTarget, displayBuffer, settings);
@@ -199,7 +223,7 @@ int Application::run() {
             posBuffer.bind();
             normalBuffer.bind(1);
             albedoBuffer.bind(2);
-            */
+
 
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -217,11 +241,12 @@ int Application::run() {
 
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
+    */
+
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
 
         glfwSwapBuffers(window);
-
     }
 
     for (auto &texture : textureStore) {

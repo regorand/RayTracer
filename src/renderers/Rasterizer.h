@@ -1,6 +1,6 @@
 #pragma once
 
-#include "scene/Scene.h"
+#include "scene/OldScene.h"
 #include "glWrappers/rasterization/IndexBuffer.h"
 #include "glWrappers/rasterization/VertexArray.h"
 #include "glWrappers/shaders/Shader.h"
@@ -14,7 +14,7 @@ private:
     Shader mPathVisShader;
     Shader mGeometryPhaseShader;
 
-    Scene mScene;
+    OldScene mScene;
 
     VertexArray mVa;
     IndexBuffer mIb;
@@ -31,8 +31,8 @@ public:
     void renderPaths();
     void renderCameraFrustum(CameraVisBuffers &buffers);
 
-    void setScene(Scene &scene);
-    Scene &getSceneRef();
+    void setScene(OldScene &scene);
+    OldScene &getSceneRef();
 
     bool canRasterize();
 };

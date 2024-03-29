@@ -5,7 +5,7 @@
 #include "glWrappers/Texture.h"
 #include "glWrappers/shaders/ComputeShader.h"
 #include "utils/RandomEngine.h"
-#include "scene/Scene.h"
+#include "scene/OldScene.h"
 #include "glWrappers/TextureBuffer.h"
 #include "glWrappers/ShaderStorageBuffer.h"
 #include "dataStructures/DataStore.h"
@@ -116,7 +116,7 @@ private:
 
     Texture *mCurrentTarget;
 
-    Scene mScene;
+    OldScene mScene;
 
     milliseconds renderStart;
 
@@ -143,7 +143,7 @@ public:
 
     void setTargetp(Texture *target);
 
-    void setScene(Scene &scene);
+    void setScene(OldScene &scene);
 
     void reloadShaders();
 
@@ -161,7 +161,7 @@ public:
 
     void setRecordingCoords(glm::vec2 coords);
 
-    Scene &getSceneRef();
+    OldScene &getSceneRef();
 
     PathTracerBuffers &getBuffers();
 

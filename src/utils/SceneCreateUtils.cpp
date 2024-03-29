@@ -5,7 +5,7 @@
 void createCornellBox(std::vector<MeshObject> &outObjects) {
     MeshObject walls;
 
-    std::vector<Vertex> wallVertices;
+    std::vector<VertexOld> wallVertices;
 
     glm::vec3 lower(-10);
     glm::vec3 higher(10);
@@ -15,14 +15,14 @@ void createCornellBox(std::vector<MeshObject> &outObjects) {
     for (int x = 0; x < 2; x++) {
         for (int y = 0; y < 2; y++) {
             for (int z = 0; z < 2; z++) {
-                Vertex v;
+                VertexOld v;
                 v.pos = (glm::vec3(1) - glm::vec3(x, y, z)) * lower + glm::vec3(x, y, z) * higher + offset;
                 wallVertices.push_back(v);
             }
         }
     }
 
-    Material lowRoughWhite{};
+    MaterialOld lowRoughWhite{};
     lowRoughWhite.albedo = glm::vec4(1.0f);
     lowRoughWhite.roughness = 0.001f;
     lowRoughWhite.emission = 0.0f;
@@ -77,19 +77,19 @@ void createCornellBox(std::vector<MeshObject> &outObjects) {
     glm::vec2 lightHigher =
             glm::vec2(higher.x, higher.y) - glm::vec2((xDiff * 0.5) * percentage, (zDiff * 0.5) * percentage);
 
-    Vertex LL;
+    VertexOld LL;
     LL.pos = glm::vec3(lightLower.x, higher.y - eps, lightLower.y);
 
-    Vertex LU;
+    VertexOld LU;
     LU.pos = glm::vec3(lightLower.x, higher.y - eps, lightHigher.y);
 
-    Vertex UL;
+    VertexOld UL;
     UL.pos = glm::vec3(lightHigher.x, higher.y - eps, lightLower.y);
 
-    Vertex UU;
+    VertexOld UU;
     UU.pos = glm::vec3(lightHigher.x, higher.y - eps, lightHigher.y);
 
-    Material lightMat = WHITE_ROUGH;
+    MaterialOld lightMat = WHITE_ROUGH;
     lightMat.emission = 1.0;
     lightMat.emissionColor = glm::vec4(15, 15, 15, 1);
 
@@ -145,7 +145,7 @@ void createSampleBoxes(std::vector<MeshObject> &outObjects) {
 
     std::vector<Triangle> centerBox;
 
-    Material centerMaterial = CYAN_ROUGH;
+    MaterialOld centerMaterial = CYAN_ROUGH;
 
     createBox(centerBox, centerMaterial, lower, higher, ALL_FACES);
     MeshObject centerBoxObject;
@@ -164,14 +164,14 @@ void createSampleBoxes(std::vector<MeshObject> &outObjects) {
     outObjects.push_back(box);
 }
 
-void createBox(std::vector<Triangle> &outTriangles, Material mat, glm::vec3 lower, glm::vec3 higher,
+void createBox(std::vector<Triangle> &outTriangles, MaterialOld mat, glm::vec3 lower, glm::vec3 higher,
                unsigned int faceFlags) {
-    std::vector<Vertex> wallVertices;
+    std::vector<VertexOld> wallVertices;
 
     for (int x = 0; x < 2; x++) {
         for (int y = 0; y < 2; y++) {
             for (int z = 0; z < 2; z++) {
-                Vertex v;
+                VertexOld v;
                 v.pos = (glm::vec3(1) - glm::vec3(x, y, z)) * lower + glm::vec3(x, y, z) * higher;
                 wallVertices.push_back(v);
             }
@@ -216,8 +216,8 @@ void createBox(std::vector<Triangle> &outTriangles, Material mat, glm::vec3 lowe
 
 }
 
-Triangle createTriangle(std::vector<Vertex> &vertices, unsigned int index1, unsigned int index2, unsigned int index3,
-                        Material mat) {
+Triangle createTriangle(std::vector<VertexOld> &vertices, unsigned int index1, unsigned int index2, unsigned int index3,
+                        MaterialOld mat) {
     Triangle triangle;
     triangle.V0 = vertices[index1];
     triangle.V1 = vertices[index2];

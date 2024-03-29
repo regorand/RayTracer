@@ -8,11 +8,13 @@
 class CameraController : public ImGuiSidebarTab {
 
 private:
-    PathTracer &pt;
-    Rasterizer &rasterizer;
+    std::vector<Camera> cameras;
+
 
 public:
-    CameraController(PathTracer &pt, Rasterizer &rasterizer);
+
+    void addCamera(Camera camera);
+    void addCameras(std::vector<Camera> &cameras);
 
     void buildImguiTab(DataStore &settings, std::vector<Event> &events) override;
 

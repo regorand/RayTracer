@@ -1,65 +1,39 @@
+#pragma once
 
-#ifndef RAYTRACER_SCENE_H
-#define RAYTRACER_SCENE_H
 
-#include <vector>
-#include "glm/vec3.hpp"
-#include "scene/camera/Camera.h"
-#include "renderers/Types.h"
-#include "glWrappers/shaders/SSBO.h"
-#include "MeshObject.h"
-#include "SceneBuffers.h"
-#include "PathVisObject.h"
-#include "dataStructures/DataStore.h"
-#include "dataStructures/Events.h"
-#include "gui/ImGuiSidebarTab.h"
+#include "scene/camera/CameraController.h"
+#include "tiny_gltf.h"
+#include "SceneGraph.h"
+#include "Material.h"
+#include "Mesh.h"
+#include "Vertex.h"
+#include "scene/buffers/RasterizeBuffers.h"
 
-class Scene : public ImGuiSidebarTab {
+class Scene {
+    CameraController cameraController;
 
-private:
-    std::vector<MeshObject> mObjects;
-    std::vector<PathVisObject> mPaths;
+    tinygltf::Model model;
+    GraphNode sceneGraphRoot;
 
-    SceneBuffers sceneBuffers;
+    std::vector<Mesh> mMeshes;
+    std::vector<Material> mMaterials;
 
-    Camera mCamera;
-
-    unsigned int mObjectCount;
-    unsigned int mEmissiveCount;
+    RasterBuffers mRasterBuffers;
 
 public:
-    Scene();
+    bool loadFile(std::string path);
 
-    void setCamera(Camera camera);
-    Camera &getCamera();
+    void addCamera(Camera camera);
 
-    void addMeshObject(MeshObject &meshObject);
-    void addPathObject(PathVisObject &pathVisObject);
+    void buildRasterBuffers();
+    void buildPathtraceBuffers();
 
-    std::vector<MeshObject> &getObjects();
-    std::vector<PathVisObject> &getPathObjects();
+    void render(Camera &camera);
 
-    void createGPUBuffers();
-
-    bool hasGPUBuffers() { return sceneBuffers.isValid(); };
-
-    unsigned int getObjectCount() { return mObjectCount; };
-    unsigned int getEmissiveCount() {return mEmissiveCount; };
-
-    void bind();
-    void unbind();
-
-    void buildRasterizeBuffers();
-    bool canRasterize();
-
-    void resetPaths();
-
-    void buildImguiTab(DataStore &settings, std::vector<Event> &events) override;
+    void renderNode(GraphNode &node, Shader &shader, glm::mat4 transform, glm::mat4 &VP);
 
 private:
-    void buildImguiObjectList();
-    void buildObjectImgui(MeshObject &object, size_t index);
+
+    void buildRasterBuffersNode(GraphNode node, std::vector<Vertex> &data, std::vector<unsigned int> &indices);
+
 };
-
-
-#endif //RAYTRACER_SCENE_H

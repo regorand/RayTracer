@@ -70,7 +70,7 @@ void Rasterizer::renderPaths() {
     }
 }
 
-void Rasterizer::setScene(Scene &scene) {
+void Rasterizer::setScene(OldScene &scene) {
     mScene = scene;
 }
 
@@ -78,7 +78,7 @@ bool Rasterizer::canRasterize() {
     return mScene.canRasterize();
 }
 
-Scene &Rasterizer::getSceneRef() {
+OldScene &Rasterizer::getSceneRef() {
     return mScene;
 }
 

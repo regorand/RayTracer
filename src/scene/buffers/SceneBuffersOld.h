@@ -4,7 +4,7 @@
 #include "glWrappers/shaders/SSBO.h"
 #include "renderers/Types.h"
 
-class SceneBuffers {
+class SceneBuffersOld {
 private:
     SSBO mTriangleSSBO;
     SSBO mObjectSSBO;
@@ -14,7 +14,7 @@ private:
 public:
     bool createGPUBuffers(std::vector<Triangle> &triangles,
                           std::vector<BufferMeshObject> &objectIds,
-                          std::vector<Material> &materials,
+                          std::vector<MaterialOld> &materials,
                           std::vector<unsigned int> &emissiveObjects);
 
     void bind();

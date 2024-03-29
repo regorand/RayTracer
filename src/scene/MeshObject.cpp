@@ -56,7 +56,7 @@ void MeshObject::createRasterBuffers() {
     unsigned int vertexCount = 0;
 
     for (auto &triangle: mTriangles) {
-        std::array<Vertex, 3> vertices = {triangle.V0, triangle.V1, triangle.V2};
+        std::array<VertexOld, 3> vertices = {triangle.V0, triangle.V1, triangle.V2};
 
         glm::vec3 edge1 = triangle.V1.pos - triangle.V0.pos;
         glm::vec3 edge2 = triangle.V2.pos - triangle.V0.pos;

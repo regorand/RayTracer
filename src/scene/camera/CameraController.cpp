@@ -1,22 +1,18 @@
 #include "CameraController.h"
 #include "imgui.h"
 
-CameraController::CameraController(PathTracer &pt, Rasterizer &rasterizer)
-    : pt(pt), rasterizer(rasterizer)
-{}
-
 void CameraController::buildImguiTab(DataStore &settings, std::vector<Event> &events) {
     if (ImGui::CollapsingHeader("Camera Controls")) {
+        ImGui::Text("Camera Controls Go here");
+    }
+}
 
-        ImVec2 windowSize = ImGui::GetWindowSize();
-        ImVec2 buttonSize = ImVec2(windowSize.x * 0.9, 25);
+void CameraController::addCamera(Camera camera) {
+    cameras.push_back(camera);
+}
 
-        if (ImGui::Button("Reset debug camera", buttonSize)) {
-            rasterizer.getSceneRef().setCamera(pt.getSceneRef().getCamera());
-        }
-
-        if (ImGui::Button("Pathtrace camera to debug camera", buttonSize)) {
-            pt.getSceneRef().setCamera(rasterizer.getSceneRef().getCamera());
-        }
+void CameraController::addCameras(std::vector<Camera> &newCameras) {
+    if (!newCameras.empty()) {
+        cameras.insert(cameras.end(), newCameras.begin(), newCameras.end());
     }
 }
