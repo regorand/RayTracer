@@ -5,6 +5,7 @@
 #include "imgui.h"
 #include "deviceShared/BufferBindings.h"
 #include "dataStructures/SettingIndex.h"
+#include "glWrappers/shaders/ShaderUtils.hpp"
 
 PathTracer::PathTracer(int width, int height)
         : mWidth(width),
@@ -12,9 +13,9 @@ PathTracer::PathTracer(int width, int height)
 
           buffers(mWidth * mHeight * sizeof(float) * 4, GL_DYNAMIC_DRAW),
 
-          mBounceShader(ComputeShader("res/shaders/compute/computeSingleBounce.comp")),
-          mNewPathShader(ComputeShader("res/shaders/compute/CreateNewPath.comp")),
-          mClearTargetShader(ComputeShader("res/shaders/compute/clearColorBuffer.comp")) {
+          mBounceShader(makeComputeProgram("res/shaders/compute/computeSingleBounce.comp")),
+          mNewPathShader(makeComputeProgram("res/shaders/compute/CreateNewPath.comp")),
+          mClearTargetShader(makeComputeProgram("res/shaders/compute/clearColorBuffer.comp")) {
 }
 
 void PathTracer::startRender() {

@@ -9,6 +9,7 @@
 #include "glWrappers/rasterization/VertexArray.h"
 #include "glWrappers/shaders/ShaderOld.h"
 #include "gui/ImGuiSidebarTab.h"
+#include "glWrappers/shaders/ShaderProgram.h"
 #include <memory>
 
 class BufferRenderer : public ImGuiSidebarTab  {
@@ -16,8 +17,8 @@ class BufferRenderer : public ImGuiSidebarTab  {
 private:
     const glm::vec3 VERTICES[4] = {glm::vec3(0, 0, 0), glm::vec3(0, 1, 0), glm::vec3(1, 0, 0), glm::vec3(1, 1, 0)};
 
-    ShaderOld mShader;
-    ShaderOld mStorageDisplayShader;
+    ShaderProgram mShader;
+    ShaderProgram mStorageDisplayShader;
 
     std::shared_ptr<VertexArray> mVa;
     std::shared_ptr<ArrayBuffer> mVerts;

@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include "GL/glew.h"
+#include "ShaderProgram.h"
 
 
 inline std::string getShaderTypeString(unsigned int type) {
@@ -13,7 +14,31 @@ inline std::string getShaderTypeString(unsigned int type) {
             return "fragment";
         case GL_COMPUTE_SHADER:
             return "compute";
+        default:
+            return "unknown";
     }
+}
+inline ShaderProgram makeComputeProgram(const std::string &computePath, const std::string& name = "") {
+    std::vector<ShaderDefinition> shaderDefs;
+
+    shaderDefs.emplace_back( computePath, ShaderType::COMPUTE_SHADER );
+
+    ShaderProgram program(shaderDefs);
+    program.setName(name);
+
+    return program;
+}
+
+inline ShaderProgram makeRasterizeProgram(const std::string &vertPath, const std::string &fragPath, const std::string& name = "") {
+    std::vector<ShaderDefinition> shaderDefs;
+
+    shaderDefs.emplace_back( vertPath, ShaderType::VERTEX_SHADER );
+    shaderDefs.emplace_back( fragPath, ShaderType::FRAGMENT_SHADER );
+
+    ShaderProgram program(shaderDefs);
+    program.setName(name);
+
+    return program;
 }
 
 inline unsigned int     compileShader(unsigned int type, const std::string &source, const std::string &name, bool &compilationResult) {

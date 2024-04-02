@@ -5,14 +5,15 @@
 #include "glWrappers/rasterization/VertexArray.h"
 #include "glWrappers/shaders/ShaderOld.h"
 #include "glWrappers/Texture.h"
+#include "glWrappers/shaders/ShaderProgram.h"
 
 
 class Rasterizer {
 
 private:
-    ShaderOld mShader;
-    ShaderOld mPathVisShader;
-    ShaderOld mGeometryPhaseShader;
+    ShaderProgram mShader;
+    ShaderProgram mPathVisShader;
+    ShaderProgram mGeometryPhaseShader;
 
     OldScene mScene;
 

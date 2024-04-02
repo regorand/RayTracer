@@ -7,6 +7,7 @@
 #include "glm/gtc/matrix_inverse.hpp"
 #include "imgui.h"
 #include "gui/ImguiUtils.h"
+#include "glWrappers/shaders/ShaderUtils.hpp"
 
 void Scene::addCamera(Camera camera) {
     cameraController.addCamera(camera);
@@ -25,14 +26,7 @@ bool Scene::loadFile(std::string path) {
         cameraController.addCameras(newCams);
     }
 
-    ShaderOld shader("res/shaders/raster/test_new.vert", "res/shaders/raster/test_new.frag");
-
-    std::vector<ShaderDefinition> shaderDefs;
-    shaderDefs.emplace_back( "res/shaders/raster/test_new.frag", ShaderType::FRAGMENT_SHADER );
-    shaderDefs.emplace_back( "res/shaders/raster/test_new.vert", ShaderType::VERTEX_SHADER );
-
-    shaderProgram = { shaderDefs };
-    shaderProgram.setName("material_test_raster");
+    shaderProgram = makeRasterizeProgram("res/shaders/raster/test_new.vert", "res/shaders/raster/test_new.frag", "material_test_raster");
 
     return true;
 }
@@ -181,7 +175,7 @@ Scene::~Scene() {
 }
 
 void Scene::reloadShaders() {
-    shaderProgram.reload();
+    shaderProgram.reloadShader();
 }
 
 void Scene::buildImguiTab(DataStore &settings, std::vector<Event> &events) {

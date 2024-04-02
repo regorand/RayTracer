@@ -7,14 +7,16 @@
 #include "renderers/TmpBuffers.h"
 #include "dataStructures/DataStore.h"
 #include "glWrappers/shaders/ComputeShader.h"
+#include "glWrappers/shaders/ShaderProgram.h"
+#include "glWrappers/shaders/ShaderUtils.hpp"
 
 
 class Denoiser {
 protected:
-    ComputeShader mShader;
+    ShaderProgram mShader;
 
 public:
-    Denoiser(std::string shaderName) : mShader(shaderName) {};
+    Denoiser(const std::string& shaderName) : mShader(makeComputeProgram(shaderName)) {};
     virtual ~Denoiser() = default;
 
     virtual std::string getName() = 0;

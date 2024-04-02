@@ -7,10 +7,11 @@
 #include "glWrappers/TextureBuffer.h"
 #include "glWrappers/Texture.h"
 #include "imgui.h"
+#include "glWrappers/shaders/ShaderUtils.hpp"
 
 BufferRenderer::BufferRenderer()
-    : mShader(ShaderOld("res/shaders/raster/fullscreen.vert", "res/shaders/raster/fullscreen.frag")),
-      mStorageDisplayShader("res/shaders/raster/fullscreen.vert", "res/shaders/raster/displayStorageBuffer.frag"),
+    : mShader(makeRasterizeProgram("res/shaders/raster/fullscreen.vert", "res/shaders/raster/fullscreen.frag")),
+      mStorageDisplayShader(makeRasterizeProgram("res/shaders/raster/fullscreen.vert", "res/shaders/raster/displayStorageBuffer.frag")),
         mVa(std::make_shared<VertexArray>()),
         mVerts(std::make_shared<ArrayBuffer>((void *) VERTICES, 4 * 3 * sizeof(float), true))
 {

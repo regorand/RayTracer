@@ -44,8 +44,6 @@ public:
     int run();
 
 private:
-    void clearTexture(Texture &texture, ComputeShader shader);
-
     void buildImguiControlSideBar(glm::vec2 displaySize, std::vector<ImGuiSidebarTab*> &sideBarTabs);
 
     void buildImguiCameraControls(PathTracer &pt, Rasterizer &rasterizer);

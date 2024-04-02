@@ -8,12 +8,13 @@
 #include "renderers/denoise/GaussDenoiser.h"
 #include "renderers/denoise/BoxDenoiser.h"
 #include "glm/common.hpp"
+#include "glWrappers/shaders/ShaderUtils.hpp"
 
 PostProcessor::PostProcessor(int textureWidth, int textureHeight)
         :
-        mResolveSampleCountShader("res/shaders/postProcessing/ResolveSampleCount.comp"),
-        mCopyTextureShader("res/shaders/postProcessing/CopyTexture.comp"),
-        mGammaTonemapShader("res/shaders/postProcessing/PostProcess.comp"),
+        mResolveSampleCountShader(makeComputeProgram("res/shaders/postProcessing/ResolveSampleCount.comp")),
+        mCopyTextureShader(makeComputeProgram("res/shaders/postProcessing/CopyTexture.comp")),
+        mGammaTonemapShader(makeComputeProgram("res/shaders/postProcessing/PostProcess.comp")),
         mWorkToDo(false),
         mTmpBuffers(textureWidth, textureHeight)
 {
@@ -54,7 +55,7 @@ void PostProcessor::applyPostProcessing(Texture &source, Texture &target, std::m
 }
 
 
-void PostProcessor::noUniformsOperation(ComputeShader shader, Texture &source, Texture &target) {
+void PostProcessor::noUniformsOperation(ShaderProgram shader, Texture &source, Texture &target) {
     source.bindAsImage(POST_PROC_SOURCE_BINDING);
     target.bindAsImage(POST_PROC_TARGET_BINDING);
 

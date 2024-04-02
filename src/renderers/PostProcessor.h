@@ -7,6 +7,7 @@
 #include "TmpBuffers.h"
 #include "renderers/denoise/Denoiser.h"
 #include "renderers/denoise/AtrousDenoiser.h"
+#include "glWrappers/shaders/ShaderProgram.h"
 
 typedef struct PostProcSettings_s {
     bool gammaCorrect;
@@ -21,9 +22,9 @@ typedef struct PostProcSettings_s {
 class PostProcessor : public ImGuiSidebarTab {
 
 private:
-    ComputeShader mResolveSampleCountShader;
-    ComputeShader mCopyTextureShader;
-    ComputeShader mGammaTonemapShader;
+    ShaderProgram mResolveSampleCountShader;
+    ShaderProgram mCopyTextureShader;
+    ShaderProgram mGammaTonemapShader;
 
     std::vector<Denoiser *> denoisers;
 
@@ -36,7 +37,7 @@ public:
 
     void applyPostProcessing(Texture &source, Texture &target, std::map<int, Texture> textureStore, DataStore &settings);
 
-    void noUniformsOperation(ComputeShader shader, Texture &source, Texture &target);
+    void noUniformsOperation(ShaderProgram shader, Texture &source, Texture &target);
     void applyGammaAndTonemap(Texture &source, Texture &target, DataStore &settings);
 
     void buildImguiTab(DataStore &settings, std::vector<Event> &events) override;

@@ -311,12 +311,3 @@ void Application::buildImguiCameraControls(PathTracer &pt, Rasterizer &rasterize
 
     }
 }
-
-void Application::clearTexture(Texture &texture, ComputeShader shader) {
-    texture.bindAsImage(0);
-    shader.bind();
-
-    glDispatchCompute(texture.getWidth(), texture.getHeight(), 1);
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-}

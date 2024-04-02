@@ -10,6 +10,7 @@
 #include "glWrappers/ShaderStorageBuffer.h"
 #include "dataStructures/DataStore.h"
 #include "gui/ImGuiSidebarTab.h"
+#include "glWrappers/shaders/ShaderProgram.h"
 
 typedef struct path_s {
     std::vector<glm::vec3> vertices;
@@ -101,10 +102,10 @@ private:
 
     PathTracerBuffers buffers;
 
-    ComputeShader mNewPathShader;
-    ComputeShader mBounceShader;
+    ShaderProgram mNewPathShader;
+    ShaderProgram mBounceShader;
+    ShaderProgram mClearTargetShader;
     // TODO want a terminate path shader ?
-    ComputeShader mClearTargetShader;
 
     PathTraceSettings mPathTraceSettings;
 

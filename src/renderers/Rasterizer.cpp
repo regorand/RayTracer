@@ -2,11 +2,12 @@
 #include "glm/gtc/matrix_inverse.hpp"
 #include "glWrappers/Texture.h"
 #include "deviceShared/BufferBindings.h"
+#include "glWrappers/shaders/ShaderUtils.hpp"
 
 Rasterizer::Rasterizer()
-        : mShader("res/shaders/raster/simpleScene.vert", "res/shaders/raster/simpleScene.frag"),
-          mPathVisShader("res/shaders/raster/rasterizePath.vert", "res/shaders/raster/rasterizePath.frag"),
-          mGeometryPhaseShader("res/shaders/raster/simpleScene.vert", "res/shaders/raster/saveToBuffers.frag") {
+        : mShader(makeRasterizeProgram("res/shaders/raster/simpleScene.vert", "res/shaders/raster/simpleScene.frag")),
+          mPathVisShader(makeRasterizeProgram("res/shaders/raster/rasterizePath.vert", "res/shaders/raster/rasterizePath.frag")),
+          mGeometryPhaseShader(makeRasterizeProgram("res/shaders/raster/simpleScene.vert", "res/shaders/raster/saveToBuffers.frag")) {
 
 }
 

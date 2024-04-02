@@ -10,7 +10,7 @@ ShaderProgram::ShaderProgram()
 ShaderProgram::ShaderProgram(std::vector<ShaderDefinition> &shaderDefs)
     : mShaderDefs(shaderDefs)
 {
-    reload();
+    reloadShader();
 }
 
 void ShaderProgram::destroy() {
@@ -38,7 +38,7 @@ void ShaderProgram::setName(const std::string& name) {
     mName = name;
 }
 
-void ShaderProgram::reload() {
+void ShaderProgram::reloadShader() {
     std::vector<Shader> newShaders;
 
     bool no_error = true;
@@ -57,7 +57,7 @@ void ShaderProgram::reload() {
 
         createProgram();
     } else {
-        std::cout << "Shader Reload failed: a shader could not be loaded correctly.\nAborting shader reload." << std::endl;
+        std::cout << "Shader Reload failed: a shader could not be loaded correctly.\nAborting shader reloadShader." << std::endl;
     }
 }
 
@@ -68,23 +68,20 @@ bool ShaderProgram::isValid() {
 void ShaderProgram::createProgram() {
     mGlId = glCreateProgram();
 
+    bool error = false;
     for (auto &shader: mShaders) {
         if (!shader.isValid()) {
-            mIsValid = false;
+            error = true;
+            break;
         }
 
-
+        glAttachShader(mGlId, shader.getGlId());
     }
 
-    glAttachShader(mGlId, mShaders[0].getGlId());
-    GLPrintError();
-    glAttachShader(mGlId, mShaders[1].getGlId());
-    GLPrintError();
-
-    GLsizei count;
-    GLuint shaders[5];
-    glGetAttachedShaders(mGlId, 5, &count, shaders);
-
+    if (error) {
+        mIsValid = false;
+        return;
+    }
 
     glLinkProgram(mGlId);
 
@@ -124,11 +121,20 @@ void ShaderProgram::printUniformNotFound(const std::string &name) {
     // std::cout << "Could not find Uniform with name \"" << name << "\"" << std::endl;
 }
 
-bool ShaderProgram::setUniform1i(const std::string &name, const unsigned int value) {
+bool ShaderProgram::setUniform1i(const std::string &name, const int value) {
     bool res;
     int uniformId = getAndValidateUniformLocation(name, res);
     if (res) {
         glUniform1i(uniformId, value);
+    }
+    return res;
+}
+
+bool ShaderProgram::setUniform1ui(const std::string &name, const unsigned int value) {
+    bool res;
+    int uniformId = getAndValidateUniformLocation(name, res);
+    if (res) {
+        glUniform1ui(uniformId, value);
     }
     return res;
 }
