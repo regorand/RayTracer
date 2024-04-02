@@ -39,17 +39,26 @@ void ShaderProgram::setName(const std::string& name) {
 }
 
 void ShaderProgram::reload() {
-    for (auto &shader: mShaders) {
-        shader.destroy();
-    }
+    std::vector<Shader> newShaders;
 
-    mShaders.clear();
-
+    bool no_error = true;
+    newShaders.reserve(mShaderDefs.size());
     for (auto &def: mShaderDefs) {
-        mShaders.emplace_back(def);
+        newShaders.emplace_back(def);
+        no_error = no_error && newShaders[newShaders.size() - 1].isValid();
     }
+    if (no_error) {
+        for (auto &shader: mShaders) {
+            shader.destroy();
+        }
 
-    createProgram();
+        mShaders.clear();
+        mShaders = std::move(newShaders);
+
+        createProgram();
+    } else {
+        std::cout << "Shader Reload failed: a shader could not be loaded correctly.\nAborting shader reload." << std::endl;
+    }
 }
 
 bool ShaderProgram::isValid() {
