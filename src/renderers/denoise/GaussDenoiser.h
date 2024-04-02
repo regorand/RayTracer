@@ -4,7 +4,6 @@
 
 
 #include "Denoiser.h"
-#include "glWrappers/shaders/ComputeShader.h"
 
 class GaussDenoiser : public Denoiser {
 

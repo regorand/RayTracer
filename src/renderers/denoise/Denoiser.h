@@ -6,7 +6,6 @@
 #include <string>
 #include "renderers/TmpBuffers.h"
 #include "dataStructures/DataStore.h"
-#include "glWrappers/shaders/ComputeShader.h"
 #include "glWrappers/shaders/ShaderProgram.h"
 #include "glWrappers/shaders/ShaderUtils.hpp"
 

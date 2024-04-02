@@ -4,7 +4,6 @@
 
 
 #include "Denoiser.h"
-#include "glWrappers/shaders/ComputeShader.h"
 
 class BoxDenoiser : public Denoiser {
     const std::string DENOISER_NAME = "Box";

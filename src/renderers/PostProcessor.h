@@ -1,6 +1,5 @@
 #pragma once
 
-#include "glWrappers/shaders/ComputeShader.h"
 #include "glWrappers/Texture.h"
 #include "dataStructures//DataStore.h"
 #include "gui/ImGuiSidebarTab.h"

@@ -3,7 +3,6 @@
 #include <chrono>
 #include "GL/glew.h"
 #include "glWrappers/Texture.h"
-#include "glWrappers/shaders/ComputeShader.h"
 #include "utils/RandomEngine.h"
 #include "scene/OldScene.h"
 #include "glWrappers/TextureBuffer.h"

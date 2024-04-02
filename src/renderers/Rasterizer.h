@@ -3,7 +3,6 @@
 #include "scene/OldScene.h"
 #include "glWrappers/rasterization/IndexBuffer.h"
 #include "glWrappers/rasterization/VertexArray.h"
-#include "glWrappers/shaders/ShaderOld.h"
 #include "glWrappers/Texture.h"
 #include "glWrappers/shaders/ShaderProgram.h"
 

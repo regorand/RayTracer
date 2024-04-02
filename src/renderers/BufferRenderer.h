@@ -7,7 +7,6 @@
 #include "glWrappers/ShaderStorageBuffer.h"
 #include "glWrappers/Texture.h"
 #include "glWrappers/rasterization/VertexArray.h"
-#include "glWrappers/shaders/ShaderOld.h"
 #include "gui/ImGuiSidebarTab.h"
 #include "glWrappers/shaders/ShaderProgram.h"
 #include <memory>
