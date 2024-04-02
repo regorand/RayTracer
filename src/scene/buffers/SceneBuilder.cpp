@@ -202,7 +202,7 @@ bool SceneBuilder::parseMesh(tinygltf::Model &model, int meshId, IterateValues &
             indices.push_back(index);
         }
 
-        mesh.addPrimitive({vertices, indices, static_cast<unsigned int>(primitive.material)});
+        mesh.addPrimitive({vertices, indices, primitive.material});
     }
 
     return true;
@@ -219,13 +219,15 @@ tinygltf::Accessor SceneBuilder::getAccessor(std::vector<tinygltf::Accessor> &ac
 
 void SceneBuilder::parseMaterial(tinygltf::Material &source, Material &target) {
     target.name = source.name;
+    BufferMaterial &bufferMat = target.bufferMaterial;
     auto &pbr = source.pbrMetallicRoughness;
-    target.albedo = glm::make_vec4<double>(pbr.baseColorFactor.data());
+    bufferMat.albedo = glm::make_vec4<double>(pbr.baseColorFactor.data());
 
-    target.emissionColor = glm::make_vec3<double>(source.emissiveFactor.data());
+    glm::vec3 emissionColor = glm::make_vec3<double>(source.emissiveFactor.data());
+    bufferMat.emission = glm::vec4(emissionColor, 1);
 
-    target.metallic = pbr.metallicFactor;
-    target.roughness = pbr.roughnessFactor;
+    bufferMat.metallic = pbr.metallicFactor;
+    bufferMat.roughness = pbr.roughnessFactor;
     // TODO target.transparency: transparency from gltf extension ?
 
 }

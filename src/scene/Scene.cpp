@@ -1,5 +1,4 @@
 
-#include <stack>
 #include "Scene.h"
 #include "scene/scene_loading/ModelLoader.h"
 #include "scene/buffers/SceneBuilder.h"
@@ -51,6 +50,7 @@ void Scene::buildRasterBuffers() {
 
     mRasterBuffers.mIb = IndexBuffer(indices.data(), indices.size());
 
+    buildMaterialBuffer();
     /*
      * TODO
      * 1. build global interlaced Vertex Buffer
@@ -105,6 +105,7 @@ void Scene::render(Camera &camera) {
     mRasterBuffers.mIb.bind();
 
     shader.bind();
+    materialBuffer.bind();
     renderNode(sceneGraphRoot, shader, glm::mat4(1), VP);
 }
 
@@ -139,4 +140,26 @@ void Scene::renderNode(GraphNode &node, Shader &shader, glm::mat4 transform, glm
 
 Camera &Scene::getActiveCamera() {
     return cameraController.getCameraByIndex(activeCameraIndex);
+}
+
+void Scene::buildMaterialBuffer() {
+    /*
+    std::vector<glm::vec4> data;
+    for (auto &material: mMaterials) {
+        data.push_back(material.albedo);
+    }
+
+    materialBuffer = {data.data(), data.size() * sizeof(glm::vec4), GL_STATIC_READ, 3};
+*/
+    std::vector<BufferMaterial > data;
+    data.reserve(mMaterials.size());
+    for (auto &material: mMaterials) {
+        data.push_back(material.bufferMaterial);
+    }
+
+    materialBuffer = {data.data(), data.size() * sizeof(BufferMaterial), GL_STATIC_READ, 3};
+
+
+
+    // materialBuffer = { GL_SHADER_STORAGE_BUFFER, GL_STATIC_READ, static_cast<unsigned int>(data.size() * sizeof(glm::vec4)), data.data() };
 }

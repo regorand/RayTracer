@@ -4,6 +4,7 @@
 #include "glm/gtc/type_ptr.hpp"
 #include "utils/fileUtils.hpp"
 #include "ShaderUtils.hpp"
+#include "ShaderLoad.h"
 
 #include <vector>
 
@@ -41,8 +42,8 @@ void Shader::printUniformNotFound(std::string name)
 
 void Shader::reloadShader()
 {
-	std::string vertSrc = read_file(m_ShaderDef.vertex_path);
-	std::string fragSrc = read_file(m_ShaderDef.fragment_path);
+    std::string vertSrc = loadShaderSource(m_ShaderDef.vertex_path, true);
+    std::string fragSrc = loadShaderSource(m_ShaderDef.fragment_path, true);
 	createShader(vertSrc, fragSrc, m_ShaderDef.vertex_path, m_ShaderDef.fragment_path);
 	if (mIsValid) {
 		glUseProgram(mGLid);

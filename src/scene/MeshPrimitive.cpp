@@ -3,7 +3,7 @@
 #include "Vertex.h"
 #include <utility>
 
-MeshPrimitive::MeshPrimitive(std::vector<VertexOld> vertices, std::vector<unsigned int> indices, unsigned int materialIndex)
+MeshPrimitive::MeshPrimitive(std::vector<VertexOld> vertices, std::vector<unsigned int> indices, int materialIndex)
     : mVertices(std::move(vertices)), mIndices(std::move(indices)), mMaterialIndex(materialIndex)
 { }
 
@@ -23,7 +23,7 @@ std::vector<unsigned int> &MeshPrimitive::getIndices() {
     return mIndices;
 }
 
-unsigned int MeshPrimitive::getMaterialIndex() {
+int MeshPrimitive::getMaterialIndex() {
     return mMaterialIndex;
 }
 

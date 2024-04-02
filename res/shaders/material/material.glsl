@@ -16,3 +16,12 @@ struct Material {
     // metallic seems to have higher prio than transmittance of dielectric
     // -> look at principled bsdf shader example!
 };
+
+struct BufferMaterial {
+    vec4 albedo;
+    vec3 emission;
+    float roughness;
+    float metallic;
+    float transparency;
+    float IOR;
+};

@@ -4,14 +4,18 @@
 #include "glm/vec3.hpp"
 #include "glm/vec4.hpp"
 
-typedef struct material_s {
-    std::string name {};
+typedef struct buf_material_s {
     glm::vec4 albedo {};
-    glm::vec3 emissionColor {};
+    glm::vec3 emission {};
     float roughness {};
     float metallic {};
     float transparency {};
-    float emission {};
+    float IOR;
+} BufferMaterial;
+
+typedef struct material_s {
+    std::string name {};
+    BufferMaterial bufferMaterial {};
 
     material_s() = default;
 } Material;

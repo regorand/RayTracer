@@ -8,6 +8,7 @@
 #include "Mesh.h"
 #include "Vertex.h"
 #include "scene/buffers/RasterizeBuffers.h"
+#include "glWrappers/GLBuffer.h"
 
 class Scene {
     CameraController cameraController;
@@ -19,8 +20,10 @@ class Scene {
 
     std::vector<Mesh> mMeshes;
     std::vector<Material> mMaterials;
+    SSBO materialBuffer;
 
     RasterBuffers mRasterBuffers;
+
 
 public:
     bool loadFile(std::string path);
@@ -40,4 +43,5 @@ private:
 
     void buildRasterBuffersNode(GraphNode node, std::vector<Vertex> &data, std::vector<unsigned int> &indices);
 
+    void buildMaterialBuffer();
 };

@@ -13,17 +13,17 @@ class MeshPrimitive {
 private:
     std::vector<VertexOld> mVertices;
     std::vector<unsigned int> mIndices;
-    unsigned int mMaterialIndex;
+    int mMaterialIndex;
 
 public:
-    MeshPrimitive(std::vector<VertexOld> vertices, std::vector<unsigned int> indices, unsigned int mMaterialIndex);
+    MeshPrimitive(std::vector<VertexOld> vertices, std::vector<unsigned int> indices, int mMaterialIndex);
 
     size_t vertexCount();
     size_t indexCount();
 
     std::vector<VertexOld> &getVertices();
     std::vector<unsigned int> &getIndices();
-    unsigned int getMaterialIndex();
+    int getMaterialIndex();
 
     /*
      * @returns: the amount of indices added

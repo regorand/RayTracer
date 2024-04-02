@@ -62,7 +62,7 @@ int Application::run() {
     }
 
     Scene testScene;
-    testScene.loadFile("res/models/donkey.gltf");
+    testScene.loadFile("res/models/cube_green.gltf");
 
     testScene.buildRasterBuffers();
 
@@ -177,9 +177,6 @@ int Application::run() {
         }
 
         if (state != RenderState::IDLE) pathTracer.buildImGuiProgressBar(glm::vec2(displayWidth, displayHeight));
-
-
-
 
         if (settings.getOrElse(SHOW_PATHTRACE_OUTPUT, false)) {
             // postProcessor.applyPostProcessing(renderTarget, displayBuffer, settings);
