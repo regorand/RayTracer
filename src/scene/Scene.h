@@ -9,8 +9,9 @@
 #include "Vertex.h"
 #include "scene/buffers/RasterizeBuffers.h"
 #include "glWrappers/GLBuffer.h"
+#include "glWrappers/shaders/ShaderProgram.h"
 
-class Scene {
+class Scene : public ImGuiSidebarTab {
     CameraController cameraController;
 
     int activeCameraIndex = DEFAULT_CAMERA_INDEX;
@@ -23,22 +24,24 @@ class Scene {
     SSBO materialBuffer;
 
     RasterBuffers mRasterBuffers;
-
+    ShaderProgram shaderProgram;
 
 public:
     bool loadFile(std::string path);
+    ~Scene();
 
     void addCamera(Camera camera);
     Camera &getActiveCamera();
 
+    void reloadShaders();
 
     void buildRasterBuffers();
     void buildPathtraceBuffers();
 
     void render(Camera &camera);
+    void renderNode(GraphNode &node, glm::mat4 transform, glm::mat4 &VP);
 
-    void renderNode(GraphNode &node, Shader &shader, glm::mat4 transform, glm::mat4 &VP);
-
+    void buildImguiTab(DataStore &settings, std::vector<Event> &events) override;
 private:
 
     void buildRasterBuffersNode(GraphNode node, std::vector<Vertex> &data, std::vector<unsigned int> &indices);

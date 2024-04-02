@@ -3,16 +3,16 @@
 #include "scene/OldScene.h"
 #include "glWrappers/rasterization/IndexBuffer.h"
 #include "glWrappers/rasterization/VertexArray.h"
-#include "glWrappers/shaders/Shader.h"
+#include "glWrappers/shaders/ShaderOld.h"
 #include "glWrappers/Texture.h"
 
 
 class Rasterizer {
 
 private:
-    Shader mShader;
-    Shader mPathVisShader;
-    Shader mGeometryPhaseShader;
+    ShaderOld mShader;
+    ShaderOld mPathVisShader;
+    ShaderOld mGeometryPhaseShader;
 
     OldScene mScene;
 

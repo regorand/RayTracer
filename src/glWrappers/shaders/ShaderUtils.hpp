@@ -16,7 +16,7 @@ inline std::string getShaderTypeString(unsigned int type) {
     }
 }
 
-inline unsigned int compileShader(unsigned int type, const std::string &source, const std::string &name) {
+inline unsigned int     compileShader(unsigned int type, const std::string &source, const std::string &name, bool &compilationResult) {
     unsigned int id = glCreateShader(type);
     const char *src = source.c_str();
     glShaderSource(id, 1, &src, nullptr);
@@ -39,9 +39,11 @@ inline unsigned int compileShader(unsigned int type, const std::string &source, 
 
         free(message);
 
+        compilationResult = false;
         return 0;
     }
 
+    compilationResult = true;
     return id;
 }
 

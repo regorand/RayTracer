@@ -146,7 +146,8 @@ int Application::run() {
     std::vector<ImGuiSidebarTab *> sideBarTabs;
     sideBarTabs.push_back(&br);
     sideBarTabs.push_back(&pathTracer);
-    sideBarTabs.push_back(&scene);
+    // sideBarTabs.push_back(&scene);
+    sideBarTabs.push_back(&testScene);
     // sideBarTabs.push_back(&cameraController);
     sideBarTabs.push_back(&postProcessor);
 

@@ -5,6 +5,8 @@
 #include "scene/buffers/import_scene_error.h"
 #include "Vertex.h"
 #include "glm/gtc/matrix_inverse.hpp"
+#include "imgui.h"
+#include "gui/ImguiUtils.h"
 
 void Scene::addCamera(Camera camera) {
     cameraController.addCamera(camera);
@@ -22,6 +24,15 @@ bool Scene::loadFile(std::string path) {
     if (!newCams.empty()) {
         cameraController.addCameras(newCams);
     }
+
+    ShaderOld shader("res/shaders/raster/test_new.vert", "res/shaders/raster/test_new.frag");
+
+    std::vector<ShaderDefinition> shaderDefs;
+    shaderDefs.emplace_back( "res/shaders/raster/test_new.frag", ShaderType::FRAGMENT_SHADER );
+    shaderDefs.emplace_back( "res/shaders/raster/test_new.vert", ShaderType::VERTEX_SHADER );
+
+    shaderProgram = { shaderDefs };
+    shaderProgram.setName("material_test_raster");
 
     return true;
 }
@@ -99,20 +110,19 @@ void Scene::render(Camera &camera) {
 
     glEnable(GL_DEPTH_TEST);
 
-    Shader shader("res/shaders/raster/test_new.vert", "res/shaders/raster/test_new.frag");
-
     mRasterBuffers.mVa.bind();
     mRasterBuffers.mIb.bind();
 
-    shader.bind();
+    shaderProgram.bind();
     materialBuffer.bind();
-    renderNode(sceneGraphRoot, shader, glm::mat4(1), VP);
+    renderNode(sceneGraphRoot, glm::mat4(1), VP);
+    shaderProgram.unbind();
 }
 
-void Scene::renderNode(GraphNode &node, Shader &shader, glm::mat4 transform, glm::mat4 &VP) {
+void Scene::renderNode(GraphNode &node, glm::mat4 transform, glm::mat4 &VP) {
     if (node.type == NodeType::INNER) {
         for (auto &child: node.children) {
-            renderNode(child, shader, node.transform * transform, VP);
+            renderNode(child, node.transform * transform, VP);
         }
     }
 
@@ -124,10 +134,12 @@ void Scene::renderNode(GraphNode &node, Shader &shader, glm::mat4 transform, glm
     glm::mat4 MVP = VP * model; // * transform;
     glm::mat4 normalTransform = glm::inverseTranspose(transform);
 
-    shader.setUniformMat4f("transform", model);
-    shader.setUniformMat4f("MVP", MVP);
 
-    shader.setUniformMat4f("normalTransform", normalTransform);
+
+    shaderProgram.setUniformMat4f("transform", model);
+    shaderProgram.setUniformMat4f("MVP", MVP);
+
+    shaderProgram.setUniformMat4f("normalTransform", normalTransform);
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
@@ -162,4 +174,29 @@ void Scene::buildMaterialBuffer() {
 
 
     // materialBuffer = { GL_SHADER_STORAGE_BUFFER, GL_STATIC_READ, static_cast<unsigned int>(data.size() * sizeof(glm::vec4)), data.data() };
+}
+
+Scene::~Scene() {
+    shaderProgram.destroy();
+}
+
+void Scene::reloadShaders() {
+    shaderProgram.reload();
+}
+
+void Scene::buildImguiTab(DataStore &settings, std::vector<Event> &events) {
+    if (ImGui::CollapsingHeader("Scene")) {
+
+        ImVec2 windowSize = ImGui::GetWindowSize();
+        ImVec2 buttonSize = ImVec2(windowSize.x * 0.9, 25);
+
+        startIndent();
+
+        if (ImGui::Button("Reload compute shaders", buttonSize)) {
+            reloadShaders();
+        }
+
+        endIndent();
+    }
+
 }

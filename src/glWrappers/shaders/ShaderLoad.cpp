@@ -12,7 +12,7 @@
 
 std::string loadShaderSource_impl(std::string path, bool resolveCustomSymbols, std::vector<std::string> &includedFiles) {
     if (!std::filesystem::exists(path)) {
-        throw std::runtime_error("Shader source not found");
+        throw std::runtime_error("ShaderOld source not found");
     }
 
     // if (std::find(includedFiles.begin(), includedFiles.end(), path) != includedFiles.end())
@@ -63,7 +63,7 @@ std::string loadShaderSource(std::string path, bool resolveCustomSymbols) {
 
     /*
     if (!std::filesystem::exists(path)) {
-        throw std::runtime_error("Shader source not found");
+        throw std::runtime_error("ShaderOld source not found");
     }
 
     std::ostringstream outBuffer;

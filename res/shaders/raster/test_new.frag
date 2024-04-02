@@ -21,7 +21,7 @@ void main() {
     vec4 color = vec4(1);
     if (fragMaterialId != -1) {
         BufferMaterial mat = matData[fragMaterialId];
-        color = vec4(vec3(mat.roughness), 1);
+        color = mat.albedo;
     }
 
     outColor = color * val;

@@ -3,13 +3,13 @@
 #include "BufferRenderer.h"
 #include "glWrappers/rasterization/VertexArray.h"
 #include "glWrappers/rasterization/ArrayBuffer.h"
-#include "glWrappers/shaders/Shader.h"
+#include "glWrappers/shaders/ShaderOld.h"
 #include "glWrappers/TextureBuffer.h"
 #include "glWrappers/Texture.h"
 #include "imgui.h"
 
 BufferRenderer::BufferRenderer()
-    : mShader(Shader("res/shaders/raster/fullscreen.vert", "res/shaders/raster/fullscreen.frag")),
+    : mShader(ShaderOld("res/shaders/raster/fullscreen.vert", "res/shaders/raster/fullscreen.frag")),
       mStorageDisplayShader("res/shaders/raster/fullscreen.vert", "res/shaders/raster/displayStorageBuffer.frag"),
         mVa(std::make_shared<VertexArray>()),
         mVerts(std::make_shared<ArrayBuffer>((void *) VERTICES, 4 * 3 * sizeof(float), true))

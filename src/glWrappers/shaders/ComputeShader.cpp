@@ -30,7 +30,8 @@ void ComputeShader::reloadShader() {
 }
 
 void ComputeShader::createShader(const std::string &shaderSource, const std::string &name) {
-    unsigned int shaderId = compileShader(GL_COMPUTE_SHADER, shaderSource, name);
+    bool res;
+    unsigned int shaderId = compileShader(GL_COMPUTE_SHADER, shaderSource, name, res);
 
     if (shaderId == 0) {
         mIsValid = false;
