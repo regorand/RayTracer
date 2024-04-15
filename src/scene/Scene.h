@@ -35,8 +35,7 @@ public:
 
     void reloadShaders();
 
-    void buildRasterBuffers();
-    void buildPathtraceBuffers();
+    void buildBuffers();
 
     void render(Camera &camera);
     void renderNode(GraphNode &node, glm::mat4 transform, glm::mat4 &VP);

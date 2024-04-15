@@ -64,7 +64,7 @@ int Application::run() {
     Scene testScene;
     testScene.loadFile("res/models/cube_green.gltf");
 
-    testScene.buildRasterBuffers();
+    testScene.buildBuffers();
 
 
     int major;

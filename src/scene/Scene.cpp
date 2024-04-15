@@ -31,7 +31,7 @@ bool Scene::loadFile(std::string path) {
     return true;
 }
 
-void Scene::buildRasterBuffers() {
+void Scene::buildBuffers() {
     std::vector<Vertex> data;
     std::vector<unsigned int> indices;
 
@@ -56,23 +56,32 @@ void Scene::buildRasterBuffers() {
     mRasterBuffers.mIb = IndexBuffer(indices.data(), indices.size());
 
     buildMaterialBuffer();
-    /*
-     * TODO
-     * 1. build global interlaced Vertex Buffer
-     *  -> If a Vertex already exists, but needs different colors, copy it. Not sure if this will happen
-     * 2. build global Index Buffer
-     * 3. for each object keep track index into index Buffer and index count
-     *  -> Store in Mesh object (or MeshIndex ?)
-     * 4. For Rendering:
-     *  -> Iterate SceneGraph
-     *  ->
+    // TODO for Path Tracing
+    /* 1. Reuse ArrayBuffer
+     * 2. Reuse IndexBuffer -> Until there is some kind of acceleration data structure, then store indices in there
+     * 3. Reuse MaterialBuffer
+     * 4. Needs some kind of ObjectBuffer
+     *  - Holds Transforms
+     *  - Holds baseIndex and indexOffset into indices buffer
+     *  - should be indexed for emissive objects
+     * 5. Needs some kind of EmissiveBuffer
+     *  - First Version: only index into ObjectBuffer
+     *  - Then: also hold information for light sampling (distance, area, etc)
      *
+     * General Idea for Acceleration Structure
+     * 1. Top level corresponds to objects (object instances), somewhat dynmic when transforms change
+     * 2. Bottom level corresponds to the triangles within objects, relatively static
      *
+     * Probably just build this with the RasterBuffers ?
      */
 
-}
 
-void Scene::buildPathtraceBuffers() {}
+    /*
+     * TODO some concrete tasks
+     * - MeshPrimitives need to store indexOffset and indexCount
+     *
+     */
+}
 
 void Scene::buildRasterBuffersNode(GraphNode node, std::vector<Vertex> &data, std::vector<unsigned int> &indices) {
     if (node.type == NodeType::CAMERA) return;
@@ -128,8 +137,6 @@ void Scene::renderNode(GraphNode &node, glm::mat4 transform, glm::mat4 &VP) {
     glm::mat4 MVP = VP * model; // * transform;
     glm::mat4 normalTransform = glm::inverseTranspose(transform);
 
-
-
     shaderProgram.setUniformMat4f("transform", model);
     shaderProgram.setUniformMat4f("MVP", MVP);
 
@@ -164,8 +171,6 @@ void Scene::buildMaterialBuffer() {
     }
 
     materialBuffer = {data.data(), data.size() * sizeof(BufferMaterial), GL_STATIC_READ, 3};
-
-
 
     // materialBuffer = { GL_SHADER_STORAGE_BUFFER, GL_STATIC_READ, static_cast<unsigned int>(data.size() * sizeof(glm::vec4)), data.data() };
 }

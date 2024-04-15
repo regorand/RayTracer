@@ -1,17 +1,16 @@
 #include "res/shaders/material/material.glsl"
 
 struct Vertex {
-    vec4 pos;
-    vec4 normal;
-    vec4 uv;
+    vec3 pos;
+    vec3 normal;
+    uint materialId;
+    // vec2 uv;
 };
 
 struct Triangle {
     Vertex V0;
     Vertex V1;
     Vertex V2;
-
-    Material mat;
 };
 
 vec3 triangleNormal(Triangle triangle) {

@@ -131,6 +131,7 @@ bool SceneBuilder::parseMesh(tinygltf::Model &model, int meshId, IterateValues &
     auto &buffers = model.buffers;
 
 
+
     meshNode.index = iterateValues.objects.size();
     Mesh &mesh = iterateValues.objects.emplace_back( gltfMesh.name );
     meshNode.type = NodeType::MESH;
