@@ -14,8 +14,20 @@ void Scene::addCamera(Camera camera) {
 }
 
 bool Scene::loadFile(std::string path) {
-    tinygltf::Model model;
     loadModel(path, model);
+
+    int customData = 4;
+
+    /*
+    // TODO remove debug traversal
+    SceneGraphTraversal sgt(model, &customData);
+    sgt.setSceneCallback(&defaultSceneCallback);
+    sgt.setInnerNodeCallback(&defaultInnerCallback);
+    sgt.setMeshNodeCallback(&defaultMeshCallback);
+    sgt.setMeshPrimitiveNodeCallback(&defaultPrimitiveCallback);
+    sgt.setCameraNodeCallback(&defaultCameraCallback);
+    sgt.traverse();
+     */
 
     std::vector<Camera> newCams;
 
@@ -32,10 +44,42 @@ bool Scene::loadFile(std::string path) {
 }
 
 void Scene::buildBuffers() {
+    // TODO Scene Building
+    /*
+     * 1. create VBO(s) of buffers
+     * 2. create other buffers (materials etc.)
+     * 3. iterate sceneGraph to identify emissive materials -> emissive buffer for NEE
+     * 4. Done ?
+     *
+     *
+     * TODO Scene Rendering
+     * 1. build general traversal for scene graph (using callback methods ?)
+     * 2. render
+     */
+
+    IterateBuffers buffers;
+    Vertex test;
+    test.position = glm::vec3(1, 0.5, 0.25);
+    test.normal = glm::vec3(-1, 0.5, 0.25);
+    test.materialIndex = 42;
+    buffers.data.push_back(test);
+
+    SceneGraphTraversal bufferBuildTraversal(model, nullptr);
+    bufferBuildTraversal.setMeshPrimitiveNodeCallback(&bufferBuildPrimitiveCallback);
+    bufferBuildTraversal.setUserData(&buffers);
+    bufferBuildTraversal.traverse();
+
+    // TODO build callback function to accumulate the vertices and indices just as done before.
+    // What naive implementaion will be missing: if there are multiple gltf buffer objects, this method would \
+        write them all to a single buffer and the offsets would not match anymore; Either..\
+            1. .. extend IterateBuffers struct to support multiple different buffer objects by creating multiple VBOs \
+            2. .. or find a way to get a better offset for MeshPrimitives
+
     std::vector<Vertex> data;
     std::vector<unsigned int> indices;
 
     buildRasterBuffersNode(sceneGraphRoot, data, indices);
+
 
 
     mRasterBuffers.mVa.bind();
@@ -73,13 +117,6 @@ void Scene::buildBuffers() {
      * 2. Bottom level corresponds to the triangles within objects, relatively static
      *
      * Probably just build this with the RasterBuffers ?
-     */
-
-
-    /*
-     * TODO some concrete tasks
-     * - MeshPrimitives need to store indexOffset and indexCount
-     *
      */
 }
 

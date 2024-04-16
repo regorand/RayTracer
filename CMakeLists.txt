@@ -9,7 +9,11 @@ add_executable(RayTracer
         src/glWrappers/shaders/Shader.cpp
         src/glWrappers/shaders/Shader.h
         src/glWrappers/shaders/ShaderProgram.cpp
-        src/glWrappers/shaders/ShaderProgram.h)
+        src/glWrappers/shaders/ShaderProgram.h
+        src/glWrappers/VertexBufferObject.cpp
+        src/glWrappers/VertexBufferObject.h
+        src/scene/SceneGraphTraversal.cpp
+        src/scene/SceneGraphTraversal.h)
 
 set(PROJECT_ROOT_DIR ${PROJECT_SOURCE_DIR})
 
