@@ -75,6 +75,11 @@ void Scene::buildBuffers() {
             1. .. extend IterateBuffers struct to support multiple different buffer objects by creating multiple VBOs \
             2. .. or find a way to get a better offset for MeshPrimitives
 
+    // TODO
+    //  I think the best way is to not try to use only the gltf buffers, I am not sure enough of their layout
+    //  Use the same method as before, just use the traversal structure ?
+    //  Disadvantage: Can not naively use gltfModel as SceneGraph -> probably fine
+
     std::vector<Vertex> data;
     std::vector<unsigned int> indices;
 
