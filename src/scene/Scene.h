@@ -3,30 +3,11 @@
 
 #include "scene/camera/CameraController.h"
 #include "tiny_gltf.h"
-#include "SceneGraph.h"
 #include "Material.h"
-#include "Vertex.h"
 #include "scene/buffers/RasterizeBuffers.h"
 #include "glWrappers/GLBuffer.h"
 #include "glWrappers/shaders/ShaderProgram.h"
-#include "SceneGraphTraversal.h"
 #include "SceneBuffers.h"
-
-typedef struct iterate_buffers_s {
-    std::vector<Vertex_Old> data;
-    std::vector<unsigned int> indices;
-} IterateBuffers;
-
-inline void bufferBuildPrimitiveCallback(const TraversalIndices &traversalIndices, const tinygltf::Primitive &primitive, void *userData) {
-    std::cout   << "Parsing primitive:\nScene index: " << traversalIndices.currentScene
-                << "\nMesh: index: " << traversalIndices.currentMesh
-                << "\nPrimitive index: " << traversalIndices.currentPrimitive
-                << "\n" << std::endl;
-    if (userData != nullptr) {
-        IterateBuffers &buffers = *(IterateBuffers *) userData;
-        std::cout << buffers.data.size();
-    }
-}
 
 class Scene : public ImGuiSidebarTab {
     CameraController cameraController;

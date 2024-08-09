@@ -30,7 +30,7 @@ private:
     std::vector<unsigned int> *emissives;
 
     std::vector<Material> *materials;
-    std::vector<TriangleNew> triangles;
+    std::vector<Triangle> triangles;
 
 
 public:

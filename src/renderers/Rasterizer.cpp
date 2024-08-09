@@ -12,7 +12,7 @@ Rasterizer::Rasterizer()
 }
 
 void Rasterizer::render() {
-    Camera &camera = mScene.getCamera();
+    Camera &camera = mScene.getActiveCamera();
 
     glm::mat4 cameraMat = camera.getTransformation();
     glm::mat4 projectionMat = camera.getProjection();
@@ -21,6 +21,7 @@ void Rasterizer::render() {
 
     glEnable(GL_DEPTH_TEST);
 
+    /*
     for (auto &object: mScene.getObjects()) {
         mShader.bind();
 
@@ -48,9 +49,11 @@ void Rasterizer::render() {
         glDrawElements(GL_TRIANGLES, object.getIndexBuffer().getCount(), GL_UNSIGNED_INT, nullptr);
         mShader.unbind();
     }
+     */
 }
 
 void Rasterizer::renderPaths() {
+    /*
     Camera &camera = mScene.getCamera();
 
     glm::mat4 cameraMat = camera.getTransformation();
@@ -69,21 +72,24 @@ void Rasterizer::renderPaths() {
         glDrawElements(GL_LINES, path.getIndexBuffer().getCount(), GL_UNSIGNED_INT, nullptr);
         mPathVisShader.unbind();
     }
+     */
 }
 
-void Rasterizer::setScene(OldScene &scene) {
+void Rasterizer::setScene(Scene &scene) {
     mScene = scene;
 }
 
 bool Rasterizer::canRasterize() {
-    return mScene.canRasterize();
+    // return mScene.canRasterize();
+    return false;
 }
 
-OldScene &Rasterizer::getSceneRef() {
+Scene &Rasterizer::getSceneRef() {
     return mScene;
 }
 
 void Rasterizer::renderCameraFrustum(CameraVisBuffers &buffers) {
+    /*
     Camera &camera = mScene.getCamera();
 
     glm::mat4 cameraMat = camera.getTransformation();
@@ -100,13 +106,11 @@ void Rasterizer::renderCameraFrustum(CameraVisBuffers &buffers) {
 
     glDrawElements(GL_LINES, buffers.indexBuffer.getCount(), GL_UNSIGNED_INT, nullptr);
     mPathVisShader.unbind();
+     */
 }
 
 void Rasterizer::saveToBuffers(Camera &pathTraceCamera) {
     /*
-    glm::mat4 cameraMat = pathTraceCamera.getTransformation();
-    glm::mat4 projectionMat = pathTraceCamera.getProjection();
-    */
     glm::mat4 cameraMat = mScene.getCamera().getTransformation();
     glm::mat4 projectionMat = mScene.getCamera().getProjection();
 
@@ -119,7 +123,6 @@ void Rasterizer::saveToBuffers(Camera &pathTraceCamera) {
     posBuffer.bindAsImage(RAST_POS_BUFFER_BINDING);
     normalBuffer.bindAsImage(RAST_NORMAL_BUFFER_BINDING);
     albedoBuffer.bindAsImage(RAST_ALBEDO_BUFFER_BINDING);
-    */
 
     mGeometryPhaseShader.bind();
     for (auto &object: mScene.getObjects()) {
@@ -142,5 +145,7 @@ void Rasterizer::saveToBuffers(Camera &pathTraceCamera) {
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     }
     mGeometryPhaseShader.unbind();
+
+    */
 }
 

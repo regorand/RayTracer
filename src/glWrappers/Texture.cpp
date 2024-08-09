@@ -16,20 +16,6 @@ Texture::Texture(int width, int height, GLenum format, GLint internalFormat, GLe
     createTexture(mInternalFormat, mWidth, mHeight, mFormat, mType, GL_NONE);
 }
 
-Texture::Texture(HostBuffer *buffer)
-        : mGlId(),
-          mFilePath(""),
-          mLoadedFromFile(false),
-          m_bytesPerPixel(0),
-          mWidth(buffer->getWidth()),
-          mHeight(buffer->getHeight()),
-          mFormat(GL_RGB),
-          mInternalFormat(GL_RGBA32F),
-          mType(GL_FLOAT),
-          mAccessType(GL_READ_WRITE) {
-    createTexture(mInternalFormat, mWidth, mHeight, mFormat, mType, buffer->getData());
-}
-
 void Texture::destroy() {
     glDeleteTextures(1, &mGlId);
 }

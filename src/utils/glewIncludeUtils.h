@@ -30,7 +30,7 @@ static int logLevel = 1;
 
 void inline GLAPIENTRY callBackFunc(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam) {
     std::string m(message, length);
-    int messageLogLevel = -1;
+    int messageLogLevel = 1;
     switch (severity) {
         case GL_DEBUG_SEVERITY_NOTIFICATION:
             messageLogLevel = 0;

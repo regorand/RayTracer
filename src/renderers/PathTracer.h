@@ -4,12 +4,12 @@
 #include "GL/glew.h"
 #include "glWrappers/Texture.h"
 #include "utils/RandomEngine.h"
-#include "scene/OldScene.h"
 #include "glWrappers/TextureBuffer.h"
 #include "glWrappers/ShaderStorageBuffer.h"
 #include "dataStructures/DataStore.h"
 #include "gui/ImGuiSidebarTab.h"
 #include "glWrappers/shaders/ShaderProgram.h"
+#include "scene/Scene.h"
 
 typedef struct path_s {
     std::vector<glm::vec3> vertices;
@@ -116,7 +116,7 @@ private:
 
     Texture *mCurrentTarget;
 
-    OldScene mScene;
+    Scene mScene;
 
     milliseconds renderStart;
 
@@ -143,7 +143,7 @@ public:
 
     void setTargetp(Texture *target);
 
-    void setScene(OldScene &scene);
+    void setScene(Scene &scene);
 
     void reloadShaders();
 
@@ -161,7 +161,7 @@ public:
 
     void setRecordingCoords(glm::vec2 coords);
 
-    OldScene &getSceneRef();
+    Scene &getSceneRef();
 
     PathTracerBuffers &getBuffers();
 

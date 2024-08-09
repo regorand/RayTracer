@@ -5,8 +5,6 @@
 #include "renderers/BufferRenderer.h"
 #include "gui/ImguiUtils.h"
 #include "renderers/PathTracer.h"
-#include "scene/OldScene.h"
-#include "utils/SceneCreateUtils.h"
 #include "renderers/PostProcessor.h"
 #include "renderers/Rasterizer.h"
 #include "dataStructures/SettingIndex.h"
@@ -16,7 +14,6 @@
 #include "glWrappers/FrameBufferObject.h"
 #include "dataStructures/TextureNames.h"
 #include "scene/scene_loading/ModelLoader.h"
-#include "scene/buffers/SceneBuilder.h"
 #include "scene/Scene.h"
 #include "scene/SceneImporter.h"
 #include <imgui.h>
@@ -68,11 +65,6 @@ int Application::run() {
     // testScene.loadFile("res/models/cube_green.gltf");
     // testScene.loadFile("res/models/donkey.gltf");
 
-    SceneBuffers sceneBuffers;
-    SceneImporter importer("res/models/cube_green.gltf");
-    // importer.import(sceneBuffers);
-
-
     int major;
     int minor;
     glGetIntegerv(GL_MAJOR_VERSION, &major);
@@ -89,8 +81,6 @@ int Application::run() {
 
     /*
     BufferRenderer br;
-
-    HostBuffer buffer(displayWidth, displayHeight);
 
     std::map<int, Texture> textureStore;
     textureStore.insert({RENDER_TARGET, createPathTraceBuffer(displayWidth, displayHeight)});
@@ -325,11 +315,13 @@ void Application::buildImguiCameraControls(PathTracer &pt, Rasterizer &rasterize
         ImVec2 buttonSize = ImVec2(windowSize.x * 0.9, 25);
 
         if (ImGui::Button("Reset debug camera", buttonSize)) {
-            rasterizer.getSceneRef().setCamera(pt.getSceneRef().getCamera());
+            // TODO
+            //rasterizer.getSceneRef().setCamera(pt.getSceneRef().getCamera());
         }
 
         if (ImGui::Button("Pathtrace camera to debug camera", buttonSize)) {
-            pt.getSceneRef().setCamera(rasterizer.getSceneRef().getCamera());
+            // TODO
+            // pt.getSceneRef().setCamera(rasterizer.getSceneRef().getCamera());
         }
 
     }

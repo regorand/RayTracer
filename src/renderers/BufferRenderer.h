@@ -2,7 +2,6 @@
 #ifndef RAYTRACER_BUFFERRENDERER_H
 #define RAYTRACER_BUFFERRENDERER_H
 
-#include "HostBuffer.h"
 #include "glWrappers/rasterization/ArrayBuffer.h"
 #include "glWrappers/ShaderStorageBuffer.h"
 #include "glWrappers/Texture.h"
@@ -27,7 +26,6 @@ public:
 
     void reloadShaders();
 
-    void render(HostBuffer *buffer);
     void render(Texture *texture);
 
     void renderStorageBuffer(ShaderStorageBuffer &buffer, glm::vec2 extents);

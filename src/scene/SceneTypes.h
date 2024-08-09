@@ -1,14 +1,8 @@
 #pragma once
 
-typedef struct SceneObject {
-    int baseIndex; // Where in vertex buffer does it start
-    int indexCount; // How many indices in vertex buffer belong to this, starting from baseIndex
-    AABB aabb; // AABB, probably not needed anymore after BVH
-    int isEmissive; // temp
-    glm::mat4 transform; // object -> world transform, wont be needed for rendering once bvh is built
-} SceneObject;
+#include "glm/vec3.hpp"
+#include "glm/vec2.hpp"
 
-// TODO another struct for rasterizing -> needs material in vertex, not triangle (i think)
 typedef struct Vertex {
     glm::vec3 position;
     glm::vec3 normal;
@@ -20,13 +14,18 @@ typedef struct RasterVertex {
     int materialId;
 } RasterVertex;
 
-typedef struct TriangleNew {
+typedef struct Triangle {
     Vertex V0;
     Vertex V1;
     Vertex V2;
 
     int materialIndex;
-} TriangleNew;
+} Triangle;
+
+typedef struct {
+    glm::vec3 lower;
+    glm::vec3 upper;
+} AABB;
 
 struct BufferMesh {
     AABB aabb {}; // AABB given in object space -> transform ray into object space

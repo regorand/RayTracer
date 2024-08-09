@@ -1,14 +1,13 @@
 
 #include "Scene.h"
 #include "scene/scene_loading/ModelLoader.h"
-#include "scene/buffers/SceneBuilder.h"
 #include "scene/buffers/import_scene_error.h"
-#include "Vertex.h"
 #include "glm/gtc/matrix_inverse.hpp"
 #include "imgui.h"
 #include "gui/ImguiUtils.h"
 #include "glWrappers/shaders/ShaderUtils.hpp"
 #include "SceneImporter.h"
+#include "scene/camera/Camera.h"
 
 void Scene::addCamera(Camera camera) {
     cameraController.addCamera(camera);
@@ -21,17 +20,17 @@ bool Scene::loadFile(std::string path) {
     // TODO for Path Tracing create Buffers here
 
     /*
-    sceneBuffers.triangleBuffer = { static_cast<unsigned int>(triangles.size() * sizeof(TriangleNew)), GL_READ_BUFFER, triangles.data() };
+    sceneBuffers.triangleBuffer = { static_cast<unsigned int>(triangles.size() * sizeof(Triangle)), GL_READ_BUFFER, triangles.data() };
 
     sceneBuffers.objectBuffer = { static_cast<unsigned int>(meshes->size() * sizeof(BufferMesh)),
                                   GL_READ_BUFFER,
                                   meshes->data() };
 
-    sceneBuffers.materialBuffer = { static_cast<unsigned int>(materials.size() * sizeof(TriangleNew)), GL_READ_BUFFER, materials.data() };
+    sceneBuffers.materialBuffer = { static_cast<unsigned int>(materials.size() * sizeof(Triangle)), GL_READ_BUFFER, materials.data() };
 
     // TODO should make these read/write or does that only matter for GPU writes ?
-    sceneBuffers.emissiveBuffer = { static_cast<unsigned int>(emissives->size() * sizeof(TriangleNew)), GL_READ_BUFFER, emissives->data() };
-    sceneBuffers.transformationBuffer = { static_cast<unsigned int>(transforms->size() * sizeof(TriangleNew)),
+    sceneBuffers.emissiveBuffer = { static_cast<unsigned int>(emissives->size() * sizeof(Triangle)), GL_READ_BUFFER, emissives->data() };
+    sceneBuffers.transformationBuffer = { static_cast<unsigned int>(transforms->size() * sizeof(Triangle)),
                                           GL_READ_BUFFER,
                                           transforms->data() };
      */

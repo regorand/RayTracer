@@ -2,8 +2,7 @@
 
 
 #include "gui/ImGuiSidebarTab.h"
-#include "renderers/Rasterizer.h"
-#include "renderers/PathTracer.h"
+#include "Camera.h"
 
 const int DEFAULT_CAMERA_INDEX = 0;
 

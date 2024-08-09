@@ -134,7 +134,7 @@ void PathTracer::newPath() {
 
     mNewPathShader.setUniform1i("width", mWidth);
 
-    Camera &camera = mScene.getCamera();
+    Camera &camera = mScene.getActiveCamera();
 
     mNewPathShader.setUniform3f("cameraPos", camera.getLocation());
     mNewPathShader.setUniform3f("viewDir", camera.getViewDir());
@@ -200,15 +200,18 @@ void PathTracer::bindBounce() {
     buffers.dirBuffer.bindToTarget(DIR_BUFFER_TARGET);
     buffers.multiplierBuffer.bindToTarget(MULT_BUFFER_TARGET);
 
-    mScene.bind();
+    // TODO
+    // mScene.bind();
 
     // TODO get scene counts and bind as uniforms, then add stuff to the scene, try to only render albedo first
 
     mBounceShader.bind();
 
+    /*
     mBounceShader.setUniform1ui("objectCount", mScene.getObjectCount());
     mBounceShader.setUniform1ui("emissiveCount", mScene.getEmissiveCount());
     mBounceShader.setUniform1f("alphaRR", mPathTraceSettings.pathSettings.alphaRR);
+    */
 
     mBounceShader.setUniform1i("width", mWidth);
     // mBounceShader.setUniform1i("height", mHeight);
@@ -217,7 +220,8 @@ void PathTracer::bindBounce() {
 void PathTracer::unbindBounce() {
     mBounceShader.unbind();
 
-    mScene.unbind();
+    // TODO
+    // mScene.unbind();
 }
 
 bool PathTracer::renderFenceSignalled() {
@@ -263,7 +267,7 @@ void PathTracer::buildImGuiProgressBar(glm::vec2 displaySize) {
     ImGui::End();
 }
 
-void PathTracer::setScene(OldScene &scene) {
+void PathTracer::setScene(Scene &scene) {
     mScene = scene;
 }
 
@@ -380,7 +384,7 @@ void PathTracer::recordPathVertex() {
     }
 }
 
-OldScene &PathTracer::getSceneRef() {
+Scene &PathTracer::getSceneRef() {
     return mScene;
 }
 PathTracerBuffers &PathTracer::getBuffers() {

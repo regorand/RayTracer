@@ -20,26 +20,6 @@ BufferRenderer::BufferRenderer()
 
 }
 
-void BufferRenderer::render(HostBuffer *buffer) {
-
-    // TODO: is it ok to do create buffer on demand if goal of Class is to only occasionally render host buffer \
-        -> infact, is there another way ?
-
-    Texture texture(buffer);
-
-    mVa->bind();
-    mVerts->bind();
-
-    mShader.bind();
-    texture.bind(0);
-
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-    mVa->unbind();
-    mVerts->unbind();
-    mShader.unbind();
-}
-
 void BufferRenderer::reloadShaders() {
     mShader.reloadShader();
     mStorageDisplayShader.reloadShader();

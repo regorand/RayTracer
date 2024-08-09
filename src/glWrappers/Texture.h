@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include "HostBuffer.h"
 #include "GL/glew.h"
 
 class Texture
@@ -24,7 +23,6 @@ private:
 public:
     Texture(int mWidth, int mHeight, GLenum format, GLint internalFormat, GLenum type, GLenum accessType);
     Texture(const std::string& path);
-    Texture(HostBuffer *buffer);
 
     void destroy();
 
