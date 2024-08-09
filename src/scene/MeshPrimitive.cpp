@@ -27,9 +27,9 @@ int MeshPrimitive::getMaterialIndex() {
     return mMaterialIndex;
 }
 
-int MeshPrimitive::fillBuffers(std::vector<Vertex> &vertices, std::vector<unsigned int> &indices, int &vertexOffset) {
+int MeshPrimitive::fillBuffers(std::vector<Vertex_Old> &vertices, std::vector<unsigned int> &indices, int &vertexOffset) {
     for (auto &rawVertex: mVertices) {
-        Vertex &vertex = vertices.emplace_back();
+        Vertex_Old &vertex = vertices.emplace_back();
         vertex.position = rawVertex.pos;
         vertex.normal = rawVertex.normal;
         vertex.materialIndex = mMaterialIndex;
@@ -41,4 +41,5 @@ int MeshPrimitive::fillBuffers(std::vector<Vertex> &vertices, std::vector<unsign
 
     return mIndices.size();
 }
+
 

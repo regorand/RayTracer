@@ -1,6 +1,9 @@
 #include <iostream>
 #include "ShaderStorageBuffer.h"
 
+ShaderStorageBuffer::ShaderStorageBuffer()
+    :m_GlId(-1) { }
+
 ShaderStorageBuffer::ShaderStorageBuffer(unsigned int size, GLenum usage, void* data)
 	:mBufferSize(size), mUsageHint(usage)
 {
@@ -10,9 +13,8 @@ ShaderStorageBuffer::ShaderStorageBuffer(unsigned int size, GLenum usage, void* 
     glBufferData(GL_SHADER_STORAGE_BUFFER, size, data, usage);
 }
 
-ShaderStorageBuffer::~ShaderStorageBuffer()
-{
-	glDeleteBuffers(1, &m_GlId);
+void ShaderStorageBuffer::destroy() {
+    glDeleteBuffers(1, &m_GlId);
 }
 
 unsigned int ShaderStorageBuffer::getGlId()
@@ -44,7 +46,6 @@ void ShaderStorageBuffer::uploadData(void *data, unsigned int size) {
 void ShaderStorageBuffer::updateData(void *data, unsigned int size, unsigned int offset) {
     glNamedBufferSubData(m_GlId, offset, size, data);
 }
-
 void ShaderStorageBuffer::getData(void *target, unsigned int size, unsigned int offset) {
     glGetNamedBufferSubData(m_GlId, offset, size, target);
 }
@@ -52,6 +53,7 @@ void ShaderStorageBuffer::getData(void *target, unsigned int size, unsigned int 
 void ShaderStorageBuffer::bindBuffer() {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_GlId);
 }
+
 unsigned int ShaderStorageBuffer::getBuffersSize() {
     return mBufferSize;
 }

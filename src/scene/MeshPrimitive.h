@@ -25,10 +25,12 @@ public:
     std::vector<unsigned int> &getIndices();
     int getMaterialIndex();
 
+    BufferMeshObject buildBufferMeshObject();
+
     /*
      * @returns: the amount of indices added
      */
-    int fillBuffers(std::vector<Vertex> &vertices, std::vector<unsigned int> &indices, int &vertexOffset);
+    int fillBuffers(std::vector<Vertex_Old> &vertices, std::vector<unsigned int> &indices, int &vertexOffset);
 
 
 };

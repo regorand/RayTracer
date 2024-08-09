@@ -8,143 +8,58 @@
 #include "imgui.h"
 #include "gui/ImguiUtils.h"
 #include "glWrappers/shaders/ShaderUtils.hpp"
+#include "SceneImporter.h"
 
 void Scene::addCamera(Camera camera) {
     cameraController.addCamera(camera);
 }
 
 bool Scene::loadFile(std::string path) {
-    loadModel(path, model);
-
-    int customData = 4;
+    SceneImporter importer(path);
+    importer.import(sceneBuffers);
+    // TODO I think after that its clean up time !! -> Get rid of a bunch of code
+    // TODO for Path Tracing create Buffers here
 
     /*
-    // TODO remove debug traversal
-    SceneGraphTraversal sgt(model, &customData);
-    sgt.setSceneCallback(&defaultSceneCallback);
-    sgt.setInnerNodeCallback(&defaultInnerCallback);
-    sgt.setMeshNodeCallback(&defaultMeshCallback);
-    sgt.setMeshPrimitiveNodeCallback(&defaultPrimitiveCallback);
-    sgt.setCameraNodeCallback(&defaultCameraCallback);
-    sgt.traverse();
+    sceneBuffers.triangleBuffer = { static_cast<unsigned int>(triangles.size() * sizeof(TriangleNew)), GL_READ_BUFFER, triangles.data() };
+
+    sceneBuffers.objectBuffer = { static_cast<unsigned int>(meshes->size() * sizeof(BufferMesh)),
+                                  GL_READ_BUFFER,
+                                  meshes->data() };
+
+    sceneBuffers.materialBuffer = { static_cast<unsigned int>(materials.size() * sizeof(TriangleNew)), GL_READ_BUFFER, materials.data() };
+
+    // TODO should make these read/write or does that only matter for GPU writes ?
+    sceneBuffers.emissiveBuffer = { static_cast<unsigned int>(emissives->size() * sizeof(TriangleNew)), GL_READ_BUFFER, emissives->data() };
+    sceneBuffers.transformationBuffer = { static_cast<unsigned int>(transforms->size() * sizeof(TriangleNew)),
+                                          GL_READ_BUFFER,
+                                          transforms->data() };
      */
 
-    std::vector<Camera> newCams;
+    buildMaterialBuffer();
 
-    SceneBuilder builder;
-    builder.build(model, mMeshes, newCams, mMaterials, sceneGraphRoot);
+    mRasterBuffersNew.mVa.bind();
 
-    if (!newCams.empty()) {
-        cameraController.addCameras(newCams);
-    }
+    GLsizei stride = sizeof(RasterVertex);
 
-    shaderProgram = makeRasterizeProgram("res/shaders/raster/test_new.vert", "res/shaders/raster/test_new.frag", "material_test_raster");
-
-    return true;
-}
-
-void Scene::buildBuffers() {
-    // TODO Scene Building
-    /*
-     * 1. create VBO(s) of buffers
-     * 2. create other buffers (materials etc.)
-     * 3. iterate sceneGraph to identify emissive materials -> emissive buffer for NEE
-     * 4. Done ?
-     *
-     *
-     * TODO Scene Rendering
-     * 1. build general traversal for scene graph (using callback methods ?)
-     * 2. render
-     */
-
-    IterateBuffers buffers;
-    Vertex test;
-    test.position = glm::vec3(1, 0.5, 0.25);
-    test.normal = glm::vec3(-1, 0.5, 0.25);
-    test.materialIndex = 42;
-    buffers.data.push_back(test);
-
-    SceneGraphTraversal bufferBuildTraversal(model, nullptr);
-    bufferBuildTraversal.setMeshPrimitiveNodeCallback(&bufferBuildPrimitiveCallback);
-    bufferBuildTraversal.setUserData(&buffers);
-    bufferBuildTraversal.traverse();
-
-    // TODO build callback function to accumulate the vertices and indices just as done before.
-    // What naive implementaion will be missing: if there are multiple gltf buffer objects, this method would \
-        write them all to a single buffer and the offsets would not match anymore; Either..\
-            1. .. extend IterateBuffers struct to support multiple different buffer objects by creating multiple VBOs \
-            2. .. or find a way to get a better offset for MeshPrimitives
-
-    // TODO
-    //  I think the best way is to not try to use only the gltf buffers, I am not sure enough of their layout
-    //  Use the same method as before, just use the traversal structure ?
-    //  Disadvantage: Can not naively use gltfModel as SceneGraph -> probably fine
-
-    std::vector<Vertex> data;
-    std::vector<unsigned int> indices;
-
-    buildRasterBuffersNode(sceneGraphRoot, data, indices);
-
-
-
-    mRasterBuffers.mVa.bind();
-
-    GLsizei stride = sizeof(Vertex);
-
-    mRasterBuffers.mAb = ArrayBuffer(data.data(), sizeof(Vertex) * data.size(), false);
+    mRasterBuffersNew.mAb = ArrayBuffer(sceneBuffers.vertices.data(), sizeof(RasterVertex) * sceneBuffers.vertices.size(), false);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, 0); // pos
     glEnableVertexAttribArray(0);
 
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void *) sizeof(glm::vec3)); // normal
     glEnableVertexAttribArray(1);
 
-    glVertexAttribPointer(2, 1, GL_INT, GL_FALSE, stride, (void *) (2 * sizeof(glm::vec3))); // material
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, (void *) (2 * sizeof(glm::vec3))); // uv
     glEnableVertexAttribArray(2);
 
+    glVertexAttribPointer(3, 1, GL_INT, GL_FALSE, stride, (void *) (2 * sizeof(glm::vec3) + sizeof(glm::vec2))); // material
+    glEnableVertexAttribArray(3);
 
-    mRasterBuffers.mIb = IndexBuffer(indices.data(), indices.size());
+    mRasterBuffersNew.mIb = IndexBuffer(sceneBuffers.indices.data(), sceneBuffers.indices.size());
 
-    buildMaterialBuffer();
-    // TODO for Path Tracing
-    /* 1. Reuse ArrayBuffer
-     * 2. Reuse IndexBuffer -> Until there is some kind of acceleration data structure, then store indices in there
-     * 3. Reuse MaterialBuffer
-     * 4. Needs some kind of ObjectBuffer
-     *  - Holds Transforms
-     *  - Holds baseIndex and indexOffset into indices buffer
-     *  - should be indexed for emissive objects
-     * 5. Needs some kind of EmissiveBuffer
-     *  - First Version: only index into ObjectBuffer
-     *  - Then: also hold information for light sampling (distance, area, etc)
-     *
-     * General Idea for Acceleration Structure
-     * 1. Top level corresponds to objects (object instances), somewhat dynmic when transforms change
-     * 2. Bottom level corresponds to the triangles within objects, relatively static
-     *
-     * Probably just build this with the RasterBuffers ?
-     */
-}
+    shaderProgram = makeRasterizeProgram("res/shaders/raster/test_new.vert", "res/shaders/raster/test_new.frag", "material_test_raster");
 
-void Scene::buildRasterBuffersNode(GraphNode node, std::vector<Vertex> &data, std::vector<unsigned int> &indices) {
-    if (node.type == NodeType::CAMERA) return;
-
-    if (node.type == NodeType::INNER) {
-        for (auto &child: node.children) buildRasterBuffersNode(child, data, indices);
-        return;
-    }
-
-    if (node.index < 0 || node.index >= mMeshes.size()) {
-        throw import_scene_error("Failed to build rasterize buffers because index of a mesh node does not match meshes vector");
-    }
-    Mesh &mesh = mMeshes[node.index];
-
-    int vertexOffset = data.size();
-    int indexOffset = indices.size();
-
-    int indexCount = mesh.fillBuffers(data, indices, vertexOffset);
-
-    mesh.setIndexOffset(indexOffset);
-    mesh.setIndexCount(indexCount);
+    return true;
 }
 
 void Scene::render(Camera &camera) {
@@ -155,42 +70,36 @@ void Scene::render(Camera &camera) {
 
     glEnable(GL_DEPTH_TEST);
 
-    mRasterBuffers.mVa.bind();
-    mRasterBuffers.mIb.bind();
+    mRasterBuffersNew.mVa.bind();
+    mRasterBuffersNew.mIb.bind();
 
+    materialBuffer.bindToTarget(4);
     shaderProgram.bind();
-    materialBuffer.bind();
-    renderNode(sceneGraphRoot, glm::mat4(1), VP);
-    shaderProgram.unbind();
-}
 
-void Scene::renderNode(GraphNode &node, glm::mat4 transform, glm::mat4 &VP) {
-    if (node.type == NodeType::INNER) {
-        for (auto &child: node.children) {
-            renderNode(child, node.transform * transform, VP);
-        }
+
+    for (auto &mesh: sceneBuffers.meshes) {
+        glm::mat4 model = sceneBuffers.transforms[mesh.bufferMesh.transformIndex];
+        glm::mat4 MVP = VP * model;
+        glm::mat4 normalTransform = glm::inverseTranspose(model);
+
+        shaderProgram.setUniformMat4f("transform", model);
+        shaderProgram.setUniformMat4f("MVP", MVP);
+
+        shaderProgram.setUniformMat4f("normalTransform", normalTransform);
+
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+        int indexBufferIndex = mesh.indexOffset;
+        int indexCount = mesh.indexCount;
+
+
+        glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, (void *) (indexBufferIndex * sizeof(GLuint)));
+
     }
+    materialBuffer.unbind();
 
-    if (node.type != NodeType::MESH) return;
-
-    Mesh &mesh = mMeshes[node.index];
-
-    glm::mat4 model = node.transform * transform;
-    glm::mat4 MVP = VP * model; // * transform;
-    glm::mat4 normalTransform = glm::inverseTranspose(transform);
-
-    shaderProgram.setUniformMat4f("transform", model);
-    shaderProgram.setUniformMat4f("MVP", MVP);
-
-    shaderProgram.setUniformMat4f("normalTransform", normalTransform);
-
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-    int indexBufferIndex = mesh.getIndexOffset();
-    int indexCount = mesh.getIndexCount();
-
-
-    glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, (void *) (indexBufferIndex * sizeof(GLuint)));
+    // renderNode(sceneGraphRoot, glm::mat4(1), VP);
+    shaderProgram.unbind();
 }
 
 Camera &Scene::getActiveCamera() {
@@ -198,27 +107,19 @@ Camera &Scene::getActiveCamera() {
 }
 
 void Scene::buildMaterialBuffer() {
-    /*
-    std::vector<glm::vec4> data;
-    for (auto &material: mMaterials) {
-        data.push_back(material.albedo);
-    }
-
-    materialBuffer = {data.data(), data.size() * sizeof(glm::vec4), GL_STATIC_READ, 3};
-*/
     std::vector<BufferMaterial > data;
-    data.reserve(mMaterials.size());
-    for (auto &material: mMaterials) {
+    data.reserve(sceneBuffers.materials.size());
+    for (auto &material: sceneBuffers.materials) {
         data.push_back(material.bufferMaterial);
     }
 
-    materialBuffer = {data.data(), data.size() * sizeof(BufferMaterial), GL_STATIC_READ, 3};
-
-    // materialBuffer = { GL_SHADER_STORAGE_BUFFER, GL_STATIC_READ, static_cast<unsigned int>(data.size() * sizeof(glm::vec4)), data.data() };
+    materialBuffer = { static_cast<unsigned int>(data.size() * sizeof(BufferMaterial)), GL_STATIC_DRAW, data.data() };
 }
 
 Scene::~Scene() {
     shaderProgram.destroy();
+
+    materialBuffer.destroy();
 }
 
 void Scene::reloadShaders() {
@@ -233,7 +134,7 @@ void Scene::buildImguiTab(DataStore &settings, std::vector<Event> &events) {
 
         startIndent();
 
-        if (ImGui::Button("Reload compute shaders", buttonSize)) {
+        if (ImGui::Button("Reload shaders", buttonSize)) {
             reloadShaders();
         }
 

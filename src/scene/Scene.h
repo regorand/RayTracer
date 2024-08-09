@@ -5,15 +5,15 @@
 #include "tiny_gltf.h"
 #include "SceneGraph.h"
 #include "Material.h"
-#include "Mesh.h"
 #include "Vertex.h"
 #include "scene/buffers/RasterizeBuffers.h"
 #include "glWrappers/GLBuffer.h"
 #include "glWrappers/shaders/ShaderProgram.h"
 #include "SceneGraphTraversal.h"
+#include "SceneBuffers.h"
 
 typedef struct iterate_buffers_s {
-    std::vector<Vertex> data;
+    std::vector<Vertex_Old> data;
     std::vector<unsigned int> indices;
 } IterateBuffers;
 
@@ -33,14 +33,17 @@ class Scene : public ImGuiSidebarTab {
 
     int activeCameraIndex = DEFAULT_CAMERA_INDEX;
 
-    tinygltf::Model model;
-    GraphNode sceneGraphRoot;
+    SceneBuffers sceneBuffers;
 
-    std::vector<Mesh> mMeshes;
-    std::vector<Material> mMaterials;
-    SSBO materialBuffer;
+    /* TODO new struct combining this**/
+    ShaderStorageBuffer triangleBuffer;
+    ShaderStorageBuffer objectBuffer;
+    ShaderStorageBuffer materialBuffer;
+    ShaderStorageBuffer transformationBuffer;
+    ShaderStorageBuffer emissiveBuffer;
 
-    RasterBuffers mRasterBuffers;
+
+    RasterBuffers mRasterBuffersNew; // These are the new ones, the ones that should stay eventually
     ShaderProgram shaderProgram;
 
 public:
@@ -52,15 +55,9 @@ public:
 
     void reloadShaders();
 
-    void buildBuffers();
-
     void render(Camera &camera);
-    void renderNode(GraphNode &node, glm::mat4 transform, glm::mat4 &VP);
 
     void buildImguiTab(DataStore &settings, std::vector<Event> &events) override;
 private:
-
-    void buildRasterBuffersNode(GraphNode node, std::vector<Vertex> &data, std::vector<unsigned int> &indices);
-
     void buildMaterialBuffer();
 };

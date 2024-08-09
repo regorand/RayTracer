@@ -18,6 +18,7 @@
 #include "scene/scene_loading/ModelLoader.h"
 #include "scene/buffers/SceneBuilder.h"
 #include "scene/Scene.h"
+#include "scene/SceneImporter.h"
 #include <imgui.h>
 
 Application::Application() {
@@ -62,9 +63,14 @@ int Application::run() {
     }
 
     Scene testScene;
-    testScene.loadFile("res/models/cube_green.gltf");
+    testScene.loadFile("res/models/colored_cubes.gltf");
+    //testScene.loadFile("res/models/monkey_donkey.gltf");
+    // testScene.loadFile("res/models/cube_green.gltf");
+    // testScene.loadFile("res/models/donkey.gltf");
 
-    testScene.buildBuffers();
+    SceneBuffers sceneBuffers;
+    SceneImporter importer("res/models/cube_green.gltf");
+    // importer.import(sceneBuffers);
 
 
     int major;
@@ -81,6 +87,7 @@ int Application::run() {
 
     glfwGetFramebufferSize(window, &displayWidth, &displayHeight);
 
+    /*
     BufferRenderer br;
 
     HostBuffer buffer(displayWidth, displayHeight);
@@ -137,7 +144,6 @@ int Application::run() {
     keyStateManager->getMouseAndGetDiff(window);
 
     settings.store(SHOW_STATS_WINDOW, false);
-    settings.store(SHOW_CONTROL_PANEL, true);
 
     settings.store(GAMMA_CORRECT, true);
 
@@ -152,13 +158,26 @@ int Application::run() {
     sideBarTabs.push_back(&postProcessor);
 
 
+     */
+    settings.store(SHOW_CONTROL_PANEL, true);
+
+    std::vector<ImGuiSidebarTab *> sideBarTabs;
+    // sideBarTabs.push_back(&br);
+    // sideBarTabs.push_back(&pathTracer);
+    // sideBarTabs.push_back(&scene);
+    sideBarTabs.push_back(&testScene);
+    // sideBarTabs.push_back(&cameraController);
+    // sideBarTabs.push_back(&postProcessor);
+
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
+        /*
         RenderState state = pathTracer.getRenderState();
         if (state != RenderState::IDLE) {
             pathTracer.doRenderStep();
         }
+         */
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -177,9 +196,10 @@ int Application::run() {
             buildImguiControlSideBar(glm::vec2(displayWidth, displayHeight), sideBarTabs);
         }
 
-        if (state != RenderState::IDLE) pathTracer.buildImGuiProgressBar(glm::vec2(displayWidth, displayHeight));
+        // if (state != RenderState::IDLE) pathTracer.buildImGuiProgressBar(glm::vec2(displayWidth, displayHeight));
 
         if (settings.getOrElse(SHOW_PATHTRACE_OUTPUT, false)) {
+            /*
             // postProcessor.applyPostProcessing(renderTarget, displayBuffer, settings);
             postProcessor.applyPostProcessing(textureStore.at(RENDER_TARGET),
                                               textureStore.at(DISPLAY_BUFFER),
@@ -196,6 +216,7 @@ int Application::run() {
             } else {
                 br.render(&textureStore.at(DISPLAY_BUFFER));
             }
+             */
         } else {
             testScene.render(testScene.getActiveCamera());
 
@@ -245,9 +266,11 @@ int Application::run() {
         glfwSwapBuffers(window);
     }
 
+    /*
     for (auto &texture : textureStore) {
         texture.second.destroy();
     }
+     */
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();

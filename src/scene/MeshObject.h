@@ -8,7 +8,7 @@
 #include "glWrappers/rasterization/ArrayBuffer.h"
 
 /**
- * Represents a single, usually continous object made of triangles
+ * Represents a single, usually continuous object made of triangles
  */
 class MeshObject {
 private:

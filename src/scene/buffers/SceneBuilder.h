@@ -3,20 +3,20 @@
 #include "tiny_gltf.h"
 #include "SceneBuffersOld.h"
 #include "scene/camera/Camera.h"
-#include "scene/Mesh.h"
 #include "scene/SceneGraph.h"
 #include "scene/Material.h"
+#include "scene/SceneBuffers.h"
 #include <stack>
 
-constexpr int FLOAT_SIZE  = 4;
+constexpr int FLOAT_SIZE_OLD  = 4;
 
-constexpr int COMPONENT_TYPE_UBYTE  = 5121;
-constexpr int COMPONENT_TYPE_USHORT = 5123;
-constexpr int COMPONENT_TYPE_UINT   = 5125;
+constexpr int COMPONENT_TYPE_UBYTE_OLD  = 5121;
+constexpr int COMPONENT_TYPE_USHORT_OLD = 5123;
+constexpr int COMPONENT_TYPE_UINT_OLD   = 5125;
 
-const std::string POSITION_ATTRIBUTE_NAME = "POSITION";
-const std::string NORMAL_ATTRIBUTE_NAME = "NORMAL";
-const std::string TEX_0_ATTRIBUTE_NAME = "TEXCOORD_0";
+const std::string POSITION_ATTRIBUTE_NAME_OLD = "POSITION";
+const std::string NORMAL_ATTRIBUTE_NAME_OLD = "NORMAL";
+const std::string TEX_0_ATTRIBUTE_NAME_OLD = "TEXCOORD_0";
 
 struct IterateValues {
     std::vector<Mesh> &objects;
@@ -35,6 +35,9 @@ public:
                std::vector<Camera> &targetCameras,
                std::vector<Material> &materials,
                GraphNode &root);
+
+    bool build(tinygltf::Model &model,
+               SceneBuffers &sceneBuffers);
 
 private:
     static void buildTransform(tinygltf::Node &node, glm::mat4 &target);

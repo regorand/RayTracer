@@ -33,8 +33,8 @@ void OldScene::createGPUBuffers() {
         unsigned int triangleCount = objectTriangles.size();
 
         BufferMeshObject bmo;
-        bmo.invTransform = glm::inverse(object.getTransform().getMatrix());
-        bmo.normalMat = glm::transpose(bmo.invTransform);
+        // bmo.invTransform = glm::inverse(object.getTransform().getMatrix());
+        // bmo.normalMat = glm::transpose(bmo.invTransform);
         bmo.aabb = object.createAABB();
         bmo.emissive = object.isEmissive();
         bmo.firstTriangleIndex = triangleOffset;

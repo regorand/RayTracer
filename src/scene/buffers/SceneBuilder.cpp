@@ -12,7 +12,7 @@
  * Reads an unsigned byte from 1 bytes at the specified address and casts it to
  * an unsigned int.
  */
-unsigned int bytesFromUnsignedCharToUnsignedInt(unsigned char* address) {
+unsigned int bytesFromUnsignedCharToUnsignedInt_old(unsigned char* address) {
     unsigned char out;
     memcpy(&out, address, sizeof(unsigned char));
     return (unsigned int)out;
@@ -22,7 +22,7 @@ unsigned int bytesFromUnsignedCharToUnsignedInt(unsigned char* address) {
  * Reads an unsigned short from 2 bytes at the specified address and casts it to
  * an unsigned int.
  */
-unsigned int bytesFromUnsignedShortToUnsignedInt(unsigned char* address) {
+unsigned int bytesFromUnsignedShortToUnsignedInt_old(unsigned char* address) {
     unsigned short out;
     memcpy(&out, address, sizeof(unsigned short));
     return (unsigned int)out;
@@ -31,10 +31,36 @@ unsigned int bytesFromUnsignedShortToUnsignedInt(unsigned char* address) {
 /*
  * Reads an unsigned int from 4 bytes at the specified address.
  */
-unsigned int bytesToUnsignedInt(unsigned char* address) {
+unsigned int bytesToUnsignedInt_old(unsigned char* address) {
     unsigned int out;
     memcpy(&out, address, sizeof(unsigned int));
     return out;
+}
+
+bool SceneBuilder::build(tinygltf::Model &model, SceneBuffers &sceneBuffers) {
+    if (model.scenes.size() > model.defaultScene + 1) {
+        throw std::runtime_error("Programm currently needs valid default scene");
+    }
+
+    std::vector<Material> materials;
+
+    for (auto &gltfMat: model.materials) {
+        auto &mat = materials.emplace_back();
+        parseMaterial(gltfMat, mat);
+    }
+    // sceneBuffers.materialBuffer = ShaderStorageBuffer(materials.size() * sizeof(Material), GL_READ_BUFFER, materials.data());
+
+    std::vector<TriangleNew> triangles;
+    std::vector<BufferMesh> bufferMeshObjects;
+    std::vector<glm::mat4> transforms;
+    std::vector<unsigned int> emissives;
+
+
+    for (auto &node: model.scenes[model.defaultScene].nodes) {
+        // parseNode(model, node, iterateValues, root);
+    }
+
+    return true;
 }
 
 bool SceneBuilder::build(tinygltf::Model &model,
@@ -73,8 +99,6 @@ bool SceneBuilder::build(tinygltf::Model &model,
 
 bool SceneBuilder::parseNode(tinygltf::Model &model, int nodeId, IterateValues &iterateValues, GraphNode &parentNode) {
     tinygltf::Node &node = model.nodes[nodeId];
-
-    GraphNode root;
 
     glm::mat4 transform;
     buildTransform(node, transform);
@@ -131,9 +155,7 @@ bool SceneBuilder::parseMesh(tinygltf::Model &model, int meshId, IterateValues &
     auto &buffers = model.buffers;
 
 
-
     meshNode.index = iterateValues.objects.size();
-    Mesh &mesh = iterateValues.objects.emplace_back( gltfMesh.name );
     meshNode.type = NodeType::MESH;
 
     std::vector<VertexOld> vertices;
@@ -141,9 +163,9 @@ bool SceneBuilder::parseMesh(tinygltf::Model &model, int meshId, IterateValues &
 
     for (auto &primitive: gltfMesh.primitives) {
 
-        tinygltf::Accessor position = getAccessor(accessors, primitive, POSITION_ATTRIBUTE_NAME);
-        tinygltf::Accessor normal = getAccessor(accessors, primitive, NORMAL_ATTRIBUTE_NAME);
-        tinygltf::Accessor texCoord0 = getAccessor(accessors, primitive, TEX_0_ATTRIBUTE_NAME);
+        tinygltf::Accessor position = getAccessor(accessors, primitive, POSITION_ATTRIBUTE_NAME_OLD);
+        tinygltf::Accessor normal = getAccessor(accessors, primitive, NORMAL_ATTRIBUTE_NAME_OLD);
+        tinygltf::Accessor texCoord0 = getAccessor(accessors, primitive, TEX_0_ATTRIBUTE_NAME_OLD);
 
         if (!(position.count == normal.count && position.count == texCoord0.count)) {
             throw import_scene_error("vertex attribute counts for primitive do not match");
@@ -163,9 +185,9 @@ bool SceneBuilder::parseMesh(tinygltf::Model &model, int meshId, IterateValues &
 
         for(int i = 0; i < position.count; i++) {
             // last number from the multiplication is the number of components in the vector
-            auto positionAddress = &(*positionBuffer)[positionOffset + i * FLOAT_SIZE * 3];
-            auto normalAddress = &(*normalBuffer)[normalOffset + i * FLOAT_SIZE * 3];
-            auto texCoordAddress = &(*texCoordBuffer)[texCoordOffset + i * FLOAT_SIZE * 2];
+            auto positionAddress = &(*positionBuffer)[positionOffset + i * FLOAT_SIZE_OLD * 3];
+            auto normalAddress = &(*normalBuffer)[normalOffset + i * FLOAT_SIZE_OLD * 3];
+            auto texCoordAddress = &(*texCoordBuffer)[texCoordOffset + i * FLOAT_SIZE_OLD * 2];
 
             auto vec = glm::make_vec3((float *) positionAddress);
             vertices.push_back({
@@ -177,17 +199,17 @@ bool SceneBuilder::parseMesh(tinygltf::Model &model, int meshId, IterateValues &
         }
 
         // default parsing function (if indices are stored as byte)
-        auto parseIndex = bytesFromUnsignedCharToUnsignedInt;
+        auto parseIndex = bytesFromUnsignedCharToUnsignedInt_old;
         // size of one index in bytes
         int indexStride   = 1;
         int componentType = accessors[primitive.indices].componentType;
 
         // choose parsing function based on the numeric type that the index is stored as in the glTF file
-        if(componentType == COMPONENT_TYPE_UINT) {
-            parseIndex  = bytesToUnsignedInt;
+        if(componentType == COMPONENT_TYPE_UINT_OLD) {
+            parseIndex  = bytesToUnsignedInt_old;
             indexStride = 4;
-        } else if(componentType == COMPONENT_TYPE_USHORT) {
-            parseIndex  = bytesFromUnsignedShortToUnsignedInt;
+        } else if(componentType == COMPONENT_TYPE_USHORT_OLD) {
+            parseIndex  = bytesFromUnsignedShortToUnsignedInt_old;
             indexStride = 2;
         }
 
@@ -203,7 +225,6 @@ bool SceneBuilder::parseMesh(tinygltf::Model &model, int meshId, IterateValues &
             indices.push_back(index);
         }
 
-        mesh.addPrimitive({vertices, indices, primitive.material});
     }
 
     return true;

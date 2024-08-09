@@ -2,13 +2,14 @@
 
 in vec3 fragPos;
 in vec3 fragNormal;
-flat in int fragMaterialId;
+in vec2 fragUV;
+flat in int fragMatIndex;
 
 #include "res/shaders/material/material.glsl"
 
-layout (std430, binding = 3) buffer materialBuffer
+layout (std430, binding = 4) buffer materialBuffer
 {
-    BufferMaterial matData[];
+    Material matData[];
 };
 
 out vec4 outColor;
@@ -19,10 +20,17 @@ void main() {
     float val = (normDot + 1) / 2;
 
     vec4 color = vec4(1);
-    if (fragMaterialId != -1) {
-        BufferMaterial mat = matData[fragMaterialId];
+    if (fragMatIndex != -1) {
+        Material mat = matData[fragMatIndex];
         color = mat.albedo;
+        color.a = 1;
     }
+    /*
+    color = vec4(0);
+    if (fragMatIndex == 1065353216) {
+        color = vec4(1);
+    }
+*/
 
     outColor = color * val;
 }

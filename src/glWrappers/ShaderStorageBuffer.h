@@ -11,8 +11,10 @@ private:
 
     unsigned int m_GlId;
 public:
+    ShaderStorageBuffer();
     ShaderStorageBuffer(unsigned int size, GLenum usage, void *data = nullptr);
-    ~ShaderStorageBuffer();
+
+    void destroy();
 
     void uploadData(void *data, unsigned int size);
     void updateData(void *data, unsigned int size, unsigned int offset);
