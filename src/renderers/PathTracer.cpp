@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include <array>
+#include <utility>
 #include "PathTracer.h"
 #include "imgui.h"
 #include "deviceShared/BufferBindings.h"
@@ -134,7 +135,7 @@ void PathTracer::newPath() {
 
     mNewPathShader.setUniform1i("width", mWidth);
 
-    Camera &camera = mScene.getActiveCamera();
+    Camera &camera = mScene->getActiveCamera();
 
     mNewPathShader.setUniform3f("cameraPos", camera.getLocation());
     mNewPathShader.setUniform3f("viewDir", camera.getViewDir());
@@ -200,28 +201,38 @@ void PathTracer::bindBounce() {
     buffers.dirBuffer.bindToTarget(DIR_BUFFER_TARGET);
     buffers.multiplierBuffer.bindToTarget(MULT_BUFFER_TARGET);
 
-    // TODO
-    // mScene.bind();
-
-    // TODO get scene counts and bind as uniforms, then add stuff to the scene, try to only render albedo first
+    GPUSceneBuffers &gpuBuffers = mScene->getGPUBuffers();
+    gpuBuffers.triangleBuffer.bindToTarget(TRIANGLE_BUFFER_BINDING);
+    gpuBuffers.meshBuffer.bindToTarget(MESH_BUFFER_BINDING);
+    gpuBuffers.materialBuffer.bindToTarget(MATERIAL_BUFFER_BINDING);
+    gpuBuffers.emissiveBuffer.bindToTarget(EMISSIVE_BUFFER_BINDING);
+    gpuBuffers.transformationBuffer.bindToTarget(TRANSFORM_BUFFER_BINDING);
 
     mBounceShader.bind();
 
-    /*
-    mBounceShader.setUniform1ui("objectCount", mScene.getObjectCount());
-    mBounceShader.setUniform1ui("emissiveCount", mScene.getEmissiveCount());
+    mBounceShader.setUniform1ui("objectCount", mScene->getCPUBuffers().meshes.size());
+    mBounceShader.setUniform1ui("emissiveCount", mScene->getCPUBuffers().emissives.size());
     mBounceShader.setUniform1f("alphaRR", mPathTraceSettings.pathSettings.alphaRR);
-    */
 
     mBounceShader.setUniform1i("width", mWidth);
     // mBounceShader.setUniform1i("height", mHeight);
 }
 
 void PathTracer::unbindBounce() {
-    mBounceShader.unbind();
+    mCurrentTarget->unbind();
 
-    // TODO
-    // mScene.unbind();
+    buffers.posBuffer.unbind();
+    buffers.dirBuffer.unbind();
+    buffers.multiplierBuffer.unbind();
+
+    GPUSceneBuffers &gpuBuffers = mScene->getGPUBuffers();
+    gpuBuffers.triangleBuffer.unbind();
+    gpuBuffers.meshBuffer.unbind();
+    gpuBuffers.materialBuffer.unbind();
+    gpuBuffers.emissiveBuffer.unbind();
+    gpuBuffers.transformationBuffer.unbind();
+
+    mBounceShader.unbind();
 }
 
 bool PathTracer::renderFenceSignalled() {
@@ -267,8 +278,8 @@ void PathTracer::buildImGuiProgressBar(glm::vec2 displaySize) {
     ImGui::End();
 }
 
-void PathTracer::setScene(Scene &scene) {
-    mScene = scene;
+void PathTracer::setScene(std::shared_ptr<Scene> newScene) {
+    mScene = std::move(newScene);
 }
 
 void PathTracer::buildImGuiWindow(DataStore &settings) {
@@ -384,7 +395,7 @@ void PathTracer::recordPathVertex() {
     }
 }
 
-Scene &PathTracer::getSceneRef() {
+std::shared_ptr<Scene> PathTracer::getScene() {
     return mScene;
 }
 PathTracerBuffers &PathTracer::getBuffers() {

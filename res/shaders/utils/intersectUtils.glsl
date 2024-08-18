@@ -27,10 +27,11 @@ bool intersectTriangle(Ray ray, Triangle triangle, out RayHit rayhit) {
     rayhit.dist = f * dot(edge2, q);
 
     if (rayhit.dist > EPS_5) {
-        rayhit.mat = triangle.mat;
+        rayhit.matID = triangle.materialIndex;
         rayhit.position = ray.origin + ray.direction * rayhit.dist;
         rayhit.normal = normalize(cross(edge1, edge2)); // TODO replace with interpolated normal for smooth shading ?
         rayhit.hitBackface = dot(rayhit.normal, (ray.origin - triangle.V0.pos.xyz)) < 0;
+
         return true;
     }
 
@@ -80,13 +81,14 @@ bool intersectAABB(Ray ray, AABB aabb, out float t) {
     return true;
 }
 
-bool intersectObject(Ray ray, MeshObject object, float alreadyClosest, out RayHit rayhit) {
-    uint objectBaseIndex = object.firstTriangleIndex;
+bool intersectObject(Ray ray, Mesh mesh, float alreadyClosest, out RayHit rayhit) {
+    uint objectBaseIndex = mesh.firstTriangleIndex;
 
     float closest = alreadyClosest;
     float dist;
 
-    mat4 inverseTransform = object.invTransform;
+    mat4 transform = transforms[mesh.transformIndex];
+    mat4 inverseTransform = inverse(transform);
 
     // Transform ray into object space
     Ray objSpaceRay = Ray((inverseTransform * vec4(ray.origin, 1)).xyz, (inverseTransform * vec4(ray.direction, 0)).xyz);
@@ -95,14 +97,17 @@ bool intersectObject(Ray ray, MeshObject object, float alreadyClosest, out RayHi
     float rayDirScaling = length(objSpaceRay.direction);
     objSpaceRay.direction = normalize(objSpaceRay.direction);
 
-    bool aabbHit = intersectAABB(objSpaceRay, object.aabb, dist);
-    if (!aabbHit || dist > closest) return false;
+    bool aabbHit = intersectAABB(objSpaceRay, mesh.aabb, dist);
+    if (!aabbHit || dist > closest) {
+        return false;
+    }
 
     bool anyHit = false;
 
     RayHit tmp;
-    for (int i = 0; i < object.triangleCount; i++) {
+    for (int i = 0; i < mesh.triangleCount; i++) {
         Triangle triangle = triangles[objectBaseIndex + i];
+
 
         bool hit = intersectTriangle(objSpaceRay, triangle, tmp);
 
@@ -117,14 +122,15 @@ bool intersectObject(Ray ray, MeshObject object, float alreadyClosest, out RayHi
 
     if (anyHit) {
         rayhit.dist /= rayDirScaling;
-        vec4 tmp = inverse(inverseTransform) * vec4(rayhit.position, 1);
+        vec4 tmp = transform * vec4(rayhit.position, 1);
         rayhit.position = tmp.xyz / tmp.w;
-        rayhit.normal = (object.normalMat * vec4(rayhit.normal, 0)).xyz;
+        mat4 normalMat = transpose(inverseTransform);
+        rayhit.normal = (normalMat * vec4(rayhit.normal, 0)).xyz;
     }
 
     return anyHit;
 }
 
-bool intersectObject(Ray ray, MeshObject object, out RayHit rayhit) {
-    return intersectObject(ray, object, 10000000, rayhit);
+bool intersectObject(Ray ray, Mesh mesh, out RayHit rayhit) {
+    return intersectObject(ray, mesh, 10000000, rayhit);
 }

@@ -32,6 +32,8 @@ void BufferRenderer::render(Texture *texture) {
     mShader.bind();
     texture->bind(0);
 
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     mVa->unbind();
@@ -63,6 +65,7 @@ void BufferRenderer::renderStorageBuffer(ShaderStorageBuffer &buffer,
     mStorageDisplayShader.setUniform1i("totalBufferSize", buffer.getBuffersSize());
 
     buffer.bindToTarget(0);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 

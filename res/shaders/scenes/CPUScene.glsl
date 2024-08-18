@@ -10,19 +10,24 @@ layout(std430, binding = TRIANGLE_BUFFER_BINDING) buffer triangleList
 };
 
 
-layout(std430, binding = OBJECT_BUFFER_BINDING) buffer objectList
+layout(std430, binding = MESH_BUFFER_BINDING) buffer meshList
 {
-    MeshObject meshObjects[];
+    Mesh meshes[];
 };
 
 
 layout(std430, binding = MATERIAL_BUFFER_BINDING) buffer materialList
 {
-    Material materials[];
+    BufferMaterial materials[];
 };
 
 
 layout(std430, binding = EMISSIVE_BUFFER_BINDING) buffer emissiveList
 {
     uint emissiveIndices[];
+};
+
+layout(std430, binding = TRANSFORM_BUFFER_BINDING) buffer transformList
+{
+    mat4 transforms[];
 };

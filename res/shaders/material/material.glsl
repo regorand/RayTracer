@@ -19,7 +19,7 @@ struct Material {
 
 struct BufferMaterial {
     vec4 albedo;
-    vec3 emission;
+    vec4 emission;
     float roughness;
     float metallic;
     float transparency;

@@ -5,9 +5,7 @@
 #include "Material.h"
 #include "glm/mat4x4.hpp"
 
-// TODO move this into own file
-
-typedef struct SceneBuffers {
+typedef struct CPUSceneBuffers {
     std::vector<RasterVertex> vertices;
     std::vector<unsigned int> indices;
     std::vector<Mesh> meshes;
@@ -15,4 +13,12 @@ typedef struct SceneBuffers {
     std::vector<unsigned int> emissives;
     std::vector<Material> materials;
     std::vector<Triangle> triangles;
-} SceneBuffers;
+} CPUSceneBuffers;
+
+typedef struct {
+    ShaderStorageBuffer triangleBuffer;
+    ShaderStorageBuffer meshBuffer;
+    ShaderStorageBuffer materialBuffer;
+    ShaderStorageBuffer transformationBuffer;
+    ShaderStorageBuffer emissiveBuffer;
+} GPUSceneBuffers;

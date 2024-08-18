@@ -26,17 +26,15 @@ private:
 
     std::vector<Mesh> *meshes;
     std::vector<glm::mat4> *transforms;
-
     std::vector<unsigned int> *emissives;
-
     std::vector<Material> *materials;
-    std::vector<Triangle> triangles;
+    std::vector<Triangle> *triangles;
 
 
 public:
     SceneImporter(std::string path);
 
-    bool import(SceneBuffers &sceneBuffers);
+    bool import(CPUSceneBuffers &sceneBuffers);
 
 
 private:

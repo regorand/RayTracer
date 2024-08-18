@@ -1,18 +1,22 @@
+#include <memory>
+#include <utility>
 #include "Rasterizer.h"
 #include "glm/gtc/matrix_inverse.hpp"
 #include "glWrappers/Texture.h"
 #include "deviceShared/BufferBindings.h"
 #include "glWrappers/shaders/ShaderUtils.hpp"
+#include "imgui.h"
+#include "gui/ImguiUtils.h"
 
 Rasterizer::Rasterizer()
-        : mShader(makeRasterizeProgram("res/shaders/raster/simpleScene.vert", "res/shaders/raster/simpleScene.frag")),
-          mPathVisShader(makeRasterizeProgram("res/shaders/raster/rasterizePath.vert", "res/shaders/raster/rasterizePath.frag")),
+        : mShader(makeRasterizeProgram("res/shaders/raster/test_new.vert", "res/shaders/raster/test_new.frag")),
           mGeometryPhaseShader(makeRasterizeProgram("res/shaders/raster/simpleScene.vert", "res/shaders/raster/saveToBuffers.frag")) {
 
 }
 
 void Rasterizer::render() {
-    Camera &camera = mScene.getActiveCamera();
+    if (!canRasterize()) return;
+    Camera &camera = mScene->getActiveCamera();
 
     glm::mat4 cameraMat = camera.getTransformation();
     glm::mat4 projectionMat = camera.getProjection();
@@ -21,14 +25,14 @@ void Rasterizer::render() {
 
     glEnable(GL_DEPTH_TEST);
 
-    /*
-    for (auto &object: mScene.getObjects()) {
-        mShader.bind();
+    mScene->bindRaster();
+    auto &transforms = mScene->getCPUBuffers().transforms;
+    mScene->getMatBuffer().bindToTarget(3);
 
-        object.getVertexArray().bind();
-        object.getIndexBuffer().bind();
+    mShader.bind();
+    for (auto &mesh: mScene->getMeshes()) {
 
-        glm::mat4 model = object.getTransformRef().getMatrix();
+        glm::mat4 model = transforms[mesh.bufferMesh.transformIndex];
         glm::mat4 MVP = VP * model;
         glm::mat4 normalTransform = glm::inverseTranspose(model);
 
@@ -36,20 +40,26 @@ void Rasterizer::render() {
         mShader.setUniformMat4f("MVP", MVP);
         mShader.setUniformMat4f("normalTransform", normalTransform);
 
-        if (object.isTransmissive()) {
+        if (mesh.bufferMesh.emissive == 1) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            mShader.setUniform1i("emissive", 1);
+
         } else {
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
 
-        if (object.isEmissive()) {
-            mShader.setUniform1i("emissive", 1);
-        }
+        int indexBufferIndex = mesh.indexOffset;
+        int indexCount = mesh.indexCount;
 
-        glDrawElements(GL_TRIANGLES, object.getIndexBuffer().getCount(), GL_UNSIGNED_INT, nullptr);
-        mShader.unbind();
+        glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, (void *) (indexBufferIndex * sizeof(GLuint)));
     }
-     */
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    mShader.unbind();
+    mScene->getMatBuffer().unbind();
+
+    mScene->unbindRaster();
 }
 
 void Rasterizer::renderPaths() {
@@ -75,17 +85,12 @@ void Rasterizer::renderPaths() {
      */
 }
 
-void Rasterizer::setScene(Scene &scene) {
-    mScene = scene;
+void Rasterizer::setScene(std::shared_ptr<Scene> newScene) {
+    mScene = std::move(newScene);
 }
 
 bool Rasterizer::canRasterize() {
-    // return mScene.canRasterize();
-    return false;
-}
-
-Scene &Rasterizer::getSceneRef() {
-    return mScene;
+    return mScene != nullptr;
 }
 
 void Rasterizer::renderCameraFrustum(CameraVisBuffers &buffers) {
@@ -147,5 +152,28 @@ void Rasterizer::saveToBuffers(Camera &pathTraceCamera) {
     mGeometryPhaseShader.unbind();
 
     */
+}
+
+std::shared_ptr<Scene> Rasterizer::getScene() {
+    return mScene;
+}
+
+void Rasterizer::reloadShaders() {
+    mShader.reloadShader();
+    mGeometryPhaseShader.reloadShader();
+}
+
+void Rasterizer::buildImguiTab(DataStore &settings, std::vector<Event> &events) {
+    if (ImGui::CollapsingHeader("Rasterizer")) {
+
+        ImVec2 windowSize = ImGui::GetWindowSize();
+        ImVec2 buttonSize = ImVec2(windowSize.x * 0.9, 25);
+
+        startIndent();
+        if (ImGui::Button("Reload shaders", buttonSize)) {
+            reloadShaders();
+        }
+        endIndent();
+    }
 }
 

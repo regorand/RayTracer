@@ -11,7 +11,5 @@ bool loadModel(std::string path, tinygltf::Model &target) {
 
     success = loader.LoadASCIIFromFile(&target, &errors, &warnings, path);
 
-    std::cout << "success: " << success << std::endl;
-
     return success;
 }

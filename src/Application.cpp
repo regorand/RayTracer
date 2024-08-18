@@ -59,11 +59,6 @@ int Application::run() {
         throw std::runtime_error("Glew init failed");
     }
 
-    Scene testScene;
-    testScene.loadFile("res/models/colored_cubes.gltf");
-    //testScene.loadFile("res/models/monkey_donkey.gltf");
-    // testScene.loadFile("res/models/cube_green.gltf");
-    // testScene.loadFile("res/models/donkey.gltf");
 
     int major;
     int minor;
@@ -79,7 +74,16 @@ int Application::run() {
 
     glfwGetFramebufferSize(window, &displayWidth, &displayHeight);
 
-    /*
+    std::shared_ptr<Scene> scene = std::make_shared<Scene>();
+    // scene->loadFile("res/models/monkey_donkey.gltf");
+    scene->loadFile("res/models/cornell_box.gltf");
+    // scene->loadFile("res/models/colored_cubes.gltf");
+    // scene->loadFile("res/models/test_cube.gltf");
+    // scene->loadFile("res/models/cube_green.gltf");
+
+    Rasterizer rasterizer;
+    rasterizer.setScene(scene);
+
     BufferRenderer br;
 
     std::map<int, Texture> textureStore;
@@ -92,25 +96,7 @@ int Application::run() {
 
     textureStore.insert({DEPTH_BUFFER, createDepthBuffer(displayWidth, displayHeight)});
 
-    OldScene scene;
-    Camera camera(glm::vec3(0, 0, -25), glm::vec3(0, 0, 1));
-    camera.setAspect((float) displayWidth / (float) displayHeight);
-    scene.setCamera(camera);
-
-    std::vector<MeshObject> objects;
-    createCornellBox(objects);
-    createSampleBoxes(objects);
-
-    for (MeshObject &object: objects) {
-        scene.addMeshObject(object);
-    }
-    scene.createGPUBuffers();
-    scene.buildRasterizeBuffers();
-
     PostProcessor postProcessor(displayWidth, displayHeight);
-
-    Rasterizer rasterizer;
-    rasterizer.setScene(scene);
 
     FrameBufferObject fbo;
     fbo.addTextureAttachment(textureStore.at(POS_BUFFER), GL_COLOR_ATTACHMENT0);
@@ -124,11 +110,6 @@ int Application::run() {
     pathTracer.setTargetp(&textureStore.at(RENDER_TARGET));
     pathTracer.clearTarget();
 
-    PathVisObject pathObj = PathVisObject(pathTracer.getRecordedPath().vertices);
-    if (pathObj.hasVertices()) {
-        rasterizer.getSceneRef().addPathObject(pathObj);
-    }
-
     pathTracer.enablePathRecording(false);
 
     keyStateManager->getMouseAndGetDiff(window);
@@ -139,35 +120,23 @@ int Application::run() {
 
     // CameraController cameraController(pathTracer, rasterizer);
 
-    std::vector<ImGuiSidebarTab *> sideBarTabs;
-    sideBarTabs.push_back(&br);
-    sideBarTabs.push_back(&pathTracer);
-    // sideBarTabs.push_back(&scene);
-    sideBarTabs.push_back(&testScene);
-    // sideBarTabs.push_back(&cameraController);
-    sideBarTabs.push_back(&postProcessor);
-
-
-     */
     settings.store(SHOW_CONTROL_PANEL, true);
 
     std::vector<ImGuiSidebarTab *> sideBarTabs;
-    // sideBarTabs.push_back(&br);
-    // sideBarTabs.push_back(&pathTracer);
-    // sideBarTabs.push_back(&scene);
-    sideBarTabs.push_back(&testScene);
+    sideBarTabs.push_back(&pathTracer);
+    sideBarTabs.push_back(scene.get());
+    sideBarTabs.push_back(&rasterizer);
     // sideBarTabs.push_back(&cameraController);
-    // sideBarTabs.push_back(&postProcessor);
+    sideBarTabs.push_back(&postProcessor);
+    sideBarTabs.push_back(&br);
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
-        /*
         RenderState state = pathTracer.getRenderState();
         if (state != RenderState::IDLE) {
             pathTracer.doRenderStep();
         }
-         */
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -186,15 +155,9 @@ int Application::run() {
             buildImguiControlSideBar(glm::vec2(displayWidth, displayHeight), sideBarTabs);
         }
 
-        // if (state != RenderState::IDLE) pathTracer.buildImGuiProgressBar(glm::vec2(displayWidth, displayHeight));
+        if (state != RenderState::IDLE) pathTracer.buildImGuiProgressBar(glm::vec2(displayWidth, displayHeight));
 
         if (settings.getOrElse(SHOW_PATHTRACE_OUTPUT, false)) {
-            /*
-            // postProcessor.applyPostProcessing(renderTarget, displayBuffer, settings);
-            postProcessor.applyPostProcessing(textureStore.at(RENDER_TARGET),
-                                              textureStore.at(DISPLAY_BUFFER),
-                                              textureStore,
-                                              settings);
 
             if (settings.getOrElse(SHOW_PATHTRACE_DEBUG, false)) {
                 int currentIndex = settings.getOrElse(PATHTRACE_DEBUG_BUFFER_INDEX, 0);
@@ -204,14 +167,23 @@ int Application::run() {
                 br.renderStorageBuffer(pathTracer.getBuffers().getByIndex(currentIndex),
                                        glm::vec2(displayWidth, displayHeight));
             } else {
-                br.render(&textureStore.at(DISPLAY_BUFFER));
+                if (settings.getOrElse(CONTINUALLY_APPLY_POSTPROC, false)) {
+                    postProcessor.applyPostProcessing(textureStore.at(RENDER_TARGET),
+                                                      textureStore.at(DISPLAY_BUFFER),
+                                                      textureStore,
+                                                      settings);
+
+                    br.render(&textureStore.at(DISPLAY_BUFFER));
+                } else {
+                    br.render(&textureStore.at(RENDER_TARGET));
+                }
+
             }
-             */
         } else {
-            testScene.render(testScene.getActiveCamera());
+            rasterizer.render();
 
             glm::vec2 diff = keyStateManager->getMouseAndGetDiff(window);
-            cameraManipulator.updateCamera(testScene.getActiveCamera(), keyStateManager, diff,
+            cameraManipulator.updateCamera(scene->getActiveCamera(), keyStateManager, diff,
                                            glm::vec2(displayWidth, displayHeight));
 
             /*
@@ -243,11 +215,6 @@ int Application::run() {
         }
 
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-
-
-
-
 
         ImGui::EndFrame();
         ImGui::Render();

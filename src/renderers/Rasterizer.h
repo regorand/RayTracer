@@ -8,22 +8,15 @@
 #include "scene/camera/Camera.h"
 
 
-class Rasterizer {
+class Rasterizer : public ImGuiSidebarTab {
 
 private:
     ShaderProgram mShader;
-    ShaderProgram mPathVisShader;
     ShaderProgram mGeometryPhaseShader;
 
-    Scene mScene;
-
-    VertexArray mVa;
-    IndexBuffer mIb;
-
-
+    std::shared_ptr<Scene> mScene = nullptr;
 public:
     Rasterizer();
-
 
     void render();
 
@@ -32,8 +25,12 @@ public:
     void renderPaths();
     void renderCameraFrustum(CameraVisBuffers &buffers);
 
-    void setScene(Scene &scene);
-    Scene &getSceneRef();
+    void setScene(std::shared_ptr<Scene> newScene);
+    std::shared_ptr<Scene> getScene();
+
+    void reloadShaders();
 
     bool canRasterize();
+
+    void buildImguiTab(DataStore &settings, std::vector<Event> &events) override;
 };

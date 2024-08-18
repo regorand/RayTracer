@@ -40,7 +40,6 @@ void ShaderProgram::setName(const std::string& name) {
 
 void ShaderProgram::reloadShader() {
     std::vector<Shader> newShaders;
-
     bool no_error = true;
     newShaders.reserve(mShaderDefs.size());
     for (auto &def: mShaderDefs) {

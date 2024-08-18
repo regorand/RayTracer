@@ -15,7 +15,6 @@ void Shader::reloadShader() {
     std::string src = loadShaderSource(m_ShaderDef.path, true);
     bool res;
     mGLid = compileShader(ShaderTypeToGlType(type), src, m_ShaderDef.path, res);
-    GLPrintError();
     if (res) {
         mIsValid = true;
     } else {

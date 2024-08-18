@@ -7,7 +7,7 @@ flat in int fragMatIndex;
 
 #include "res/shaders/material/material.glsl"
 
-layout (std430, binding = 4) buffer materialBuffer
+layout (std430, binding = 3) buffer materialBuffer
 {
     Material matData[];
 };
@@ -25,12 +25,6 @@ void main() {
         color = mat.albedo;
         color.a = 1;
     }
-    /*
-    color = vec4(0);
-    if (fragMatIndex == 1065353216) {
-        color = vec4(1);
-    }
-*/
 
     outColor = color * val;
 }

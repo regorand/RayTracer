@@ -1,6 +1,7 @@
 #pragma once
 
 #include <chrono>
+#include <memory>
 #include "GL/glew.h"
 #include "glWrappers/Texture.h"
 #include "utils/RandomEngine.h"
@@ -116,7 +117,7 @@ private:
 
     Texture *mCurrentTarget;
 
-    Scene mScene;
+    std::shared_ptr<Scene> mScene;
 
     milliseconds renderStart;
 
@@ -143,7 +144,7 @@ public:
 
     void setTargetp(Texture *target);
 
-    void setScene(Scene &scene);
+    void setScene(std::shared_ptr<Scene> newScene);
 
     void reloadShaders();
 
@@ -161,7 +162,7 @@ public:
 
     void setRecordingCoords(glm::vec2 coords);
 
-    Scene &getSceneRef();
+    std::shared_ptr<Scene> getScene();
 
     PathTracerBuffers &getBuffers();
 

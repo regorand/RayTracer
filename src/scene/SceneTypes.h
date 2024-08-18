@@ -1,18 +1,31 @@
 #pragma once
 
+#include "glm/vec4.hpp"
 #include "glm/vec3.hpp"
 #include "glm/vec2.hpp"
 
 typedef struct Vertex {
-    glm::vec3 position;
-    glm::vec3 normal;
-    glm::vec2 uv;
+    alignas(16) glm::vec3 position;
+    alignas(16) glm::vec3 normal;
+    alignas(16) glm::vec2 uv;
 } Vertex;
 
 typedef struct RasterVertex {
-    Vertex vertex;
+    glm::vec3 position;
+    glm::vec3 normal;
+    glm::vec2 uv;
     int materialId;
+
+    Vertex toBufferVertex() const {
+        Vertex v;
+        v.position = this->position;
+        v.normal = this->normal;
+        v.uv = this->uv;
+        return v;
+    }
 } RasterVertex;
+
+
 
 typedef struct Triangle {
     Vertex V0;
@@ -23,8 +36,8 @@ typedef struct Triangle {
 } Triangle;
 
 typedef struct {
-    glm::vec3 lower;
-    glm::vec3 upper;
+    glm::vec4 lower;
+    glm::vec4 upper;
 } AABB;
 
 struct BufferMesh {

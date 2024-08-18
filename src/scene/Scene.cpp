@@ -2,10 +2,8 @@
 #include "Scene.h"
 #include "scene/scene_loading/ModelLoader.h"
 #include "scene/buffers/import_scene_error.h"
-#include "glm/gtc/matrix_inverse.hpp"
 #include "imgui.h"
 #include "gui/ImguiUtils.h"
-#include "glWrappers/shaders/ShaderUtils.hpp"
 #include "SceneImporter.h"
 #include "scene/camera/Camera.h"
 
@@ -15,33 +13,79 @@ void Scene::addCamera(Camera camera) {
 
 bool Scene::loadFile(std::string path) {
     SceneImporter importer(path);
-    importer.import(sceneBuffers);
-    // TODO I think after that its clean up time !! -> Get rid of a bunch of code
-    // TODO for Path Tracing create Buffers here
+    importer.import(cpuBuffers);
 
-    /*
-    sceneBuffers.triangleBuffer = { static_cast<unsigned int>(triangles.size() * sizeof(Triangle)), GL_READ_BUFFER, triangles.data() };
+    buildRasterBuffers();
 
-    sceneBuffers.objectBuffer = { static_cast<unsigned int>(meshes->size() * sizeof(BufferMesh)),
-                                  GL_READ_BUFFER,
-                                  meshes->data() };
+    buildGPUBuffers();
 
-    sceneBuffers.materialBuffer = { static_cast<unsigned int>(materials.size() * sizeof(Triangle)), GL_READ_BUFFER, materials.data() };
+    return true;
+}
 
-    // TODO should make these read/write or does that only matter for GPU writes ?
-    sceneBuffers.emissiveBuffer = { static_cast<unsigned int>(emissives->size() * sizeof(Triangle)), GL_READ_BUFFER, emissives->data() };
-    sceneBuffers.transformationBuffer = { static_cast<unsigned int>(transforms->size() * sizeof(Triangle)),
-                                          GL_READ_BUFFER,
-                                          transforms->data() };
-     */
+Camera &Scene::getActiveCamera() {
+    return cameraController.getCameraByIndex(activeCameraIndex);
+}
 
-    buildMaterialBuffer();
+void Scene::buildMaterialBuffer() {
+    std::vector<BufferMaterial > data;
+    data.reserve(cpuBuffers.materials.size());
+    for (auto &material: cpuBuffers.materials) {
+        data.push_back(material.bufferMaterial);
+    }
 
+    gpuBuffers.materialBuffer = { static_cast<unsigned int>(data.size() * sizeof(BufferMaterial)), GL_STATIC_DRAW, data.data() };
+}
+
+Scene::~Scene() {
+    gpuBuffers.materialBuffer.destroy();
+}
+
+void Scene::buildImguiTab(DataStore &settings, std::vector<Event> &events) {
+    if (ImGui::CollapsingHeader("Scene")) {
+
+        ImVec2 windowSize = ImGui::GetWindowSize();
+        ImVec2 buttonSize = ImVec2(windowSize.x * 0.9, 25);
+
+        startIndent();
+        ImGui::Text("Scene Stuff");
+        endIndent();
+    }
+
+}
+
+std::vector<Mesh> &Scene::getMeshes() {
+    return cpuBuffers.meshes;
+}
+
+void Scene::bindRaster() {
+    mRasterBuffersNew.mVa.bind();
+    mRasterBuffersNew.mIb.bind();
+
+}
+
+void Scene::unbindRaster() {
+    mRasterBuffersNew.mVa.unbind();
+    mRasterBuffersNew.mIb.unbind();
+}
+
+CPUSceneBuffers &Scene::getCPUBuffers() {
+    return cpuBuffers;
+}
+
+GPUSceneBuffers &Scene::getGPUBuffers() {
+    return gpuBuffers;
+}
+
+ShaderStorageBuffer &Scene::getMatBuffer() {
+    return gpuBuffers.materialBuffer;
+}
+
+void Scene::buildRasterBuffers() {
     mRasterBuffersNew.mVa.bind();
 
     GLsizei stride = sizeof(RasterVertex);
 
-    mRasterBuffersNew.mAb = ArrayBuffer(sceneBuffers.vertices.data(), sizeof(RasterVertex) * sceneBuffers.vertices.size(), false);
+    mRasterBuffersNew.mAb = ArrayBuffer(cpuBuffers.vertices.data(), sizeof(RasterVertex) * cpuBuffers.vertices.size(), false);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, 0); // pos
     glEnableVertexAttribArray(0);
 
@@ -54,90 +98,38 @@ bool Scene::loadFile(std::string path) {
     glVertexAttribPointer(3, 1, GL_INT, GL_FALSE, stride, (void *) (2 * sizeof(glm::vec3) + sizeof(glm::vec2))); // material
     glEnableVertexAttribArray(3);
 
-    mRasterBuffersNew.mIb = IndexBuffer(sceneBuffers.indices.data(), sceneBuffers.indices.size());
-
-    shaderProgram = makeRasterizeProgram("res/shaders/raster/test_new.vert", "res/shaders/raster/test_new.frag", "material_test_raster");
-
-    return true;
+    mRasterBuffersNew.mIb = IndexBuffer(cpuBuffers.indices.data(), cpuBuffers.indices.size());
 }
 
-void Scene::render(Camera &camera) {
-    glm::mat4 cameraMat = camera.getTransformation();
-    glm::mat4 projectionMat = camera.getProjection();
+void Scene::buildGPUBuffers() {
+    buildMaterialBuffer();
 
-    glm::mat4 VP = projectionMat * cameraMat;
-
-    glEnable(GL_DEPTH_TEST);
-
-    mRasterBuffersNew.mVa.bind();
-    mRasterBuffersNew.mIb.bind();
-
-    materialBuffer.bindToTarget(4);
-    shaderProgram.bind();
+    buildMeshBuffer();
 
 
-    for (auto &mesh: sceneBuffers.meshes) {
-        glm::mat4 model = sceneBuffers.transforms[mesh.bufferMesh.transformIndex];
-        glm::mat4 MVP = VP * model;
-        glm::mat4 normalTransform = glm::inverseTranspose(model);
-
-        shaderProgram.setUniformMat4f("transform", model);
-        shaderProgram.setUniformMat4f("MVP", MVP);
-
-        shaderProgram.setUniformMat4f("normalTransform", normalTransform);
-
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-        int indexBufferIndex = mesh.indexOffset;
-        int indexCount = mesh.indexCount;
+    gpuBuffers.triangleBuffer = { static_cast<unsigned int>(cpuBuffers.triangles.size() * sizeof(Triangle)),
+                                  GL_STATIC_DRAW,
+                                  cpuBuffers.triangles.data() };
 
 
-        glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, (void *) (indexBufferIndex * sizeof(GLuint)));
+    gpuBuffers.emissiveBuffer = { static_cast<unsigned int>(cpuBuffers.emissives.size() * sizeof(unsigned int)),
+                                  GL_STATIC_DRAW,
+                                  cpuBuffers.emissives.data() };
 
-    }
-    materialBuffer.unbind();
 
-    // renderNode(sceneGraphRoot, glm::mat4(1), VP);
-    shaderProgram.unbind();
+    gpuBuffers.transformationBuffer = { static_cast<unsigned int>(cpuBuffers.transforms.size() * sizeof(glm::mat4)),
+                                        GL_STATIC_DRAW,
+                                        cpuBuffers.transforms.data() };
+
 }
 
-Camera &Scene::getActiveCamera() {
-    return cameraController.getCameraByIndex(activeCameraIndex);
-}
-
-void Scene::buildMaterialBuffer() {
-    std::vector<BufferMaterial > data;
-    data.reserve(sceneBuffers.materials.size());
-    for (auto &material: sceneBuffers.materials) {
-        data.push_back(material.bufferMaterial);
+void Scene::buildMeshBuffer() {
+    std::vector<BufferMesh > data;
+    data.reserve(cpuBuffers.meshes.size());
+    for (auto &mesh: cpuBuffers.meshes) {
+        data.push_back(mesh.bufferMesh);
     }
 
-    materialBuffer = { static_cast<unsigned int>(data.size() * sizeof(BufferMaterial)), GL_STATIC_DRAW, data.data() };
-}
-
-Scene::~Scene() {
-    shaderProgram.destroy();
-
-    materialBuffer.destroy();
-}
-
-void Scene::reloadShaders() {
-    shaderProgram.reloadShader();
-}
-
-void Scene::buildImguiTab(DataStore &settings, std::vector<Event> &events) {
-    if (ImGui::CollapsingHeader("Scene")) {
-
-        ImVec2 windowSize = ImGui::GetWindowSize();
-        ImVec2 buttonSize = ImVec2(windowSize.x * 0.9, 25);
-
-        startIndent();
-
-        if (ImGui::Button("Reload shaders", buttonSize)) {
-            reloadShaders();
-        }
-
-        endIndent();
-    }
+    gpuBuffers.meshBuffer = {static_cast<unsigned int>(data.size() * sizeof(BufferMesh)), GL_STATIC_DRAW, data.data() };
 
 }

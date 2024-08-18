@@ -32,8 +32,11 @@ void evaluateLighting(Ray inRay, RayHit rayHit, LightingSettings settings, inout
     hasDirect = false;
     outDirect = vec3(0);
 
-    if (settings.evaluateDirect && rayHit.mat.emission > 0.0f) {
-        const vec3 LIGHT_INTENSITY = rayHit.mat.emissionColor.xyz;
+    BufferMaterial mat = materials[rayHit.matID];
+
+    bool emissive = mat.emission.x > 1e-2 || mat.emission.y > 1e-2 || mat.emission.z > 1e-2;
+    if (settings.evaluateDirect && emissive) {
+        const vec3 LIGHT_INTENSITY = mat.emission.xyz;
 
         float emissionLambert = 1;// max(0.0f, dot(N, -inRay.direction));
 
@@ -46,12 +49,12 @@ void evaluateLighting(Ray inRay, RayHit rayHit, LightingSettings settings, inout
     vec3 m = vec3(0);
     float thetaM = 0;
     float NDF = 0;
-    sampleMicronormal(N, rayHit.mat.roughness, seed, m, thetaM, NDF, pdf);
+    sampleMicronormal(N, mat.roughness, seed, m, thetaM, NDF, pdf);
 
 
     outRay.direction = reflect(inRay.direction, m);
     vec3 brdf = vec3(0);
-    evaluateBRDF(inRay.direction, N, m, thetaM, NDF, outRay.direction, rayHit.mat, brdf);
+    evaluateBRDF(inRay.direction, N, m, thetaM, NDF, outRay.direction, mat, brdf);
 
 
     outRay.origin += outRay.direction * EPS_4;
@@ -62,7 +65,7 @@ void evaluateLighting(Ray inRay, RayHit rayHit, LightingSettings settings, inout
     if (settings.evaluateNEE) {
         vec3 contribNEE = vec3(0);
         float pdfNEE = 1;
-        sampleLightsourceNEE(outRay.origin, N, inRay.direction, rayHit.mat, seed, contribNEE, pdfNEE);
+        sampleLightsourceNEE(outRay.origin, N, inRay.direction, mat, seed, contribNEE, pdfNEE);
 
         outDirect += contribNEE / pdfNEE;
         hasDirect = true;

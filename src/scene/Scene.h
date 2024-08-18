@@ -14,19 +14,10 @@ class Scene : public ImGuiSidebarTab {
 
     int activeCameraIndex = DEFAULT_CAMERA_INDEX;
 
-    SceneBuffers sceneBuffers;
+    CPUSceneBuffers cpuBuffers;
+    GPUSceneBuffers gpuBuffers;
 
-    /* TODO new struct combining this**/
-    ShaderStorageBuffer triangleBuffer;
-    ShaderStorageBuffer objectBuffer;
-    ShaderStorageBuffer materialBuffer;
-    ShaderStorageBuffer transformationBuffer;
-    ShaderStorageBuffer emissiveBuffer;
-
-
-    RasterBuffers mRasterBuffersNew; // These are the new ones, the ones that should stay eventually
-    ShaderProgram shaderProgram;
-
+    RasterBuffers mRasterBuffersNew;
 public:
     bool loadFile(std::string path);
     ~Scene();
@@ -34,11 +25,22 @@ public:
     void addCamera(Camera camera);
     Camera &getActiveCamera();
 
-    void reloadShaders();
+    std::vector<Mesh> &getMeshes();
 
-    void render(Camera &camera);
+    CPUSceneBuffers &getCPUBuffers();
+    GPUSceneBuffers &getGPUBuffers();
+
+    ShaderStorageBuffer &getMatBuffer();
+
+    void bindRaster();
+    void unbindRaster();
 
     void buildImguiTab(DataStore &settings, std::vector<Event> &events) override;
 private:
     void buildMaterialBuffer();
+    void buildMeshBuffer();
+
+    void buildRasterBuffers();
+
+    void buildGPUBuffers();
 };

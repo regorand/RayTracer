@@ -40,7 +40,7 @@ SceneImporter::SceneImporter(std::string path)
 
 }
 
-bool SceneImporter::import(SceneBuffers &sceneBuffers) {
+bool SceneImporter::import(CPUSceneBuffers &sceneBuffers) {
     tinygltf::Model model;
     bool result = loadModel(scenePath, model);
     if (!result) {
@@ -56,6 +56,7 @@ bool SceneImporter::import(SceneBuffers &sceneBuffers) {
     vertices = &sceneBuffers.vertices;
     indices = &sceneBuffers.indices;
 
+    triangles = &sceneBuffers.triangles;
     meshes = &sceneBuffers.meshes;
     transforms = &sceneBuffers.transforms;
 
@@ -82,7 +83,20 @@ void SceneImporter::parseMaterial(tinygltf::Material &source, Material &target) 
     bufferMat.albedo = glm::make_vec4<double>(pbr.baseColorFactor.data());
 
     glm::vec3 emissionColor = glm::make_vec3<double>(source.emissiveFactor.data());
-    bufferMat.emission = glm::vec4(emissionColor, 1);
+
+    float factor = 0;
+    for (auto &key_val: source.extensions) {
+        if (key_val.first == "KHR_materials_emissive_strength") {
+            if (key_val.second.IsObject()) {
+                auto val = key_val.second.Get("emissiveStrength");
+                if (val.IsNumber()) {
+                    factor = val.GetNumberAsDouble();
+                }
+            }
+        }
+    }
+
+    bufferMat.emission = factor * glm::vec4(emissionColor, 1);
 
     bufferMat.metallic = pbr.metallicFactor;
     bufferMat.roughness = pbr.roughnessFactor;
@@ -211,7 +225,7 @@ bool SceneImporter::parseMesh(tinygltf::Model &model, int meshId, glm::mat4 tran
         auto* indexBuffer      = &buffers[indexBufferIndex].data;
 
         mesh.indexOffset = indices->size();
-        mesh.bufferMesh.firstTriangleIndex = triangles.size();
+        mesh.bufferMesh.firstTriangleIndex = triangles->size();
 
         for(int i = 0; i < accessors[primitive.indices].count; i+=3) {
             unsigned int localIndex0 = parseIndex(&(*indexBuffer)[indexOffset + i * indexStride]);
@@ -226,10 +240,10 @@ bool SceneImporter::parseMesh(tinygltf::Model &model, int meshId, glm::mat4 tran
             indices->push_back(index1);
             indices->push_back(index2);
 
-            auto &triangle = triangles.emplace_back();
-            triangle.V0 = (*vertices)[index0].vertex;
-            triangle.V1 = (*vertices)[index1].vertex;
-            triangle.V2 = (*vertices)[index2].vertex;
+            auto &triangle = triangles->emplace_back();
+            triangle.V0 = (*vertices)[index0].toBufferVertex();
+            triangle.V1 = (*vertices)[index1].toBufferVertex();
+            triangle.V2 = (*vertices)[index2].toBufferVertex();
 
             lower = glm::min(lower, triangle.V0.position);
             lower = glm::min(lower, triangle.V1.position);
@@ -243,14 +257,17 @@ bool SceneImporter::parseMesh(tinygltf::Model &model, int meshId, glm::mat4 tran
         }
 
 
-        mesh.bufferMesh.triangleCount = triangles.size() - mesh.bufferMesh.triangleCount;
+        mesh.bufferMesh.triangleCount = triangles->size() - mesh.bufferMesh.firstTriangleIndex;
         mesh.indexCount = indices->size() - mesh.indexOffset;
 
-        mesh.bufferMesh.aabb.lower = lower;
-        mesh.bufferMesh.aabb.upper = upper;
+        mesh.bufferMesh.aabb.lower = glm::vec4(lower, 1);
+        mesh.bufferMesh.aabb.upper = glm::vec4(upper, 1);
 
         auto &mat = (*materials)[primitive.material];
-        if (glm::length(mat.bufferMaterial.emission) > 1e-2) {
+        glm::vec4 &emission = mat.bufferMaterial.emission;
+
+        constexpr float eps = 1e-2;
+        if (emission.x > eps || emission.y > eps || emission.z > eps) {
             mesh.bufferMesh.emissive = 1;
             emissives->push_back(meshes->size());
         }

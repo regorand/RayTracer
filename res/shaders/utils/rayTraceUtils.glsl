@@ -9,16 +9,13 @@ bool getClosestHit(Ray ray, out RayHit rayhit) {
 
     RayHit tmp;
     for (int i = 0; i < objectCount; i++) {
-        MeshObject meshObject = meshObjects[i];
+        Mesh mesh = meshes[i];
 
-        bool hit = intersectObject(ray, meshObject, closest, tmp);
+        bool hit = intersectObject(ray, mesh, closest, tmp);
         if (hit && tmp.dist < closest) {
             anyHit = true;
             closest = tmp.dist;
             rayhit = tmp;
-            if (meshObject.emissive == 1) {
-                rayhit.mat.emission = 1.0f;
-            }
         }
     }
 
@@ -27,12 +24,13 @@ bool getClosestHit(Ray ray, out RayHit rayhit) {
 
 bool anyHit(Ray ray, float maxDist) {
     for (int i = 0; i < objectCount; i++) {
-        MeshObject meshObject = meshObjects[i];
+        Mesh mesh = meshes[i];
 
         // reduce maxDist by eps value, so that if maxDist is given by a known position on geometry,
         // that geometry does not shadow itself
         RayHit dummy;
-        if (intersectObject(ray, meshObject, maxDist - 1e-3, dummy)) {
+
+        if (intersectObject(ray, mesh, maxDist - 1e-3, dummy)) {
             return true;
         }
     }

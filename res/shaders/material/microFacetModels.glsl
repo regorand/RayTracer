@@ -94,7 +94,7 @@ void sampleMicronormal(vec3 N, float roughness, inout uint seed, out vec3 m, out
     pdf = NDF * dot(m, N) + EPS_4;
 }
 
-void evaluateBRDF(vec3 inDir, vec3 N, vec3 m, float thetaM, float NDF, vec3 outDir, Material material, out vec3 brdf) {
+void evaluateBRDF(vec3 inDir, vec3 N, vec3 m, float thetaM, float NDF, vec3 outDir, BufferMaterial material, out vec3 brdf) {
     vec3 albedo = vec3(1);
     if (material.metallic < 1.0 /* TODO && material.transmission < 1.0 */) {
         albedo = material.albedo.xyz; // diffuse term here
@@ -114,7 +114,7 @@ void evaluateBRDF(vec3 inDir, vec3 N, vec3 m, float thetaM, float NDF, vec3 outD
     // brdf = vec3(NDF);
 }
 
-void evaluateBRDF(vec3 inDir, vec3 N, vec3 m, float thetaM, vec3 outDir, Material material, out vec3 brdf) {
+void evaluateBRDF(vec3 inDir, vec3 N, vec3 m, float thetaM, vec3 outDir, BufferMaterial material, out vec3 brdf) {
     float NDF = GGXNormalDistFunc(material.roughness, m, N, thetaM);
 
     evaluateBRDF(inDir, N, m, thetaM, NDF, outDir, material, brdf);
