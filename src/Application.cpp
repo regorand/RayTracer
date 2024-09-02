@@ -16,6 +16,7 @@
 #include "scene/scene_loading/ModelLoader.h"
 #include "scene/Scene.h"
 #include "scene/SceneImporter.h"
+#include "renderers/MCIntegrator.h"
 #include <imgui.h>
 
 Application::Application() {
@@ -28,7 +29,7 @@ int Application::run() {
         return 1;
     }
 
-    glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
+    // glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
 
     const int width = 800;
     const int height = 500;
@@ -75,11 +76,7 @@ int Application::run() {
     glfwGetFramebufferSize(window, &displayWidth, &displayHeight);
 
     std::shared_ptr<Scene> scene = std::make_shared<Scene>();
-    // scene->loadFile("res/models/monkey_donkey.gltf");
     scene->loadFile("res/models/cornell_box.gltf");
-    // scene->loadFile("res/models/colored_cubes.gltf");
-    // scene->loadFile("res/models/test_cube.gltf");
-    // scene->loadFile("res/models/cube_green.gltf");
 
     Rasterizer rasterizer;
     rasterizer.setScene(scene);
@@ -122,8 +119,13 @@ int Application::run() {
 
     settings.store(SHOW_CONTROL_PANEL, true);
 
+    MCIntegrator mcIntegrator;
+    mcIntegrator.setScene(scene);
+    mcIntegrator.setTarget(&textureStore.at(RENDER_TARGET));
+
     std::vector<ImGuiSidebarTab *> sideBarTabs;
     sideBarTabs.push_back(&pathTracer);
+    sideBarTabs.push_back(&mcIntegrator);
     sideBarTabs.push_back(scene.get());
     sideBarTabs.push_back(&rasterizer);
     // sideBarTabs.push_back(&cameraController);
@@ -136,6 +138,11 @@ int Application::run() {
         RenderState state = pathTracer.getRenderState();
         if (state != RenderState::IDLE) {
             pathTracer.doRenderStep();
+        }
+
+        if (tmpDoRender) {
+            tmpDoRender = false;
+            mcIntegrator.renderSample();
         }
 
         ImGui_ImplOpenGL3_NewFrame();
@@ -159,6 +166,9 @@ int Application::run() {
 
         if (settings.getOrElse(SHOW_PATHTRACE_OUTPUT, false)) {
 
+            mcIntegrator.renderSample();
+            br.render(&textureStore.at(RENDER_TARGET));
+            /*
             if (settings.getOrElse(SHOW_PATHTRACE_DEBUG, false)) {
                 int currentIndex = settings.getOrElse(PATHTRACE_DEBUG_BUFFER_INDEX, 0);
                 int maxIndex = PathTracerBuffers::getAsList().size();
@@ -177,14 +187,11 @@ int Application::run() {
                 } else {
                     br.render(&textureStore.at(RENDER_TARGET));
                 }
-
             }
+                */
         } else {
             rasterizer.render();
 
-            glm::vec2 diff = keyStateManager->getMouseAndGetDiff(window);
-            cameraManipulator.updateCamera(scene->getActiveCamera(), keyStateManager, diff,
-                                           glm::vec2(displayWidth, displayHeight));
 
             /*
             glm::vec2 diff = keyStateManager->getMouseAndGetDiff(window);
@@ -214,6 +221,14 @@ int Application::run() {
             */
         }
 
+        glm::vec2 diff = keyStateManager->getMouseAndGetDiff(window);
+        bool dirty = cameraManipulator.updateCamera(scene->getActiveCamera(), keyStateManager, diff,
+                                       glm::vec2(displayWidth, displayHeight));
+        if (dirty) {
+            pathTracer.clearTarget();
+        }
+
+        std::cout << std::flush;
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
         ImGui::EndFrame();
@@ -262,6 +277,9 @@ void Application::buildImguiControlSideBar(glm::vec2 displaySize, std::vector<Im
             getPointer<bool>(SHOW_PATHTRACE_OUTPUT)
     );
 
+    if (ImGui::Button("Render sample")) {
+        tmpDoRender = true;
+    }
 
     startIndent();
     for (auto sideBarTab: sideBarTabs) {

@@ -38,6 +38,8 @@ private:
     KeyStateManager *keyStateManager = KeyStateManager::getInstance();
     CameraManipulator cameraManipulator;
 
+    bool tmpDoRender = false;
+
 public:
     Application();
 

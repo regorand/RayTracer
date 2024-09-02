@@ -84,7 +84,7 @@ void SceneImporter::parseMaterial(tinygltf::Material &source, Material &target) 
 
     glm::vec3 emissionColor = glm::make_vec3<double>(source.emissiveFactor.data());
 
-    float factor = 0;
+    float factor = 1;
     for (auto &key_val: source.extensions) {
         if (key_val.first == "KHR_materials_emissive_strength") {
             if (key_val.second.IsObject()) {
@@ -190,7 +190,10 @@ bool SceneImporter::parseMesh(tinygltf::Model &model, int meshId, glm::mat4 tran
 
         transforms->push_back(transform);
 
-        // TODO dont need these, there are min/max fields in gltf file
+        /* dont technically need those, accessors have min/max fields
+            First attempt at using those didn't quite work.
+            Keeping this for now because scene loading is offline and finding min/max should barely be slower
+         */
         glm::vec3 lower(INFINITY);
         glm::vec3 upper(-INFINITY);
 
@@ -257,6 +260,10 @@ bool SceneImporter::parseMesh(tinygltf::Model &model, int meshId, glm::mat4 tran
         }
 
 
+        constexpr float eps = 1e-2;
+        lower -= glm::vec3(eps);
+        upper += glm::vec3(eps);
+
         mesh.bufferMesh.triangleCount = triangles->size() - mesh.bufferMesh.firstTriangleIndex;
         mesh.indexCount = indices->size() - mesh.indexOffset;
 
@@ -266,7 +273,6 @@ bool SceneImporter::parseMesh(tinygltf::Model &model, int meshId, glm::mat4 tran
         auto &mat = (*materials)[primitive.material];
         glm::vec4 &emission = mat.bufferMaterial.emission;
 
-        constexpr float eps = 1e-2;
         if (emission.x > eps || emission.y > eps || emission.z > eps) {
             mesh.bufferMesh.emissive = 1;
             emissives->push_back(meshes->size());

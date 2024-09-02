@@ -41,8 +41,6 @@ public:
 
     bool setUniform3fv(const std::string& name, unsigned int count, const glm::vec3* data);
 
-
-
 private:
     int getAndValidateUniformLocation(const std::string &name, bool &res);
     bool validateUniform(int id, const std::string &name);

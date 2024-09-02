@@ -10,7 +10,8 @@
 
 Rasterizer::Rasterizer()
         : mShader(makeRasterizeProgram("res/shaders/raster/test_new.vert", "res/shaders/raster/test_new.frag")),
-          mGeometryPhaseShader(makeRasterizeProgram("res/shaders/raster/simpleScene.vert", "res/shaders/raster/saveToBuffers.frag")) {
+          mGeometryPhaseShader(makeRasterizeProgram("res/shaders/raster/simpleScene.vert",
+                                                    "res/shaders/raster/saveToBuffers.frag")) {
 
 }
 
@@ -40,13 +41,9 @@ void Rasterizer::render() {
         mShader.setUniformMat4f("MVP", MVP);
         mShader.setUniformMat4f("normalTransform", normalTransform);
 
-        if (mesh.bufferMesh.emissive == 1) {
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            mShader.setUniform1i("emissive", 1);
 
-        } else {
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        }
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
 
         int indexBufferIndex = mesh.indexOffset;
         int indexCount = mesh.indexCount;

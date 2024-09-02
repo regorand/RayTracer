@@ -14,6 +14,8 @@ add_executable(RayTracer
         src/scene/SceneImporter.cpp
         src/scene/SceneImporter.h
         src/scene/SceneTypes.h
+        src/renderers/MCIntegrator.cpp
+        src/renderers/MCIntegrator.h
 )
 
 set(PROJECT_ROOT_DIR ${PROJECT_SOURCE_DIR})

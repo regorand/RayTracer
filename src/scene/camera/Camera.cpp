@@ -125,5 +125,5 @@ void Camera::setIntrinsics(const Intrinsics intrinsics) {
 }
 
 Camera Camera::getDefaultCamera() {
-    return {glm::vec3(0, 0, -25), glm::vec3(0, 0, 1)};
+    return {glm::vec3(0, 0, -3), glm::vec3(0, 0, 1)};
 }

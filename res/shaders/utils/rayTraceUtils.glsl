@@ -12,6 +12,7 @@ bool getClosestHit(Ray ray, out RayHit rayhit) {
         Mesh mesh = meshes[i];
 
         bool hit = intersectObject(ray, mesh, closest, tmp);
+
         if (hit && tmp.dist < closest) {
             anyHit = true;
             closest = tmp.dist;

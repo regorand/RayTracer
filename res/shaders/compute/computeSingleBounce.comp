@@ -29,6 +29,8 @@ uniform int height;
 
 uniform uint seed;
 
+vec3 test = vec3(0);
+
 #include "res/shaders/scenes/CPUScene.glsl"
 #include "res/shaders/utils/rayTraceUtils.glsl"
 #include "res/shaders/utils/MeshTypes.glsl"
@@ -37,6 +39,7 @@ uniform uint seed;
 #include "src/deviceShared/MaterialFlags.h"
 #include "res/shaders/lighting/Lighting.glsl"
 #include "res/shaders/utils/Constants.glsl"
+
 
 void main() {
     vec2 texelCoord = vec2(gl_GlobalInvocationID.xy);
@@ -64,8 +67,6 @@ void main() {
     RayHit rayHit;
     bool hit = getClosestHit(ray, rayHit);
 
-    vec3 test = vec3(1);
-
     if (!hit) {
         // TODO when present, evaluate environment map
 
@@ -84,7 +85,7 @@ void main() {
         imageStore(imgOutput, bufferCoords, newValue);
         */
 
-        // imageStore(imgOutput, bufferCoords, vec4(test, 1));
+        imageStore(imgOutput, bufferCoords, vec4(test, 1));
 
         posData[singleDimCoord] = vec4(ray.origin + 10000 * ray.direction, 0);
         mulData[singleDimCoord] = vec4(0);

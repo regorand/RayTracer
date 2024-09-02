@@ -9,6 +9,6 @@ class CameraManipulator {
 
 public:
 
-    void updateCamera(Camera &camera, KeyStateManager *keyStateManager, glm::vec2 diff, glm::vec2 extents);
+    bool updateCamera(Camera &camera, KeyStateManager *keyStateManager, glm::vec2 diff, glm::vec2 extents);
 
 };

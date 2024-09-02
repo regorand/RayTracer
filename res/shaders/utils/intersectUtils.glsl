@@ -30,7 +30,8 @@ bool intersectTriangle(Ray ray, Triangle triangle, out RayHit rayhit) {
         rayhit.matID = triangle.materialIndex;
         rayhit.position = ray.origin + ray.direction * rayhit.dist;
         rayhit.normal = normalize(cross(edge1, edge2)); // TODO replace with interpolated normal for smooth shading ?
-        rayhit.hitBackface = dot(rayhit.normal, (ray.origin - triangle.V0.pos.xyz)) < 0;
+        rayhit.normal *= sign(dot(rayhit.normal, (ray.origin - triangle.V0.pos.xyz)));
+        // rayhit.hitBackface = dot(rayhit.normal, (ray.origin - triangle.V0.pos.xyz)) < 0;
 
         return true;
     }
@@ -94,10 +95,12 @@ bool intersectObject(Ray ray, Mesh mesh, float alreadyClosest, out RayHit rayhit
     Ray objSpaceRay = Ray((inverseTransform * vec4(ray.origin, 1)).xyz, (inverseTransform * vec4(ray.direction, 0)).xyz);
 
     // Save length of transformed direction before normalizing, need it to transform t value back to world distances
-    float rayDirScaling = length(objSpaceRay.direction);
+    float lengthScaling = length(objSpaceRay.direction);
     objSpaceRay.direction = normalize(objSpaceRay.direction);
 
     bool aabbHit = intersectAABB(objSpaceRay, mesh.aabb, dist);
+    dist /= lengthScaling;
+
     if (!aabbHit || dist > closest) {
         return false;
     }
@@ -108,10 +111,10 @@ bool intersectObject(Ray ray, Mesh mesh, float alreadyClosest, out RayHit rayhit
     for (int i = 0; i < mesh.triangleCount; i++) {
         Triangle triangle = triangles[objectBaseIndex + i];
 
-
         bool hit = intersectTriangle(objSpaceRay, triangle, tmp);
 
         if (hit && tmp.dist > 0) {
+            tmp.dist /= lengthScaling;
             if (tmp.dist < closest) {
                 anyHit = true;
                 closest = tmp.dist;
@@ -121,7 +124,6 @@ bool intersectObject(Ray ray, Mesh mesh, float alreadyClosest, out RayHit rayhit
     }
 
     if (anyHit) {
-        rayhit.dist /= rayDirScaling;
         vec4 tmp = transform * vec4(rayhit.position, 1);
         rayhit.position = tmp.xyz / tmp.w;
         mat4 normalMat = transpose(inverseTransform);

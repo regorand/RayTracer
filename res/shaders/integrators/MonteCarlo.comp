@@ -1,0 +1,131 @@
+#version 430 core
+
+layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+layout (rgba32f, binding = 0) uniform image2D imgOutput;
+
+uniform int width;
+uniform int height;
+
+uniform uint seed;
+
+uniform vec3 cameraPos;
+uniform vec3 viewDir;
+uniform vec3 upDir;
+
+uniform float fov;
+uniform float aspect;
+
+uniform bool doBrdf;
+uniform bool doNee;
+
+uniform float alphaRR;
+
+#include "res/shaders/scenes/CPUScene.glsl"
+#include "res/shaders/utils/rayTraceUtils.glsl"
+#include "res/shaders/utils/MeshTypes.glsl"
+#include "res/shaders/utils/RayTypes.glsl"
+#include "res/shaders/utils/FlagUtils.glsl"
+#include "src/deviceShared/MaterialFlags.h"
+#include "res/shaders/lighting/Lighting.glsl"
+#include "res/shaders/utils/Constants.glsl"
+#include "res/shaders/utils/cameraUtils.glsl"
+
+void main() {
+    vec2 texelCoord = vec2(gl_GlobalInvocationID.xy);
+    ivec2 bufferCoords = ivec2(texelCoord);
+
+    int singleDimCoord = bufferCoords.y * width + bufferCoords.x;
+
+    uint instanceSeed = triple32(seed + triple32(singleDimCoord));
+
+    vec2 viewPortSize = vec2(width, height);
+    Ray ray = samplePathStart2(texelCoord, viewPortSize, instanceSeed);
+
+    const int maxBounces = 8;
+    int bounces = 0;
+
+    vec3 L = vec3(0);
+    vec3 Lw = vec3(1);
+
+    bool doNext = true;
+    const bool doRR = false;
+
+    vec3 brdfContrib = vec3(0);
+    float prevBrdfMISWeight = 1.0;
+    float neeWeight = 0;
+    while (doNext && bounces <= maxBounces) {
+        RayHit rayHit;
+        bool hit = getClosestHit(ray, rayHit);
+        if (!hit) {
+            break;
+        }
+
+        BufferMaterial mat = materials[rayHit.matID];
+
+        if ((doBrdf || bounces == 0) && isEmissive(mat)) {
+            brdfContrib = 20 * Lw * prevBrdfMISWeight * mat.emission.xyz;
+            doNext = false;
+        }
+
+        vec3 N = rayHit.normal;
+        float pdf = 1;
+        vec3 localSample = sampleHemisphereCosine(instanceSeed, pdf);
+
+        vec3 outDir = sampleToFrame(localSample, N);
+        vec3 newPos = rayHit.position + EPS_3 * outDir;
+
+        vec3 brdf = mat.albedo.xyz * ONE_OVER_PI;
+
+        /*
+        // TODO something seems to be broken about my microfacet material
+
+        vec3 m = vec3(0);
+        float thetaM = 0;
+        float NDF = 0;
+        sampleMicronormal(N, mat.roughness, instanceSeed, m, thetaM, NDF, pdf);
+
+        vec3 outDir = reflect(ray.direction, m);
+        vec3 newPos = rayHit.position + EPS_3 * outDir;
+
+        vec3 brdf = vec3(0);
+        evaluateBRDF(ray.direction, N, m, thetaM, NDF, outDir, mat, brdf);
+        */
+
+        vec3 contribNEE = vec3(0);
+        float pdfNEE = 0;
+        if (doNee) {
+            sampleLightsourceNEE(newPos, N, ray.direction, mat, instanceSeed, contribNEE, pdfNEE);
+        }
+
+        // MIS Balance Heuristic
+        neeWeight = doNee ? pdfNEE : 0.0f;
+        prevBrdfMISWeight = doBrdf ? pdf : 0.0f;
+
+        float weightSum = neeWeight;
+
+        if (weightSum > 0) {
+            prevBrdfMISWeight /= weightSum;
+            neeWeight /= weightSum;
+        }
+
+        L += brdfContrib + Lw * neeWeight * contribNEE;
+
+        // create new ray
+        ray.direction = outDir;
+        ray.origin = newPos;
+
+        float newDirLambert = max(0.0f, dot(N, ray.direction));
+        Lw *= newDirLambert * brdf / pdf;
+
+        if (doRR) {
+            doNext = randUniform_0_1(instanceSeed) < alphaRR;
+            Lw /= alphaRR ;
+        }
+
+        bounces++;
+    }
+
+    vec4 prevBufferContent = imageLoad(imgOutput, bufferCoords);
+    imageStore(imgOutput, bufferCoords, prevBufferContent + vec4(L, 1));
+}

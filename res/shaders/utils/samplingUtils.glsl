@@ -23,6 +23,20 @@ vec3 sampleHemisphereUniform(inout uint seed) {
     return vec3(xy, z);
 }
 
+vec3 sampleHemisphereCosine(inout uint seed, out float pdf) {
+    float Xi1 = randUniform_0_1(seed);
+    float Xi2 = randUniform_0_1(seed);
+
+    float sqrtXi1 = sqrt(Xi1);
+    float theta = acos(sqrtXi1);
+    float phi = 2 * PI * Xi2;
+
+    float z = sqrtXi1;
+    vec2 xy = sin(theta) * vec2(cos(phi), sin(phi));
+    pdf = sqrtXi1 * ONE_OVER_PI;
+    return vec3(xy, z);
+}
+
 vec3 getRandVec3(inout vec2 seed) {
     float x = rand(seed);
     seed = seed * vec2(x + 0.5, 1);
@@ -32,6 +46,17 @@ vec3 getRandVec3(inout vec2 seed) {
     seed = seed * vec2(z + 0.5, y + 0.5);
 
     return vec3(x, y, z);
+}
+
+// transforms a direction sampled on the hemisphere with z up into space where the provided 'normal' is up
+// Uses an arbitrary tangent space
+vec3 sampleToFrame(vec3 sampledDir, vec3 normal) {
+    vec3 tangent = vec3(normal.y, normal.z, -normal.x);
+    vec3 cotangent = cross(normal, tangent);
+
+    mat3 rot = mat3(tangent, cotangent, normal);
+
+    return normalize(rot * sampledDir);
 }
 
 vec3 getNewDirection(inout uint seed, vec3 normal) {

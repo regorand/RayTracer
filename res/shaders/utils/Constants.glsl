@@ -1,4 +1,5 @@
 const float PI = 3.14159;
+const float ONE_OVER_PI = 0.31830988618;
 
 const float EPS_3 = 1e-3;
 const float EPS_4 = 1e-4;
