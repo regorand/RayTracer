@@ -70,7 +70,7 @@
 			],
 			"extensions":{
 				"KHR_materials_emissive_strength":{
-					"emissiveStrength": 40.0
+					"emissiveStrength": 20.0
 				}
 			},
 			"name":"light",

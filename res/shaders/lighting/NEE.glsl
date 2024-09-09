@@ -60,8 +60,11 @@ void sampleLightsourceNEE(vec3 pos, vec3 N, vec3 inDir, BufferMaterial material,
         return;
     }
 
-    const float lightDotTerm = max(0.0f, dot(dir, N));
-    const float surfaceDotTerm = max(0.0f, dot(dir, triangleNormal(triangle)));
+    vec3 triNormal = triangleNormal(triangle);
+    triNormal *= sign(dot(triNormal, -dir));
+
+    const float lightDotTerm = max(0.0f, dot(-dir, triNormal));
+    const float surfaceDotTerm = max(0.0f, dot(dir, N));
 
     float geometryTerm = lightDotTerm * surfaceDotTerm / (dist * dist);
 

@@ -33,8 +33,7 @@ vec3 sampleHemisphereCosine(inout uint seed, out float pdf) {
 
     float z = sqrtXi1;
     vec2 xy = sin(theta) * vec2(cos(phi), sin(phi));
-    // pdf = sqrtXi1 * ONE_OVER_PI;
-    pdf = Xi1;
+    pdf = sqrtXi1 * ONE_OVER_PI;
     return vec3(xy, z);
 }
 

@@ -102,7 +102,7 @@ void main() {
         neeWeight = doNee ? pdfNEE : 0.0f;
         prevBrdfMISWeight = doBrdf ? pdf : 0.0f;
 
-        float weightSum = neeWeight;
+        float weightSum = neeWeight + prevBrdfMISWeight;
 
         if (weightSum > 0) {
             prevBrdfMISWeight /= weightSum;
