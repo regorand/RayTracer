@@ -56,10 +56,17 @@ float floatConstruct( uint m ) {
 float randUniform_0_1(inout uint seed) {
     // uint intSeed = floatBitsToUint(seed);
     // seed = uintBitsToFloat(rand_lcg(intSeed));
-    // seed = uintBitsToFloat(rand_xorshift(intSeed));
+    // seed = rand_xorshift(intSeed);
     seed = wang_hash(seed);
 
-    return floatConstruct(seed);
+    float unnorm = float(seed);
+    uint denomUint = 0xFFFFFFFF;
+    float denom = float(denomUint);
+    float val = unnorm / denomUint;
+
+
+    return val;
+    // return floatConstruct(seed);
 }
 
 uint randUniform_uint_0_n(inout uint seed, uint n) {

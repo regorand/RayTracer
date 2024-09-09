@@ -76,6 +76,7 @@ int Application::run() {
     glfwGetFramebufferSize(window, &displayWidth, &displayHeight);
 
     std::shared_ptr<Scene> scene = std::make_shared<Scene>();
+    // scene->loadFile("res/models/cornell_box_boxes.gltf");
     scene->loadFile("res/models/cornell_box.gltf");
 
     Rasterizer rasterizer;
@@ -140,11 +141,6 @@ int Application::run() {
             pathTracer.doRenderStep();
         }
 
-        if (tmpDoRender) {
-            tmpDoRender = false;
-            mcIntegrator.renderSample();
-        }
-
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
@@ -164,71 +160,26 @@ int Application::run() {
 
         if (state != RenderState::IDLE) pathTracer.buildImGuiProgressBar(glm::vec2(displayWidth, displayHeight));
 
-        if (settings.getOrElse(SHOW_PATHTRACE_OUTPUT, false)) {
-
-            mcIntegrator.renderSample();
-            br.render(&textureStore.at(RENDER_TARGET));
-            /*
-            if (settings.getOrElse(SHOW_PATHTRACE_DEBUG, false)) {
-                int currentIndex = settings.getOrElse(PATHTRACE_DEBUG_BUFFER_INDEX, 0);
-                int maxIndex = PathTracerBuffers::getAsList().size();
-                currentIndex = glm::min(glm::max(currentIndex, 0), maxIndex);
-
-                br.renderStorageBuffer(pathTracer.getBuffers().getByIndex(currentIndex),
-                                       glm::vec2(displayWidth, displayHeight));
-            } else {
-                if (settings.getOrElse(CONTINUALLY_APPLY_POSTPROC, false)) {
-                    postProcessor.applyPostProcessing(textureStore.at(RENDER_TARGET),
-                                                      textureStore.at(DISPLAY_BUFFER),
-                                                      textureStore,
-                                                      settings);
-
-                    br.render(&textureStore.at(DISPLAY_BUFFER));
-                } else {
-                    br.render(&textureStore.at(RENDER_TARGET));
-                }
-            }
-                */
-        } else {
-            rasterizer.render();
-
-
-            /*
-            glm::vec2 diff = keyStateManager->getMouseAndGetDiff(window);
-            cameraManipulator.updateCamera(rasterizer.getSceneRef().getCamera(), keyStateManager, diff,
-                                           glm::vec2(displayWidth, displayHeight));
-
-            fbo.bind();
-
-
-            posBuffer.bind();
-            normalBuffer.bind(1);
-            albedoBuffer.bind(2);
-
-            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            rasterizer.saveToBuffers(pathTracer.getSceneRef().getCamera());
-            fbo.unbind();
-
-            br.render(&textureStore.at(NORMAL_BUFFER));
-
-            // rasterizer.render();
-            // rasterizer.renderPaths();
-            // rasterizer.renderCameraFrustum(buffers);
-            CameraVisBuffers buffers;
-            pathTracer.getSceneRef().getCamera().buildCameraVisBuffers(buffers);
-
-            */
-        }
 
         glm::vec2 diff = keyStateManager->getMouseAndGetDiff(window);
-        bool dirty = cameraManipulator.updateCamera(scene->getActiveCamera(), keyStateManager, diff,
-                                       glm::vec2(displayWidth, displayHeight));
-        if (dirty) {
-            pathTracer.clearTarget();
+        dirty = cameraManipulator.updateCamera(scene->getActiveCamera(), keyStateManager, diff,
+                                               glm::vec2(displayWidth, displayHeight));
+
+        if (settings.getOrElse(SHOW_PATHTRACE_OUTPUT, false)) {
+            if (dirty) {
+                pathTracer.clearTarget();
+            }
+
+            mcIntegrator.renderSample();
+
+            // Idle waiting not ideal, but with current implementation need to wait for Integrator to finish
+            // so single sample image is visible while moving the camera
+            while (mcIntegrator.currentlyWorking()) { }
+            br.render(&textureStore.at(RENDER_TARGET));
+        } else {
+            rasterizer.render();
         }
 
-        std::cout << std::flush;
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
         ImGui::EndFrame();
@@ -276,10 +227,6 @@ void Application::buildImguiControlSideBar(glm::vec2 displaySize, std::vector<Im
     ImGui::Checkbox("Show Pathtrace output", settings.
             getPointer<bool>(SHOW_PATHTRACE_OUTPUT)
     );
-
-    if (ImGui::Button("Render sample")) {
-        tmpDoRender = true;
-    }
 
     startIndent();
     for (auto sideBarTab: sideBarTabs) {

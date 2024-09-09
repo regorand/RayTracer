@@ -15,7 +15,7 @@ class MCIntegrator : public ImGuiSidebarTab {
     std::shared_ptr<Scene> mScene;
     Texture *mCurrentTarget;
 
-    GLsync fence;
+    GLsync fence = nullptr;
 
     RandomEngine dist;
 

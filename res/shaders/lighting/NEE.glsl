@@ -8,7 +8,7 @@ Mesh sampleNEEObject(inout uint seed, inout float pdf) {
     // TODO dont uniformly sample light sources
 
     uint lightSourceIndex = emissiveIndices[randUniform_uint_0_n(seed, emissiveCount)];
-    pdf = 1.0f / float(emissiveCount);
+    pdf *= 1.0f / float(emissiveCount);
 
     return meshes[lightSourceIndex];
 }
@@ -28,6 +28,7 @@ void sampleLightsourceNEE(vec3 pos, vec3 N, vec3 inDir, BufferMaterial material,
         return;
     }
 
+    pdf = 1.0f;
     Mesh object = sampleNEEObject(seed, pdf);
 
     Triangle triangle = sampleNEETriangle(object, seed, pdf);
@@ -41,8 +42,10 @@ void sampleLightsourceNEE(vec3 pos, vec3 N, vec3 inDir, BufferMaterial material,
     vec3 halfway = (dir - inDir) / vec3(2);
     float thetaM = acos(dot(halfway, N));
 
-    vec3 brdf = vec3(1);
-    evaluateBRDF(inDir, N, halfway, thetaM, dir, material, brdf);
+    vec3 brdf = material.albedo.xyz * ONE_OVER_PI;
+    // evaluateBRDF(inDir, N, halfway, thetaM, dir, material, brdf);
+
+
     if (length(brdf) < 1e-4) {
         // The material will have almost zero contribution for this light source
         // For example, performing NEE on a perfectly specular surface

@@ -38,8 +38,8 @@ public:
 
 
 private:
-    bool parseNode(tinygltf::Model &model, int nodeId, glm::mat4 prevTransform);
-    bool parseMesh(tinygltf::Model &model, int meshId, glm::mat4 transform);
+    bool parseNode(tinygltf::Model &model, int nodeId, const glm::mat4 &prevTransform);
+    bool parseMesh(tinygltf::Model &model, int meshId, const glm::mat4 &transform);
 
     static void buildTransform(tinygltf::Node &node, glm::mat4 &target);
 
@@ -50,5 +50,6 @@ private:
                                    tinygltf::Primitive &primitive,
                                    const std::string &attribute);
 
+    void addDefaultMaterial();
 
 };

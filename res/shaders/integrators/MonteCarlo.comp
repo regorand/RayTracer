@@ -64,7 +64,7 @@ void main() {
         BufferMaterial mat = materials[rayHit.matID];
 
         if ((doBrdf || bounces == 0) && isEmissive(mat)) {
-            brdfContrib = 20 * Lw * prevBrdfMISWeight * mat.emission.xyz;
+            brdfContrib = Lw * prevBrdfMISWeight * mat.emission.xyz;
             doNext = false;
         }
 
@@ -128,4 +128,12 @@ void main() {
 
     vec4 prevBufferContent = imageLoad(imgOutput, bufferCoords);
     imageStore(imgOutput, bufferCoords, prevBufferContent + vec4(L, 1));
+
+    /*
+    vec4 val = prevBufferContent;
+    if (any(isnan(L))) {
+        val = vec4(1);
+    }
+    imageStore(imgOutput, bufferCoords, val);
+*/
 }

@@ -73,6 +73,7 @@ bool MCIntegrator::currentlyWorking() {
 
     if (signal == GL_SIGNALED) {
         glDeleteSync(fence);
+        fence = nullptr;
         return false;
     }
 

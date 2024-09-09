@@ -68,9 +68,12 @@ bool SceneImporter::import(CPUSceneBuffers &sceneBuffers) {
         auto &mat = materials->emplace_back();
         parseMaterial(gltfMat, mat);
     }
+    // default material appendend to the end so every other material index still matches
+    addDefaultMaterial();
 
+    auto unityMat = glm::mat4(1);
     for (auto &node: model.scenes[model.defaultScene].nodes) {
-        parseNode(model, node, glm::mat4(1));
+        parseNode(model, node, unityMat);
     }
 
     return true;
@@ -105,7 +108,7 @@ void SceneImporter::parseMaterial(tinygltf::Material &source, Material &target) 
     // TODO target.transparency: transparency from gltf extension ?
 }
 
-bool SceneImporter::parseNode(tinygltf::Model &model, int nodeId, glm::mat4 prevTransform) {
+bool SceneImporter::parseNode(tinygltf::Model &model, int nodeId, const glm::mat4 &prevTransform) {
     tinygltf::Node &node = model.nodes[nodeId];
 
     glm::mat4 transform;
@@ -152,7 +155,7 @@ void SceneImporter::buildTransform(tinygltf::Node &node, glm::mat4 &target) {
     target = translate * rotate * scale;
 }
 
-bool SceneImporter::parseMesh(tinygltf::Model &model, int meshId, glm::mat4 transform) {
+bool SceneImporter::parseMesh(tinygltf::Model &model, int meshId, const glm::mat4 &transform) {
     tinygltf::Mesh gltfMesh = model.meshes[meshId];
 
     auto &accessors = model.accessors;
@@ -230,6 +233,14 @@ bool SceneImporter::parseMesh(tinygltf::Model &model, int meshId, glm::mat4 tran
         mesh.indexOffset = indices->size();
         mesh.bufferMesh.firstTriangleIndex = triangles->size();
 
+        int materialIndex = primitive.material;
+
+        // Some objects might have no material index -> will be -1, set to default material
+        if (primitive.material < 0 | primitive.material >= materials->size()) {
+            materialIndex = materials->size() - 1;
+        }
+
+
         for(int i = 0; i < accessors[primitive.indices].count; i+=3) {
             unsigned int localIndex0 = parseIndex(&(*indexBuffer)[indexOffset + i * indexStride]);
             unsigned int localIndex1 = parseIndex(&(*indexBuffer)[indexOffset + (i + 1) * indexStride]);
@@ -256,7 +267,7 @@ bool SceneImporter::parseMesh(tinygltf::Model &model, int meshId, glm::mat4 tran
             upper = glm::max(upper, triangle.V1.position);
             upper = glm::max(upper, triangle.V2.position);
 
-            triangle.materialIndex = primitive.material;
+            triangle.materialIndex = materialIndex;
         }
 
 
@@ -270,13 +281,17 @@ bool SceneImporter::parseMesh(tinygltf::Model &model, int meshId, glm::mat4 tran
         mesh.bufferMesh.aabb.lower = glm::vec4(lower, 1);
         mesh.bufferMesh.aabb.upper = glm::vec4(upper, 1);
 
-        auto &mat = (*materials)[primitive.material];
-        glm::vec4 &emission = mat.bufferMaterial.emission;
 
-        if (emission.x > eps || emission.y > eps || emission.z > eps) {
-            mesh.bufferMesh.emissive = 1;
-            emissives->push_back(meshes->size());
+        if (primitive.material >= 0 && primitive.material < materials->size() - 1) {
+            auto &mat = (*materials)[primitive.material];
+            glm::vec4 &emission = mat.bufferMaterial.emission;
+
+            if (emission.x > eps || emission.y > eps || emission.z > eps) {
+                mesh.bufferMesh.emissive = 1;
+                emissives->push_back(meshes->size());
+            }
         }
+
 
         meshes->push_back(mesh);
     }
@@ -292,4 +307,13 @@ SceneImporter::getAccessor(std::vector<tinygltf::Accessor> &accessors, tinygltf:
     }
     return accessors[primitive.attributes[attribute]];
 
+}
+
+void SceneImporter::addDefaultMaterial() {
+    auto &mat = materials->emplace_back();
+
+    mat.name = "default";
+    auto &bufferMat = mat.bufferMaterial;
+    bufferMat.albedo = glm::vec4(0.8, 0.8, 0.8, 1);
+    bufferMat.roughness = 0.8f;
 }
