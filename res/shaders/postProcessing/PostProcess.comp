@@ -17,7 +17,7 @@ void main() {
     ivec2 bufferCoords = ivec2(texelCoord);
 
     vec4 bufferColor = imageLoad(renderBuffer, bufferCoords);
-    vec3 color = bufferColor.rgb; // / bufferColor.a;
+    vec3 color = bufferColor.rgb/ bufferColor.a;
 
     if (checkBitFlag(postProcessFlags, GAMMA_CORRECT_BIT_FLAG)) {
         GammaCorrection(color);

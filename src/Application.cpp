@@ -76,8 +76,8 @@ int Application::run() {
     glfwGetFramebufferSize(window, &displayWidth, &displayHeight);
 
     std::shared_ptr<Scene> scene = std::make_shared<Scene>();
-    // scene->loadFile("res/models/cornell_box_boxes.gltf");
-    scene->loadFile("res/models/cornell_box.gltf");
+    scene->loadFile("res/models/cornell_box_boxes.gltf");
+    // scene->loadFile("res/models/cornell_box.gltf");
 
     Rasterizer rasterizer;
     rasterizer.setScene(scene);
@@ -115,6 +115,7 @@ int Application::run() {
     settings.store(SHOW_STATS_WINDOW, false);
 
     settings.store(GAMMA_CORRECT, true);
+    settings.store(SHOW_DENOISE, false);
 
     // CameraController cameraController(pathTracer, rasterizer);
 
@@ -133,6 +134,7 @@ int Application::run() {
     sideBarTabs.push_back(&postProcessor);
     sideBarTabs.push_back(&br);
 
+    bool hasDenoised = false;
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
@@ -175,7 +177,9 @@ int Application::run() {
             // Idle waiting not ideal, but with current implementation need to wait for Integrator to finish
             // so single sample image is visible while moving the camera
             while (mcIntegrator.currentlyWorking()) { }
-            br.render(&textureStore.at(RENDER_TARGET));
+
+            postProcessor.applyGammaAndTonemap(textureStore.at(RENDER_TARGET), textureStore.at(DISPLAY_BUFFER), settings);
+            br.render(&textureStore.at(DISPLAY_BUFFER));
         } else {
             rasterizer.render();
         }
@@ -189,11 +193,9 @@ int Application::run() {
         glfwSwapBuffers(window);
     }
 
-    /*
     for (auto &texture : textureStore) {
         texture.second.destroy();
     }
-     */
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -238,23 +240,4 @@ void Application::buildImguiControlSideBar(glm::vec2 displaySize, std::vector<Im
 
     ImGui::End();
 
-}
-
-void Application::buildImguiCameraControls(PathTracer &pt, Rasterizer &rasterizer) {
-    if (ImGui::CollapsingHeader("Camera Controls")) {
-
-        ImVec2 windowSize = ImGui::GetWindowSize();
-        ImVec2 buttonSize = ImVec2(windowSize.x * 0.9, 25);
-
-        if (ImGui::Button("Reset debug camera", buttonSize)) {
-            // TODO
-            //rasterizer.getSceneRef().setCamera(pt.getSceneRef().getCamera());
-        }
-
-        if (ImGui::Button("Pathtrace camera to debug camera", buttonSize)) {
-            // TODO
-            // pt.getSceneRef().setCamera(rasterizer.getSceneRef().getCamera());
-        }
-
-    }
 }
