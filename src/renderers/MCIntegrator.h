@@ -9,6 +9,7 @@
 
 class MCIntegrator : public ImGuiSidebarTab {
     const unsigned int TARGET_TEXTURE_TARGET = 0;
+    constexpr static int WORK_GROUP_SIZE_1_DIM = 8; // Is set in shader, hardcoded here
 
     ShaderProgram mcIntegrator;
 

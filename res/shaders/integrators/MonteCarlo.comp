@@ -1,6 +1,6 @@
 #version 430 core
 
-layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout (local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
 layout (rgba32f, binding = 0) uniform image2D imgOutput;
 
@@ -34,6 +34,7 @@ uniform float alphaRR;
 void main() {
     vec2 texelCoord = vec2(gl_GlobalInvocationID.xy);
     ivec2 bufferCoords = ivec2(texelCoord);
+    if (bufferCoords.x >= width || bufferCoords.y >= height) return;
 
     int singleDimCoord = bufferCoords.y * width + bufferCoords.x;
 

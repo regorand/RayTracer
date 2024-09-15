@@ -42,6 +42,7 @@ public:
 
     void bindAsImage(unsigned int imageSlot = 0);
 
+    void clear();
     // bool readPixels(glm::vec2 coords, glm::vec2 coords, glm::vec4 *);
 
 private:

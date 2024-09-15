@@ -93,3 +93,7 @@ GLenum Texture::getAccessType() {
 unsigned int Texture::getGlID() {
     return mGlId;
 }
+
+void Texture::clear() {
+    glClearTexImage(mGlId, 0, mFormat, mType, GL_NONE);
+}

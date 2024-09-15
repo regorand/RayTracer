@@ -17,8 +17,11 @@ void MCIntegrator::renderSample() {
     bindUniforms();
     bindScene();
 
+    int numWorkGroupsX = mCurrentTarget->getWidth() / WORK_GROUP_SIZE_1_DIM + 1;
+    int numWorkGroupsY = mCurrentTarget->getHeight() / WORK_GROUP_SIZE_1_DIM + 1;
+
     GLClearError();
-    glDispatchCompute(mCurrentTarget->getWidth(), mCurrentTarget->getHeight(), 1);
+    glDispatchCompute(numWorkGroupsX, numWorkGroupsY, 1);
     GLPrintError();
 
     mcIntegrator.unbind();

@@ -4,7 +4,6 @@
 #include "imgui_impl_opengl3.h"
 #include "renderers/BufferRenderer.h"
 #include "gui/ImguiUtils.h"
-#include "renderers/PathTracer.h"
 #include "renderers/PostProcessor.h"
 #include "renderers/Rasterizer.h"
 #include "dataStructures/SettingIndex.h"
@@ -15,7 +14,6 @@
 #include "dataStructures/TextureNames.h"
 #include "scene/scene_loading/ModelLoader.h"
 #include "scene/Scene.h"
-#include "scene/SceneImporter.h"
 #include "renderers/MCIntegrator.h"
 #include <imgui.h>
 
@@ -80,9 +78,13 @@ int Application::run() {
     // scene->loadFile("res/models/cornell_box.gltf");
 
     Rasterizer rasterizer;
-    rasterizer.setScene(scene);
-
     BufferRenderer br;
+    PostProcessor postProcessor(displayWidth, displayHeight);
+    FrameBufferObject fbo;
+    MCIntegrator mcIntegrator;
+    std::vector<ImGuiSidebarTab *> sideBarTabs;
+
+    rasterizer.setScene(scene);
 
     std::map<int, Texture> textureStore;
     textureStore.insert({RENDER_TARGET, createPathTraceBuffer(displayWidth, displayHeight)});
@@ -94,21 +96,11 @@ int Application::run() {
 
     textureStore.insert({DEPTH_BUFFER, createDepthBuffer(displayWidth, displayHeight)});
 
-    PostProcessor postProcessor(displayWidth, displayHeight);
 
-    FrameBufferObject fbo;
     fbo.addTextureAttachment(textureStore.at(POS_BUFFER), GL_COLOR_ATTACHMENT0);
     fbo.addTextureAttachment(textureStore.at(NORMAL_BUFFER), GL_COLOR_ATTACHMENT1);
     fbo.addTextureAttachment(textureStore.at(ALBEDO_BUFFER), GL_COLOR_ATTACHMENT2);
     fbo.addTextureAttachment(textureStore.at(DEPTH_BUFFER), GL_DEPTH_ATTACHMENT);
-
-    PathTracer pathTracer(displayWidth, displayHeight);
-    pathTracer.setScene(scene);
-
-    pathTracer.setTargetp(&textureStore.at(RENDER_TARGET));
-    pathTracer.clearTarget();
-
-    pathTracer.enablePathRecording(false);
 
     keyStateManager->getMouseAndGetDiff(window);
 
@@ -121,12 +113,9 @@ int Application::run() {
 
     settings.store(SHOW_CONTROL_PANEL, true);
 
-    MCIntegrator mcIntegrator;
     mcIntegrator.setScene(scene);
     mcIntegrator.setTarget(&textureStore.at(RENDER_TARGET));
 
-    std::vector<ImGuiSidebarTab *> sideBarTabs;
-    sideBarTabs.push_back(&pathTracer);
     sideBarTabs.push_back(&mcIntegrator);
     sideBarTabs.push_back(scene.get());
     sideBarTabs.push_back(&rasterizer);
@@ -138,10 +127,7 @@ int Application::run() {
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
-        RenderState state = pathTracer.getRenderState();
-        if (state != RenderState::IDLE) {
-            pathTracer.doRenderStep();
-        }
+
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -157,11 +143,8 @@ int Application::run() {
         }
 
         if (settings.getOrElse<bool>(SHOW_CONTROL_PANEL, false)) {
-            buildImguiControlSideBar(glm::vec2(displayWidth, displayHeight), sideBarTabs);
+            buildImguiControlSideBar(glm::vec2(displayWidth, displayHeight), sideBarTabs, textureStore);
         }
-
-        if (state != RenderState::IDLE) pathTracer.buildImGuiProgressBar(glm::vec2(displayWidth, displayHeight));
-
 
         glm::vec2 diff = keyStateManager->getMouseAndGetDiff(window);
         dirty = cameraManipulator.updateCamera(scene->getActiveCamera(), keyStateManager, diff,
@@ -169,7 +152,7 @@ int Application::run() {
 
         if (settings.getOrElse(SHOW_PATHTRACE_OUTPUT, false)) {
             if (dirty) {
-                pathTracer.clearTarget();
+                textureStore.at(RENDER_TARGET).clear();
             }
 
             mcIntegrator.renderSample();
@@ -208,7 +191,7 @@ int Application::run() {
 }
 
 
-void Application::buildImguiControlSideBar(glm::vec2 displaySize, std::vector<ImGuiSidebarTab*> &sideBarTabs) {
+void Application::buildImguiControlSideBar(glm::vec2 displaySize, std::vector<ImGuiSidebarTab*> &sideBarTabs, std::map<int, Texture> &textureStore) {
 
     float windowWidth = displaySize.x / 6.0f;
 
@@ -225,10 +208,13 @@ void Application::buildImguiControlSideBar(glm::vec2 displaySize, std::vector<Im
                  ImGuiWindowFlags_NoResize
                  | ImGuiWindowFlags_NoMove);
 
-// ImGui::Checkbox("Show Pathtrace output", &menuSettings.viewPathTraceOutput);
     ImGui::Checkbox("Show Pathtrace output", settings.
             getPointer<bool>(SHOW_PATHTRACE_OUTPUT)
     );
+
+    if (ImGui::Button("reset Texture")) {
+        textureStore.at(RENDER_TARGET).clear();
+    }
 
     startIndent();
     for (auto sideBarTab: sideBarTabs) {
