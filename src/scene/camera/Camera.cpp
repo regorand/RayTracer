@@ -1,4 +1,3 @@
-
 #include <vector>
 #include "Camera.h"
 #include "glm/gtc/matrix_transform.hpp"
@@ -125,5 +124,5 @@ void Camera::setIntrinsics(const Intrinsics intrinsics) {
 }
 
 Camera Camera::getDefaultCamera() {
-    return {glm::vec3(0, 0, -3), glm::vec3(0, 0, 1)};
+    return {glm::vec3(0, 0, 3), glm::vec3(0, 0, -1)};
 }

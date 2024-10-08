@@ -127,7 +127,7 @@ bool intersectObject(Ray ray, Mesh mesh, float alreadyClosest, out RayHit rayhit
         vec4 tmp = transform * vec4(rayhit.position, 1);
         rayhit.position = tmp.xyz / tmp.w;
         mat4 normalMat = transpose(inverseTransform);
-        rayhit.normal = (normalMat * vec4(rayhit.normal, 0)).xyz;
+        rayhit.normal = normalize((normalMat * vec4(rayhit.normal, 0)).xyz);
     }
 
     return anyHit;

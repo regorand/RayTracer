@@ -7,6 +7,7 @@
 #include "glWrappers/shaders/ShaderUtils.hpp"
 #include "imgui.h"
 #include "gui/ImguiUtils.h"
+#include "glm/ext/matrix_clip_space.hpp"
 
 Rasterizer::Rasterizer()
         : mShader(makeRasterizeProgram("res/shaders/raster/test_new.vert", "res/shaders/raster/test_new.frag")),
@@ -15,12 +16,16 @@ Rasterizer::Rasterizer()
 
 }
 
-void Rasterizer::render() {
+void Rasterizer::render(int width, int height) {
     if (!canRasterize()) return;
     Camera &camera = mScene->getActiveCamera();
 
     glm::mat4 cameraMat = camera.getTransformation();
-    glm::mat4 projectionMat = camera.getProjection();
+
+    const auto &intrinsics = camera.getIntrinsics();
+
+    float aspect = static_cast<float>(width) / static_cast<float>(height);
+    glm::mat4 projectionMat = glm::perspective(intrinsics.fovY, aspect, intrinsics.zNear, intrinsics.zFar);
 
     glm::mat4 VP = projectionMat * cameraMat;
 

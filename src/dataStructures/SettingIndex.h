@@ -27,6 +27,8 @@ enum SettingIndex {
     SHOW_STATS_WINDOW,
     SHOW_CONTROL_PANEL,
     MENU_BAR_SIZE,
+    SHOW_FILE_PATH_DIALOG,
+    FILE_PATH_SHOW_ERROR,
 
     /*
      * Rendering Settings

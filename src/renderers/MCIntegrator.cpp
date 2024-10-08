@@ -45,6 +45,13 @@ void MCIntegrator::buildImguiTab(DataStore &settings, std::vector<Event> &events
         if (ImGui::Button("Reload compute shaders", buttonSize)) {
             reloadShaders();
         }
+
+        ImGui::SliderInt("max bounces", &maxBounces, 0, 8);
+
+        ImGui::Checkbox("do RR", &doRR);
+        if (doRR) {
+            ImGui::SliderFloat("alpha rr", &alphaRR, 0.0f, 0.99f);
+        }
     }
 }
 
@@ -86,10 +93,18 @@ bool MCIntegrator::currentlyWorking() {
 void MCIntegrator::bindUniforms() {
     mcIntegrator.setUniform1ui("objectCount", mScene->getCPUBuffers().meshes.size());
     mcIntegrator.setUniform1ui("emissiveCount", mScene->getCPUBuffers().emissives.size());
-    mcIntegrator.setUniform1f("alphaRR", 0.8);
 
-    mcIntegrator.setUniform1i("width",mCurrentTarget->getWidth());
-    mcIntegrator.setUniform1i("height", mCurrentTarget->getHeight());
+    mcIntegrator.setUniform1i("maxBounces", maxBounces);
+
+    mcIntegrator.setUniform1i("doRR", doRR);
+    mcIntegrator.setUniform1f("alphaRR", alphaRR);
+
+
+    int width = mCurrentTarget->getWidth();
+    int height = mCurrentTarget->getHeight();
+
+    mcIntegrator.setUniform1i("width", width);
+    mcIntegrator.setUniform1i("height", height);
 
     mcIntegrator.setUniform1ui("seed", dist.sampleUint());
     Camera &camera = mScene->getActiveCamera();
@@ -99,7 +114,9 @@ void MCIntegrator::bindUniforms() {
     mcIntegrator.setUniform3f("upDir", camera.getLocalUpVec());
 
     mcIntegrator.setUniform1f("fov", camera.getIntrinsics().fovY);
-    mcIntegrator.setUniform1f("aspect", camera.getIntrinsics().aspectRatio);
+
+    float aspect = static_cast<float>(width) / static_cast<float>(height);
+    mcIntegrator.setUniform1f("aspect", aspect);
 
     mcIntegrator.setUniform1i("doBrdf", doBrdf ? 1 : 0);
     mcIntegrator.setUniform1i("doNee", doNee ? 1 : 0);

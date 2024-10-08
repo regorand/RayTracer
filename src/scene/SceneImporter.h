@@ -36,7 +36,6 @@ public:
 
     bool import(CPUSceneBuffers &sceneBuffers);
 
-
 private:
     bool parseNode(tinygltf::Model &model, int nodeId, const glm::mat4 &prevTransform);
     bool parseMesh(tinygltf::Model &model, int meshId, const glm::mat4 &transform);
@@ -51,5 +50,4 @@ private:
                                    const std::string &attribute);
 
     void addDefaultMaterial();
-
 };

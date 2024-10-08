@@ -1,4 +1,5 @@
 
+#include <sstream>
 #include "Scene.h"
 #include "scene/scene_loading/ModelLoader.h"
 #include "scene/buffers/import_scene_error.h"
@@ -12,6 +13,7 @@ void Scene::addCamera(Camera camera) {
 }
 
 bool Scene::loadFile(std::string path) {
+    mPath = path;
     SceneImporter importer(path);
     importer.import(cpuBuffers);
 
@@ -132,4 +134,16 @@ void Scene::buildMeshBuffer() {
 
     gpuBuffers.meshBuffer = {static_cast<unsigned int>(data.size() * sizeof(BufferMesh)), GL_STATIC_DRAW, data.data() };
 
+}
+
+std::string Scene::getPath() {
+    return mPath;
+}
+
+std::string Scene::getName() {
+    std::stringstream ss(mPath);
+    std::string segment;
+    while (std::getline(ss, segment, '/'));
+
+    return segment;
 }

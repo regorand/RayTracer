@@ -34,6 +34,8 @@ public:
     PostProcessor(int textureWidth, int textureHeight);
     ~PostProcessor();
 
+    void resize(int width, int height);
+
     void applyPostProcessing(Texture &source, Texture &target, std::map<int, Texture> textureStore, DataStore &settings);
 
     void noUniformsOperation(ShaderProgram shader, Texture &source, Texture &target);

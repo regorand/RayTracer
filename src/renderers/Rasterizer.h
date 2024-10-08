@@ -18,7 +18,7 @@ private:
 public:
     Rasterizer();
 
-    void render();
+    void render(int width, int height);
 
     void saveToBuffers(Camera &pathTraceCamera);
 

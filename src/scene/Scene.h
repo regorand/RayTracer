@@ -12,6 +12,8 @@
 class Scene : public ImGuiSidebarTab {
     CameraController cameraController;
 
+    std::string mPath;
+
     int activeCameraIndex = DEFAULT_CAMERA_INDEX;
 
     CPUSceneBuffers cpuBuffers;
@@ -31,6 +33,9 @@ public:
     GPUSceneBuffers &getGPUBuffers();
 
     ShaderStorageBuffer &getMatBuffer();
+
+    std::string getPath();
+    std::string getName();
 
     void bindRaster();
     void unbindRaster();

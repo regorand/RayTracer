@@ -1,25 +1,27 @@
 
 #include "CameraManipulator.h"
 #include "glm/ext/matrix_transform.hpp"
+#include "imgui.h"
 
-bool CameraManipulator::updateCamera(Camera &camera, KeyStateManager *keyStateManager, glm::vec2 diff, glm::vec2 extents) {
-    bool control = keyStateManager->getKeyState(GLFW_KEY_LEFT_CONTROL);
-    bool leftMouseDown = keyStateManager->getKeyState(GLFW_MOUSE_BUTTON_LEFT);
+bool CameraManipulator::updateCamera(Camera &camera, glm::vec2 extents) {
+    bool control = ImGui::IsKeyDown(ImGuiKey_LeftCtrl);
+    bool leftMouseDown = ImGui::IsKeyDown(ImGuiKey_MouseLeft);
 
     glm::vec3 location = camera.getLocation();
     glm::vec3 viewDir = camera.getViewDir();
     glm::vec3 up = camera.getCamSpaceUpVec();
     glm::vec3 tangent = glm::cross(viewDir, up);
 
+    ImGuiIO &io = ImGui::GetIO();
+    glm::vec2 diff = glm::vec2(io.MouseDelta.x, io.MouseDelta.y);
+
     float posSpeed = 0.05;
 
-    // glm::vec2 diff = keyStateManager->getMouseAndGetDiff(window);
     glm::mat4 rot(1);
 
     bool updateRot = false;
 
     if (control && leftMouseDown && diff != glm::vec2(0)) {
-        // glm::vec2 extents(displayWidth, displayHeight);
         float fovY = camera.getIntrinsics().fovY;
         glm::vec2 fovs(fovY * camera.getIntrinsics().aspectRatio, fovY);
         glm::vec2 angles = glm::vec2(1) * fovs * (diff / extents);
@@ -30,12 +32,13 @@ bool CameraManipulator::updateCamera(Camera &camera, KeyStateManager *keyStateMa
     }
 
     glm::vec3 translation(0);
-    if (keyStateManager->getKeyState(GLFW_KEY_W)) translation += viewDir * posSpeed;
-    if (keyStateManager->getKeyState(GLFW_KEY_A)) translation -= tangent * posSpeed;
-    if (keyStateManager->getKeyState(GLFW_KEY_S)) translation -= viewDir * posSpeed;
-    if (keyStateManager->getKeyState(GLFW_KEY_D)) translation += tangent * posSpeed;
-    if (keyStateManager->getKeyState(GLFW_KEY_Q)) translation += up * posSpeed;
-    if (keyStateManager->getKeyState(GLFW_KEY_E)) translation -= up * posSpeed;
+
+    if (ImGui::IsKeyDown(ImGuiKey_W)) translation += viewDir * posSpeed;
+    if (ImGui::IsKeyDown(ImGuiKey_A)) translation -= tangent * posSpeed;
+    if (ImGui::IsKeyDown(ImGuiKey_S)) translation -= viewDir * posSpeed;
+    if (ImGui::IsKeyDown(ImGuiKey_D)) translation += tangent * posSpeed;
+    if (ImGui::IsKeyDown(ImGuiKey_Q)) translation += up * posSpeed;
+    if (ImGui::IsKeyDown(ImGuiKey_E)) translation -= up * posSpeed;
 
     bool updateTranslate = translation != glm::vec3(0);
 

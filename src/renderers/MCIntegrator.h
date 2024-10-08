@@ -23,6 +23,10 @@ class MCIntegrator : public ImGuiSidebarTab {
     bool doBrdf = true;
     bool doNee = false;
 
+    int maxBounces = 4;
+    bool doRR = false;
+    float alphaRR = 0.8;
+
 public:
     MCIntegrator();
 

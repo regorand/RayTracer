@@ -30,14 +30,25 @@ void sampleLightsourceNEE(vec3 pos, vec3 N, vec3 inDir, BufferMaterial material,
 
     pdf = 1.0f;
     Mesh object = sampleNEEObject(seed, pdf);
+    mat4 transform = transforms[object.transformIndex];
+    mat4 normalTransform = transpose(inverse(transform));
 
     Triangle triangle = sampleNEETriangle(object, seed, pdf);
 
-    vec3 sampledPos = sampleTrianglePos(triangle, seed, pdf);
+    vec3 sampledPosObjectSpace = sampleTrianglePos(triangle, seed, pdf);
+    vec3 sampledPos = (transform * vec4(sampledPosObjectSpace, 1)).xyz;
 
     vec3 dir = sampledPos - pos;
     float dist = length(dir) + EPS_4;
     dir = dir / vec3(dist);
+
+    if (dot(N, dir) <= 0) {
+        // Light source is on other side of geometry, it shadows itself
+
+        contrib = vec3(0);
+        pdf = 0;
+        return;
+    }
 
     vec3 halfway = (dir - inDir) / vec3(2);
     float thetaM = acos(dot(halfway, N));
@@ -51,6 +62,7 @@ void sampleLightsourceNEE(vec3 pos, vec3 N, vec3 inDir, BufferMaterial material,
         // For example, performing NEE on a perfectly specular surface
         contrib = vec3(0);
         pdf = 0;
+        return;
     }
 
     bool shadowed = anyHit(Ray(pos, dir), dist);
@@ -60,7 +72,7 @@ void sampleLightsourceNEE(vec3 pos, vec3 N, vec3 inDir, BufferMaterial material,
         return;
     }
 
-    vec3 triNormal = triangleNormal(triangle);
+    vec3 triNormal = (normalTransform * vec4(triangleNormal(triangle), 0)).xyz;
     triNormal *= sign(dot(triNormal, -dir));
 
     const float lightDotTerm = max(0.0f, dot(-dir, triNormal));

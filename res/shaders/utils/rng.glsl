@@ -45,6 +45,7 @@ float floatConstruct( uint m ) {
     const uint ieeeMantissa = 0x007FFFFFu; // binary32 mantissa bitmask
     const uint ieeeOne      = 0x3F800000u; // 1.0 in IEEE binary32
 
+
     m &= ieeeMantissa;                     // Keep only mantissa bits (fractional part)
     m |= ieeeOne;                          // Add fractional part to 1.0
 
@@ -56,17 +57,14 @@ float floatConstruct( uint m ) {
 float randUniform_0_1(inout uint seed) {
     // uint intSeed = floatBitsToUint(seed);
     // seed = uintBitsToFloat(rand_lcg(intSeed));
-    // seed = rand_xorshift(intSeed);
+    // seed = rand_xorshift(seed);
     seed = wang_hash(seed);
 
-    float unnorm = float(seed);
-    uint denomUint = 0xFFFFFFFF;
-    float denom = float(denomUint);
-    float val = unnorm / denomUint;
+    return floatConstruct(seed);
+}
 
-
-    return val;
-    // return floatConstruct(seed);
+float randUniform_neg_1_to_1(inout uint seed) {
+    return randUniform_0_1(seed) * 2 - 1;
 }
 
 uint randUniform_uint_0_n(inout uint seed, uint n) {

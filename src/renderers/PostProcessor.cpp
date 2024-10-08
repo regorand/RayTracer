@@ -150,3 +150,11 @@ void PostProcessor::buildImguiTab(DataStore &settings, std::vector<Event> &event
 void PostProcessor::applyNextCall() {
     mWorkToDo = true;
 }
+
+void PostProcessor::resize(int width, int height) {
+    // This function is not fully tested yet as denoising is not yet implemented again
+    mTmpBuffers.tmp1.clear();
+    mTmpBuffers.tmp2.clear();
+
+    mTmpBuffers = TmpBuffers(width, height);
+}

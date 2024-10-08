@@ -5,31 +5,32 @@
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/gtx/quaternion.hpp"
 #include "scene/buffers/import_scene_error.h"
+#include <algorithm>
 
 /*
  * Reads an unsigned byte from 1 bytes at the specified address and casts it to
  * an unsigned int.
  */
-unsigned int bytesFromUnsignedCharToUnsignedInt(unsigned char* address) {
+unsigned int bytesFromUnsignedCharToUnsignedInt(unsigned char *address) {
     unsigned char out;
     memcpy(&out, address, sizeof(unsigned char));
-    return (unsigned int)out;
+    return (unsigned int) out;
 }
 
 /*
  * Reads an unsigned short from 2 bytes at the specified address and casts it to
  * an unsigned int.
  */
-unsigned int bytesFromUnsignedShortToUnsignedInt(unsigned char* address) {
+unsigned int bytesFromUnsignedShortToUnsignedInt(unsigned char *address) {
     unsigned short out;
     memcpy(&out, address, sizeof(unsigned short));
-    return (unsigned int)out;
+    return (unsigned int) out;
 }
 
 /*
  * Reads an unsigned int from 4 bytes at the specified address.
  */
-unsigned int bytesToUnsignedInt(unsigned char* address) {
+unsigned int bytesToUnsignedInt(unsigned char *address) {
     unsigned int out;
     memcpy(&out, address, sizeof(unsigned int));
     return out;
@@ -115,7 +116,7 @@ bool SceneImporter::parseNode(tinygltf::Model &model, int nodeId, const glm::mat
     buildTransform(node, transform);
 
     if (node.mesh != -1) {
-        return parseMesh(model, node.mesh, transform * prevTransform);
+        return parseMesh(model, node.mesh, prevTransform * transform);
     } else if (node.camera != -1) {
         // TODO can handle camera here
         return true;
@@ -123,7 +124,7 @@ bool SceneImporter::parseNode(tinygltf::Model &model, int nodeId, const glm::mat
         if (node.children.empty()) return true;
 
         for (auto &child: node.children) {
-            parseNode(model, child, transform * prevTransform);
+            parseNode(model, child, prevTransform * transform);
         }
 
         return true;
@@ -132,27 +133,30 @@ bool SceneImporter::parseNode(tinygltf::Model &model, int nodeId, const glm::mat
 }
 
 void SceneImporter::buildTransform(tinygltf::Node &node, glm::mat4 &target) {
-    glm::mat4 translate(1);
-    glm::mat4 scale(1);
-    glm::mat4 rotate(1);
-
+    glm::mat4 transform(1.0f);
 
     if (node.translation.size() == 3) {
         glm::vec3 translateVec(node.translation[0], node.translation[1], node.translation[2]);
-        translate = glm::translate(glm::mat4(1), translateVec);
+        // translate = glm::translate(glm::mat4(1), translateVec);
+        transform = glm::translate(glm::mat4(1), translateVec);
     }
 
     if (node.rotation.size() == 4) {
-        rotate = glm::toMat4(glm::make_quat(node.rotation.data()));
+        float data[4];
+        for (int i = 0; i < 4; i++) {
+            // shift by one because tinygltf gives quats as xyzw but internally glm uses wxyz
+            data[(i + 1) % 4] = static_cast<float>(node.rotation[i]);
+        }
+        transform *= glm::mat4_cast(glm::make_quat(data));
     }
 
     if (node.scale.size() == 3) {
         glm::vec3 scaleVec(node.scale[0], node.scale[1], node.scale[2]);
-        scale = glm::scale(glm::mat4(1), scaleVec);
+        transform = glm::scale(transform, scaleVec);
     }
 
     // TODO what if transform is given by matrix instead of vectors ? => extra check
-    target = translate * rotate * scale;
+    target = transform;
 }
 
 bool SceneImporter::parseMesh(tinygltf::Model &model, int meshId, const glm::mat4 &transform) {
@@ -191,7 +195,9 @@ bool SceneImporter::parseMesh(tinygltf::Model &model, int meshId, const glm::mat
         Mesh mesh;
         mesh.bufferMesh.transformIndex = transforms->size();
 
-        transforms->push_back(transform);
+        glm::mat4 meshTransform = transform;
+
+        transforms->push_back(meshTransform);
 
         /* dont technically need those, accessors have min/max fields
             First attempt at using those didn't quite work.
@@ -206,29 +212,29 @@ bool SceneImporter::parseMesh(tinygltf::Model &model, int meshId, const glm::mat
             auto texCoordAddress = &(*texCoordBuffer)[texCoordOffset + i * FLOAT_SIZE * 2];
 
             vertices->push_back({glm::make_vec3((float *) positionAddress),
-                                glm::make_vec3((float *) normalAddress),
-                                glm::make_vec2((float *) texCoordAddress),
-                                primitive.material});
+                                 glm::make_vec3((float *) normalAddress),
+                                 glm::make_vec2((float *) texCoordAddress),
+                                 primitive.material});
         }
 
         // default parsing function (if indices are stored as byte)
         auto parseIndex = bytesFromUnsignedCharToUnsignedInt;
         // size of one index in bytes
-        int indexStride   = 1;
+        int indexStride = 1;
         int componentType = accessors[primitive.indices].componentType;
 
         // choose parsing function based on the numeric type that the index is stored as in the glTF file
-        if(componentType == COMPONENT_TYPE_UINT) {
-            parseIndex  = bytesToUnsignedInt;
+        if (componentType == COMPONENT_TYPE_UINT) {
+            parseIndex = bytesToUnsignedInt;
             indexStride = 4;
-        } else if(componentType == COMPONENT_TYPE_USHORT) {
-            parseIndex  = bytesFromUnsignedShortToUnsignedInt;
+        } else if (componentType == COMPONENT_TYPE_USHORT) {
+            parseIndex = bytesFromUnsignedShortToUnsignedInt;
             indexStride = 2;
         }
 
-        int   indexBufferIndex = bufferViews[primitive.indices].buffer;
-        int   indexOffset      = bufferViews[primitive.indices].byteOffset;
-        auto* indexBuffer      = &buffers[indexBufferIndex].data;
+        int indexBufferIndex = bufferViews[primitive.indices].buffer;
+        int indexOffset = bufferViews[primitive.indices].byteOffset;
+        auto *indexBuffer = &buffers[indexBufferIndex].data;
 
         mesh.indexOffset = indices->size();
         mesh.bufferMesh.firstTriangleIndex = triangles->size();
@@ -241,7 +247,7 @@ bool SceneImporter::parseMesh(tinygltf::Model &model, int meshId, const glm::mat
         }
 
 
-        for(int i = 0; i < accessors[primitive.indices].count; i+=3) {
+        for (int i = 0; i < accessors[primitive.indices].count; i += 3) {
             unsigned int localIndex0 = parseIndex(&(*indexBuffer)[indexOffset + i * indexStride]);
             unsigned int localIndex1 = parseIndex(&(*indexBuffer)[indexOffset + (i + 1) * indexStride]);
             unsigned int localIndex2 = parseIndex(&(*indexBuffer)[indexOffset + (i + 2) * indexStride]);
@@ -258,6 +264,17 @@ bool SceneImporter::parseMesh(tinygltf::Model &model, int meshId, const glm::mat
             triangle.V0 = (*vertices)[index0].toBufferVertex();
             triangle.V1 = (*vertices)[index1].toBufferVertex();
             triangle.V2 = (*vertices)[index2].toBufferVertex();
+
+            /*
+            float d1 = glm::distance(triangle.V0.position, triangle.V1.position);
+            float d2 = glm::distance(triangle.V0.position, triangle.V2.position);
+            float d3 = glm::distance(triangle.V1.position, triangle.V2.position);
+
+            constexpr float EPS = 1e-3;
+            if (d1 < EPS || d2 < EPS || d3 < EPS) {
+                int x = 4;
+            }
+             */
 
             lower = glm::min(lower, triangle.V0.position);
             lower = glm::min(lower, triangle.V1.position);
@@ -295,6 +312,22 @@ bool SceneImporter::parseMesh(tinygltf::Model &model, int meshId, const glm::mat
 
         meshes->push_back(mesh);
     }
+    /*
+    int count = 0;
+    for (auto &tri: *triangles) {
+        float d1 = glm::distance(tri.V0.position, tri.V1.position);
+        float d2 = glm::distance(tri.V0.position, tri.V2.position);
+        float d3 = glm::distance(tri.V1.position, tri.V2.position);
+
+        constexpr float EPS = 1e-3;
+        if (d1 < EPS || d2 < EPS || d3 < EPS) {
+            count++;
+        }
+
+
+    }
+    std::cout << "count: " << count << std::endl;
+    */
 
     return true;
 }

@@ -33,7 +33,7 @@ vec3 sampleHemisphereCosine(inout uint seed, out float pdf) {
 
     float z = sqrtXi1;
     vec2 xy = sin(theta) * vec2(cos(phi), sin(phi));
-    pdf = sqrtXi1 * ONE_OVER_PI;
+    pdf = sqrtXi1 * ONE_OVER_PI + EPS_5;
     return vec3(xy, z);
 }
 
@@ -81,8 +81,12 @@ vec3 sampleTrianglePos(Triangle triangle, uint seed, inout float pdf) {
     vec3 edge1 = triangle.V1.pos.xyz - triangle.V0.pos.xyz;
     vec3 edge2 = triangle.V2.pos.xyz - triangle.V0.pos.xyz;
 
-    float area = 0.5 * length(cross(edge1, edge2));
-    pdf /= area;
+    float area = 0.5f * abs(length(cross(edge1, edge2)));
+
+    if (area > 0) {
+        pdf /= area;
+    }
+
 
     return triangle.V0.pos.xyz + xi1 * edge1 + xi2 * edge2;
 }

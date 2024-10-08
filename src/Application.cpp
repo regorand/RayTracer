@@ -16,167 +16,90 @@
 #include "scene/Scene.h"
 #include "renderers/MCIntegrator.h"
 #include <imgui.h>
+#include <filesystem>
+
 
 Application::Application() {
 }
 
 
 int Application::run() {
+    int initRes = init();
+    if (initRes) return initRes;
 
-    if (!glfwInit()) {
-        return 1;
-    }
-
-    // glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
-
-    const int width = 800;
-    const int height = 500;
-
-    const std::string application_name = "RayTracer";
-
-    window = glfwCreateWindow(width, height, application_name.c_str(), nullptr, nullptr);
-    if (window == nullptr)
-        return 1;
-
-    glfwMakeContextCurrent(window);
-    glfwSwapInterval(1); // Enable vsync
-
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO &io = ImGui::GetIO();
-    (void) io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-
-    ImGui::StyleColorsDark();
-
-    ImGui_ImplOpenGL3_Init();
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
-
-    GLenum err = glewInit();
-    if (GLEW_OK != err) {
-        throw std::runtime_error("Glew init failed");
-    }
-
-
-    int major;
-    int minor;
-    glGetIntegerv(GL_MAJOR_VERSION, &major);
-    glGetIntegerv(GL_MINOR_VERSION, &minor);
-
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, major);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, minor);
-
-    keyStateManager->registerGLFW(window);
-
-    registerGLCallBack();
-
-    glfwGetFramebufferSize(window, &displayWidth, &displayHeight);
-
-    std::shared_ptr<Scene> scene = std::make_shared<Scene>();
-    scene->loadFile("res/models/cornell_box_boxes.gltf");
-    // scene->loadFile("res/models/cornell_box.gltf");
-
-    Rasterizer rasterizer;
-    BufferRenderer br;
-    PostProcessor postProcessor(displayWidth, displayHeight);
-    FrameBufferObject fbo;
-    MCIntegrator mcIntegrator;
-    std::vector<ImGuiSidebarTab *> sideBarTabs;
-
-    rasterizer.setScene(scene);
-
-    std::map<int, Texture> textureStore;
-    textureStore.insert({RENDER_TARGET, createPathTraceBuffer(displayWidth, displayHeight)});
-    textureStore.insert({DISPLAY_BUFFER, createPathTraceBuffer(displayWidth, displayHeight)});
-
-    textureStore.insert({POS_BUFFER, createPathTraceBuffer(displayWidth, displayHeight)});
-    textureStore.insert({NORMAL_BUFFER, createPathTraceBuffer(displayWidth, displayHeight)});
-    textureStore.insert({ALBEDO_BUFFER, createPathTraceBuffer(displayWidth, displayHeight)});
-
-    textureStore.insert({DEPTH_BUFFER, createDepthBuffer(displayWidth, displayHeight)});
-
-
-    fbo.addTextureAttachment(textureStore.at(POS_BUFFER), GL_COLOR_ATTACHMENT0);
-    fbo.addTextureAttachment(textureStore.at(NORMAL_BUFFER), GL_COLOR_ATTACHMENT1);
-    fbo.addTextureAttachment(textureStore.at(ALBEDO_BUFFER), GL_COLOR_ATTACHMENT2);
-    fbo.addTextureAttachment(textureStore.at(DEPTH_BUFFER), GL_DEPTH_ATTACHMENT);
-
-    keyStateManager->getMouseAndGetDiff(window);
-
-    settings.store(SHOW_STATS_WINDOW, false);
-
-    settings.store(GAMMA_CORRECT, true);
-    settings.store(SHOW_DENOISE, false);
-
-    // CameraController cameraController(pathTracer, rasterizer);
-
-    settings.store(SHOW_CONTROL_PANEL, true);
-
-    mcIntegrator.setScene(scene);
-    mcIntegrator.setTarget(&textureStore.at(RENDER_TARGET));
-
-    sideBarTabs.push_back(&mcIntegrator);
-    sideBarTabs.push_back(scene.get());
-    sideBarTabs.push_back(&rasterizer);
-    // sideBarTabs.push_back(&cameraController);
-    sideBarTabs.push_back(&postProcessor);
-    sideBarTabs.push_back(&br);
-
-    bool hasDenoised = false;
     while (!glfwWindowShouldClose(window)) {
-        glfwPollEvents();
-
-
-
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-
-        glViewport(0, 0, displayWidth, displayHeight);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        buildImguiMenu(settings);
-
-        if (settings.get<bool>(SHOW_STATS_WINDOW).value_or(false)) {
-            buildImguiAppStats(settings);
-        }
-
-        if (settings.getOrElse<bool>(SHOW_CONTROL_PANEL, false)) {
-            buildImguiControlSideBar(glm::vec2(displayWidth, displayHeight), sideBarTabs, textureStore);
-        }
-
-        glm::vec2 diff = keyStateManager->getMouseAndGetDiff(window);
-        dirty = cameraManipulator.updateCamera(scene->getActiveCamera(), keyStateManager, diff,
-                                               glm::vec2(displayWidth, displayHeight));
-
-        if (settings.getOrElse(SHOW_PATHTRACE_OUTPUT, false)) {
-            if (dirty) {
-                textureStore.at(RENDER_TARGET).clear();
-            }
-
-            mcIntegrator.renderSample();
-
-            // Idle waiting not ideal, but with current implementation need to wait for Integrator to finish
-            // so single sample image is visible while moving the camera
-            while (mcIntegrator.currentlyWorking()) { }
-
-            postProcessor.applyGammaAndTonemap(textureStore.at(RENDER_TARGET), textureStore.at(DISPLAY_BUFFER), settings);
-            br.render(&textureStore.at(DISPLAY_BUFFER));
-        } else {
-            rasterizer.render();
-        }
-
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-        ImGui::EndFrame();
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-        glfwSwapBuffers(window);
+        renderLoop();
     }
 
-    for (auto &texture : textureStore) {
+    clear();
+    return 0;
+}
+
+
+int Application::init() {
+    initGLFW();
+    initImGui();
+    initOpenGL();
+
+    setupAppTools();
+
+    loadScene("res/models/cornell_box_boxes.gltf");
+    return 0;
+}
+
+int Application::renderLoop() {
+    glfwPollEvents();
+
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    glViewport(0, 0, displayWidth, displayHeight);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    buildImgui();
+
+    ImGui::GetMouseDragDelta();
+
+    auto &activeScene = scenes[activeSceneIndex];
+
+    if (!settings.getOrElse(SHOW_FILE_PATH_DIALOG, false)) {
+        dirty |= cameraManipulator.updateCamera(activeScene->getActiveCamera(), glm::vec2(displayWidth, displayHeight));
+    }
+
+    if (settings.getOrElse(SHOW_PATHTRACE_OUTPUT, false)) {
+        if (dirty) {
+            textureStore.at(RENDER_TARGET).clear();
+            dirty = false;
+        }
+
+        mcIntegrator->renderSample();
+
+        // Idle waiting not ideal, but with current implementation need to wait for Integrator to finish
+        // so single sample image is visible while moving the camera
+        while (mcIntegrator->currentlyWorking()) {}
+
+        postProcessor->applyGammaAndTonemap(textureStore.at(RENDER_TARGET), textureStore.at(DISPLAY_BUFFER), settings);
+        br->render(&textureStore.at(DISPLAY_BUFFER));
+    } else {
+        rasterizer->render(displayWidth, displayHeight);
+    }
+
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+    ImGui::EndFrame();
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    glfwSwapBuffers(window);
+
+    wasResized = false;
+
+    return 0;
+}
+
+int Application::clear() {
+    for (auto &texture: textureStore) {
         texture.second.destroy();
     }
 
@@ -191,22 +114,137 @@ int Application::run() {
 }
 
 
-void Application::buildImguiControlSideBar(glm::vec2 displaySize, std::vector<ImGuiSidebarTab*> &sideBarTabs, std::map<int, Texture> &textureStore) {
+int Application::initGLFW() {
+    if (!glfwInit()) {
+        return 1;
+    }
 
-    float windowWidth = displaySize.x / 6.0f;
+    const std::string application_name = "RayTracer";
+
+    window = glfwCreateWindow(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT, application_name.c_str(), nullptr, nullptr);
+
+
+    if (window == nullptr)
+        return 1;
+
+    glfwGetWindowSize(window, &windowWidth, &windowHeight);
+    glfwGetFramebufferSize(window, &displayWidth, &displayHeight);
+
+
+    glfwSetWindowUserPointer(window, this);
+    glfwSetWindowSizeCallback(window, &Application::windowResizeCallback);
+
+
+    glfwMakeContextCurrent(window);
+    glfwSwapInterval(1); // Enable vsync
+    return 0;
+}
+
+int Application::initImGui() {
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+
+    ImGui_ImplOpenGL3_Init();
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+
+    ImGuiIO &io = ImGui::GetIO();
+    (void) io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+    // io.AddInputCharacter(ImGuiKey_Backspace);
+    // io.KeysDown[ImGuiKey_Backspace] = true;
+    // io.KeyMap[ImGuiKey_Delete] = GLFW_KEY_DELETE;
+    // io.KeyMap[ImGuiKey_Backspace] = GLFW_KEY_BACKSPACE;
+
+    prevMousePos = ImGui::GetMousePos();
+
+    ImGui::StyleColorsDark();
+
+    return 0;
+}
+
+int Application::initOpenGL() {
+    GLenum err = glewInit();
+    if (GLEW_OK != err) {
+        throw std::runtime_error("Glew init failed");
+    }
+
+
+    int major;
+    int minor;
+    glGetIntegerv(GL_MAJOR_VERSION, &major);
+    glGetIntegerv(GL_MINOR_VERSION, &minor);
+
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, major);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, minor);
+
+    registerGLCallBack();
+    return 0;
+}
+
+int Application::setupAppTools() {
+    strncpy_s(pathInputBuf, DEFAULT_MODEL_DIR.c_str(), std::min(DEFAULT_MODEL_DIR.size(), PATH_INPUT_BUF_SIZE));
+    setupTextures();
+
+    rasterizer = std::make_shared<Rasterizer>();
+
+    br = std::make_shared<BufferRenderer>();
+    postProcessor = std::make_shared<PostProcessor>(displayWidth, displayHeight);
+
+    mcIntegrator = std::make_shared<MCIntegrator>();
+    mcIntegrator->setTarget(&textureStore.at(RENDER_TARGET));
+
+    /*
+    textureStore.insert({POS_BUFFER, createPathTraceBuffer(displayWidth, displayHeight)});
+    textureStore.insert({NORMAL_BUFFER, createPathTraceBuffer(displayWidth, displayHeight)});
+    textureStore.insert({ALBEDO_BUFFER, createPathTraceBuffer(displayWidth, displayHeight)});
+
+    textureStore.insert({DEPTH_BUFFER, createDepthBuffer(displayWidth, displayHeight)});
+    */
+
+    settings.store(SHOW_STATS_WINDOW, false);
+
+    settings.store(GAMMA_CORRECT, true);
+    settings.store(SHOW_DENOISE, false);
+
+    // CameraController cameraController(pathTracer, rasterizer);
+
+    settings.store(SHOW_CONTROL_PANEL, true);
+
+    sideBarTabs.push_back(mcIntegrator.get());
+    // sideBarTabs.push_back(scene.get());
+    sideBarTabs.push_back(rasterizer.get());
+    // sideBarTabs.push_back(&cameraController);
+    sideBarTabs.push_back(postProcessor.get());
+    sideBarTabs.push_back(br.get());
+
+    return 0;
+}
+
+
+int Application::setupTextures() {
+    textureStore.clear();
+
+    textureStore.insert({RENDER_TARGET, createPathTraceBuffer(displayWidth, displayHeight)});
+    textureStore.insert({DISPLAY_BUFFER, createPathTraceBuffer(displayWidth, displayHeight)});
+
+    return 0;
+}
+
+void Application::buildImguiControlSideBar() {
+    float sideBarWidth = static_cast<float>(displayWidth) / 4.0f;
 
     glm::vec2 menuBarSize = settings.get<glm::vec2>(MENU_BAR_SIZE).value_or(glm::vec2(0));
+    float xPos = displayWidth - sideBarWidth;
 
-    ImGui::SetNextWindowPos(
-            ImVec2(displaySize.x - windowWidth, menuBarSize.y),
-            ImGuiCond_Once
-    );
-    ImGui::SetNextWindowSize(ImVec2(windowWidth, displaySize.y), ImGuiCond_Once
-    );
+    ImGuiCond_ flags = wasResized ? ImGuiCond_Always : ImGuiCond_Once;
+
+    ImGui::SetNextWindowPos(ImVec2(xPos, menuBarSize.y), flags);
+    ImGui::SetNextWindowSize(ImVec2(sideBarWidth, static_cast<float>(displayHeight)), flags);
+
     ImGui::Begin("Control Panel", settings.
-                         getPointer<bool>(SHOW_CONTROL_PANEL),
-                 ImGuiWindowFlags_NoResize
-                 | ImGuiWindowFlags_NoMove);
+            getPointer<bool>(SHOW_CONTROL_PANEL), ImGuiWindowFlags_NoMove);
 
     ImGui::Checkbox("Show Pathtrace output", settings.
             getPointer<bool>(SHOW_PATHTRACE_OUTPUT)
@@ -217,6 +255,20 @@ void Application::buildImguiControlSideBar(glm::vec2 displaySize, std::vector<Im
     }
 
     startIndent();
+    if (ImGui::CollapsingHeader("Scenes")) {
+        for (int i = 0; i < scenes.size(); i++) {
+            auto &scene = scenes[i];
+            const auto &name = scene->getName();
+            if (ImGui::Button(name.c_str())) {
+                if (activeSceneIndex != i) {
+                    activeSceneIndex = i;
+                    updateActiveScene();
+                    dirty = true;
+                }
+            }
+        }
+    }
+    endAndNewIndent();
     for (auto sideBarTab: sideBarTabs) {
         sideBarTab->buildImguiTab(settings, events);
         endAndNewIndent();
@@ -227,3 +279,130 @@ void Application::buildImguiControlSideBar(glm::vec2 displaySize, std::vector<Im
     ImGui::End();
 
 }
+
+void Application::updateActiveScene() {
+    auto &activeScene = scenes[activeSceneIndex];
+    mcIntegrator->setScene(activeScene);
+    rasterizer->setScene(activeScene);
+}
+
+void Application::buildImgui() {
+    buildImguiMenu();
+
+    if (settings.get<bool>(SHOW_FILE_PATH_DIALOG).value_or(false)) {
+        buildFileOpenDialog();
+    }
+
+    if (settings.get<bool>(SHOW_STATS_WINDOW).value_or(false)) {
+        buildImguiAppStats(settings);
+    }
+
+    if (settings.getOrElse<bool>(SHOW_CONTROL_PANEL, false)) {
+        buildImguiControlSideBar();
+    }
+}
+
+void Application::buildImguiMenu() {
+    if (ImGui::BeginMainMenuBar()) {
+        settings.store(SettingIndex::MENU_BAR_SIZE, ImVec2ToGlmVec2(ImGui::GetWindowSize()));
+        if (ImGui::BeginMenu("File")) {
+            if (ImGui::MenuItem("TODO: Load Scene")) {
+                settings.store(SHOW_FILE_PATH_DIALOG, true);
+            }
+            if (ImGui::MenuItem("TODO: Save Image"));
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Windows")) {
+            // TODO change message dynamically
+
+            if (ImGui::MenuItem("App Statistics")) {
+                settings.store(SHOW_STATS_WINDOW, !settings.getOrElse(SHOW_STATS_WINDOW, true));
+            }
+
+            if (ImGui::MenuItem("Control Panel")) {
+                settings.store(SHOW_CONTROL_PANEL, !settings.getOrElse(SHOW_CONTROL_PANEL, true));
+            }
+
+            ImGui::EndMenu();
+        }
+
+        ImGui::EndMainMenuBar();
+    }
+
+}
+
+void Application::loadScene(const std::string &path, bool activateOnLoad) {
+    std::shared_ptr<Scene> scene = std::make_shared<Scene>();
+    bool success = scene->loadFile(path);
+    if (!success) return;
+    scenes.push_back(scene);
+
+    if (activateOnLoad) {
+        activeSceneIndex = scenes.size() - 1;
+        updateActiveScene();
+        dirty = true;
+    }
+}
+
+void Application::windowResizeCallback(GLFWwindow *window, int width, int height) {
+    auto *app = (Application *) glfwGetWindowUserPointer(window);
+
+    app->handleResize(window, width, height);
+}
+
+void Application::handleResize(GLFWwindow *window, int width, int height) {
+    windowWidth = width;
+    windowHeight = height;
+
+    glfwGetFramebufferSize(window, &displayWidth, &displayHeight);
+
+    postProcessor->resize(displayWidth, displayHeight);
+
+    setupTextures();
+    mcIntegrator->setTarget(&textureStore.at(RENDER_TARGET));
+
+    wasResized = true;
+}
+
+void Application::buildFileOpenDialog() {
+    ImGui::SetNextWindowPos(ImVec2(static_cast<float>(displayWidth) / 2, static_cast<float>(displayHeight) / 2),
+                            0 ,
+                            ImVec2(0.5f, 0.5f));
+
+    float width = std::min(500.0f, static_cast<float>(displayWidth) * 0.8f);
+    ImGui::SetNextWindowSize(ImVec2(width, 150));
+
+    ImGui::Begin("Load new File", settings.getPointer<bool>(SHOW_FILE_PATH_DIALOG));
+
+    ImGui::InputText("##Scene Path", pathInputBuf, PATH_INPUT_BUF_SIZE);
+    if (ImGui::Button("Load")) {
+        std::string path_str(pathInputBuf);
+        std::filesystem::path path(path_str);
+        if (!exists(path)) {
+            loadErrorString = "File could not be found";
+            settings.store(FILE_PATH_SHOW_ERROR, true);
+        }
+
+        if (path.extension() != ".gltf") {
+            loadErrorString = "Can only load gltf files currently";
+            settings.store(FILE_PATH_SHOW_ERROR, true);
+        }
+
+        if (!settings.getOrElse(FILE_PATH_SHOW_ERROR, false)) {
+            strncpy_s(pathInputBuf, DEFAULT_MODEL_DIR.c_str(), std::min(DEFAULT_MODEL_DIR.size(), PATH_INPUT_BUF_SIZE));
+
+            settings.store(SHOW_FILE_PATH_DIALOG, false);
+            settings.store(FILE_PATH_SHOW_ERROR, false);
+            loadErrorString.clear();
+
+            loadScene(path.string());
+        }
+    }
+    if (settings.getOrElse(FILE_PATH_SHOW_ERROR, false)) {
+        ImGui::Text(loadErrorString.c_str());
+    }
+
+    ImGui::End();
+}
+
