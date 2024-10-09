@@ -99,6 +99,11 @@ void PostProcessor::buildImguiTab(DataStore &settings, std::vector<Event> &event
         ImVec2 windowSize = ImGui::GetWindowSize();
         ImVec2 buttonSize = ImVec2(windowSize.x * 0.9, 25);
 
+        ImGui::Checkbox("Gamma Correction", settings.getPointer<bool>(GAMMA_CORRECT));
+        ImGui::Checkbox("tonemapping", settings.getPointer<bool>(TONEMAP));
+
+        ImGui::Separator();
+
         ImGui::Checkbox("Continually Apply", settings.getPointer<bool>(CONTINUALLY_APPLY_POSTPROC));
 
         if (ImGui::Button("Reload post Proc shaders", buttonSize)) {
@@ -139,11 +144,6 @@ void PostProcessor::buildImguiTab(DataStore &settings, std::vector<Event> &event
 
             selected->buildImgui(settings);
         }
-
-        ImGui::Separator();
-
-        ImGui::Checkbox("Gamma Correction", settings.getPointer<bool>(GAMMA_CORRECT));
-        ImGui::Checkbox("tonemapping", settings.getPointer<bool>(TONEMAP));
     }
 }
 

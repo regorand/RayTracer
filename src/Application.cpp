@@ -254,7 +254,18 @@ void Application::buildImguiControlSideBar() {
         textureStore.at(RENDER_TARGET).clear();
     }
 
+    sideBarTabs.push_back(mcIntegrator.get());
+    // sideBarTabs.push_back(scene.get());
+    sideBarTabs.push_back(rasterizer.get());
+    // sideBarTabs.push_back(&cameraController);
+    sideBarTabs.push_back(postProcessor.get());
+    sideBarTabs.push_back(br.get());
+
     startIndent();
+
+    mcIntegrator->buildImguiTab(settings, events);
+    endAndNewIndent();
+
     if (ImGui::CollapsingHeader("Scenes")) {
         for (int i = 0; i < scenes.size(); i++) {
             auto &scene = scenes[i];
@@ -269,10 +280,15 @@ void Application::buildImguiControlSideBar() {
         }
     }
     endAndNewIndent();
-    for (auto sideBarTab: sideBarTabs) {
-        sideBarTab->buildImguiTab(settings, events);
-        endAndNewIndent();
-    }
+
+    postProcessor->buildImguiTab(settings, events);
+    endAndNewIndent();
+
+    br->buildImguiTab(settings, events);
+    endAndNewIndent();
+
+    rasterizer->buildImguiTab(settings, events);
+
     endIndent();
 
 
