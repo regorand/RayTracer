@@ -15,6 +15,7 @@
 #include "scene/scene_loading/ModelLoader.h"
 #include "scene/Scene.h"
 #include "renderers/MCIntegrator.h"
+#include "scene/camera/manipulators/OrbitManipulator.h"
 #include <imgui.h>
 #include <filesystem>
 
@@ -63,9 +64,7 @@ int Application::renderLoop() {
 
     auto &activeScene = scenes[activeSceneIndex];
 
-    if (!settings.getOrElse(SHOW_FILE_PATH_DIALOG, false)) {
-        dirty |= cameraManipulator.updateCamera(activeScene->getActiveCamera(), glm::vec2(displayWidth, displayHeight));
-    }
+    dirty |= cameraManipulators[mActiveManipulatorIndex]->updateCamera(activeScene->getActiveCamera(), glm::vec2(displayWidth, displayHeight));
 
     if (settings.getOrElse(SHOW_PATHTRACE_OUTPUT, false)) {
         dirty |= !accumulate;
@@ -213,6 +212,10 @@ int Application::setupAppTools() {
 
     settings.store(SHOW_CONTROL_PANEL, true);
 
+    cameraManipulators.push_back(std::make_shared<OrbitManipulator>());
+    cameraManipulators.push_back(std::make_shared<FlightManipulator>());
+    mActiveManipulatorIndex = 0;
+
     sideBarTabs.push_back(mcIntegrator.get());
     // sideBarTabs.push_back(scene.get());
     sideBarTabs.push_back(rasterizer.get());
@@ -281,6 +284,30 @@ void Application::buildImguiControlSideBar() {
                 }
             }
         }
+    }
+    endAndNewIndent();
+
+    if (ImGui::CollapsingHeader("Camera Manipulators")) {
+        mActiveManipulatorIndex = glm::min(glm::max(mActiveManipulatorIndex, 0), (int) cameraManipulators.size() - 1);
+
+        auto selected = cameraManipulators[mActiveManipulatorIndex];
+        ImGui::Text("Camera Manipulator");
+        if (ImGui::BeginCombo("##chhoseManipulator", cameraManipulators[mActiveManipulatorIndex]->getDisplayName().c_str())) {
+            for (int i = 0; i < cameraManipulators.size(); i++) {
+                bool is_selected = (selected->getDisplayName() == cameraManipulators[i]->getDisplayName()); // You can store your selection however you want, outside or inside your objects
+                if (ImGui::Selectable(cameraManipulators[i]->getDisplayName().c_str(), is_selected)) {
+                    selected = cameraManipulators[i];
+                    mActiveManipulatorIndex = i;
+                }
+                if (is_selected)
+                    ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
+
+            }
+
+            ImGui::EndCombo();
+        }
+        ImGui::Separator();
+        cameraManipulators[mActiveManipulatorIndex]->buildImgui(scenes[activeSceneIndex]->getActiveCamera());
     }
     endAndNewIndent();
 

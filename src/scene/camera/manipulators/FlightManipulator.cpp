@@ -1,9 +1,9 @@
 
-#include "CameraManipulator.h"
+#include "FlightManipulator.h"
 #include "glm/ext/matrix_transform.hpp"
 #include "imgui.h"
 
-bool CameraManipulator::updateCamera(Camera &camera, glm::vec2 extents) {
+bool FlightManipulator::updateCamera(Camera &camera, glm::vec2 extents, glm::vec2 mouseDiff) {
     bool control = ImGui::IsKeyDown(ImGuiKey_LeftCtrl);
     bool leftMouseDown = ImGui::IsKeyDown(ImGuiKey_MouseLeft);
 
@@ -13,7 +13,7 @@ bool CameraManipulator::updateCamera(Camera &camera, glm::vec2 extents) {
     glm::vec3 tangent = glm::cross(viewDir, up);
 
     ImGuiIO &io = ImGui::GetIO();
-    glm::vec2 diff = glm::vec2(io.MouseDelta.x, io.MouseDelta.y);
+    // glm::vec2 diff = glm::vec2(io.MouseDelta.x, io.MouseDelta.y);
 
     float posSpeed = 0.05;
 
@@ -21,10 +21,10 @@ bool CameraManipulator::updateCamera(Camera &camera, glm::vec2 extents) {
 
     bool updateRot = false;
 
-    if (control && leftMouseDown && diff != glm::vec2(0)) {
+    if (control && leftMouseDown && mouseDiff != glm::vec2(0)) {
         float fovY = camera.getIntrinsics().fovY;
         glm::vec2 fovs(fovY * camera.getIntrinsics().aspectRatio, fovY);
-        glm::vec2 angles = glm::vec2(1) * fovs * (diff / extents);
+        glm::vec2 angles = glm::vec2(1) * fovs * (mouseDiff / extents);
 
         rot = glm::rotate(rot, angles.x, up);
         rot = glm::rotate(rot, angles.y, tangent);
@@ -51,4 +51,8 @@ bool CameraManipulator::updateCamera(Camera &camera, glm::vec2 extents) {
     }
 
     return updateTranslate || updateRot;
+}
+
+void FlightManipulator::buildImgui(Camera &activeCamera) {
+
 }

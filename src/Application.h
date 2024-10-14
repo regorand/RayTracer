@@ -7,7 +7,7 @@
 #include "renderers/PostProcessor.h"
 #include "userInput/KeyStateManager.h"
 #include "renderers/Rasterizer.h"
-#include "userInput/CameraManipulator.h"
+#include "scene/camera/manipulators/FlightManipulator.h"
 #include "dataStructures/DataStore.h"
 #include "dataStructures/Events.h"
 #include "renderers/MCIntegrator.h"
@@ -39,7 +39,8 @@ private:
     std::shared_ptr<MCIntegrator> mcIntegrator;
     std::vector<ImGuiSidebarTab *> sideBarTabs;
 
-    CameraManipulator cameraManipulator;
+    std::vector<std::shared_ptr<CameraManipulator>> cameraManipulators;
+    int mActiveManipulatorIndex;
 
     bool accumulate = true;
     bool dirty = false;

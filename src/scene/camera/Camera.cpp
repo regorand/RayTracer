@@ -27,6 +27,7 @@ glm::vec3 &Camera::getViewDir() {
 
 void Camera::setViewDir(glm::vec3 viewDir) {
     mViewDir = viewDir;
+    calculateLocalUp();
 }
 
 void Camera::setLocation(glm::vec3 location) {
