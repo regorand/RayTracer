@@ -27,6 +27,8 @@ class MCIntegrator : public ImGuiSidebarTab {
     bool doRR = false;
     float alphaRR = 0.8;
 
+    bool useMicrofacets = false;
+
 public:
     MCIntegrator();
 

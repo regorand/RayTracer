@@ -11,7 +11,7 @@ flat in int fragMatIndex;
 
 layout (std430, binding = 3) buffer materialBuffer
 {
-    BufferMaterial matData[];
+    Material matData[];
 };
 
 out vec4 outColor;
@@ -28,7 +28,7 @@ void main() {
 
     vec4 color = vec4(1);
     if (fragMatIndex != -1) {
-        BufferMaterial mat = matData[fragMatIndex];
+        Material mat = matData[fragMatIndex];
         color = mat.albedo;
         color.a = 1;
     }

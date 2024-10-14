@@ -18,7 +18,7 @@ layout(std430, binding = MESH_BUFFER_BINDING) buffer meshList
 
 layout(std430, binding = MATERIAL_BUFFER_BINDING) buffer materialList
 {
-    BufferMaterial materials[];
+    Material materials[];
 };
 
 

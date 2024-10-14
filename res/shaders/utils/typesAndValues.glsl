@@ -5,14 +5,6 @@ struct Ray {
     vec3 direction;
 };
 
-struct Material {
-    vec3 color;
-    bool diffuse; // 1 - diffuse is specular term
-    bool emissive;
-    bool transmissive;
-    float IOR;
-};
-
 struct RayHit {
     float dist;
     vec3 position;

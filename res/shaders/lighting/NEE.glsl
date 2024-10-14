@@ -1,6 +1,7 @@
 #include "res/shaders/scenes/CPUScene.glsl"
 #include "res/shaders/utils/MeshTypes.glsl"
 #include "res/shaders/utils/samplingUtils.glsl"
+#include "res/shaders/material/BSDF.glsl"
 
 Mesh sampleNEEObject(inout uint seed, inout float pdf) {
     // TODO: this is naive implementation, do some kinf of precompute
@@ -21,7 +22,7 @@ Triangle sampleNEETriangle(Mesh mesh, inout uint seed, inout float pdf) {
     return triangles[triangleIndex];
 }
 
-void sampleLightsourceNEE(vec3 pos, vec3 N, vec3 inDir, BufferMaterial material, inout uint seed, out vec3 contrib, out float pdf) {
+void sampleLightsourceNEE(vec3 pos, vec3 N, vec3 inDir, Material material, inout uint seed, out vec3 contrib, out float pdf) {
     if (emissiveCount == 0) {
         contrib = vec3(0);
         pdf = 0;
@@ -50,12 +51,7 @@ void sampleLightsourceNEE(vec3 pos, vec3 N, vec3 inDir, BufferMaterial material,
         return;
     }
 
-    vec3 halfway = (dir - inDir) / vec3(2);
-    float thetaM = acos(dot(halfway, N));
-
-    vec3 brdf = material.albedo.xyz * ONE_OVER_PI;
-    // evaluateBRDF(inDir, N, halfway, thetaM, dir, material, brdf);
-
+    vec3 brdf = BSDF_Eval(inDir, dir, N, material, seed);
 
     if (length(brdf) < 1e-4) {
         // The material will have almost zero contribution for this light source
@@ -81,8 +77,8 @@ void sampleLightsourceNEE(vec3 pos, vec3 N, vec3 inDir, BufferMaterial material,
     float geometryTerm = lightDotTerm * surfaceDotTerm / (dist * dist);
 
     // TODO read from hit material
-    BufferMaterial mat = materials[triangle.materialIndex];
+    Material mat = materials[triangle.materialIndex];
     const vec3 lightIntensity = mat.emission.xyz;
 
-    contrib = brdf * lightIntensity * geometryTerm / pdf;
+    contrib = brdf * lightIntensity * geometryTerm / pdf; // * lightIntensity * geometryTerm / pdf;
 }

@@ -1,4 +1,4 @@
-struct BufferMaterial {
+struct Material {
     vec4 albedo;
     vec4 emission;
     float roughness;
@@ -7,6 +7,6 @@ struct BufferMaterial {
     float IOR;
 };
 
-bool isEmissive(BufferMaterial mat) {
+bool isEmissive(Material mat) {
     return mat.emission.x > 1e-2 || mat.emission.y > 1e-2 || mat.emission.z > 1e-2;
 }

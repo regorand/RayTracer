@@ -7,7 +7,7 @@
 typedef struct buf_material_s {
     glm::vec4 albedo {};
     glm::vec4 emission {};
-    float roughness {};
+    float roughness {1.0f};
     float metallic {};
     float transparency {};
     float IOR;

@@ -41,6 +41,7 @@ private:
 
     CameraManipulator cameraManipulator;
 
+    bool accumulate = true;
     bool dirty = false;
     bool wasResized = false;
 

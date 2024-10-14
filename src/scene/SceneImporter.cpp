@@ -102,8 +102,9 @@ void SceneImporter::parseMaterial(tinygltf::Material &source, Material &target) 
 
     bufferMat.emission = factor * glm::vec4(emissionColor, 1);
 
-    bufferMat.metallic = pbr.metallicFactor;
-    bufferMat.roughness = pbr.roughnessFactor;
+    bufferMat.metallic = 1.0f; // pbr.metallicFactor;
+    bufferMat.roughness = 0.1f; //pbr.roughnessFactor;
+    bufferMat.roughness *= bufferMat.roughness; //pbr.roughnessFactor;
     bufferMat.transparency = 0;
     bufferMat.IOR = 1;
     // TODO target.transparency: transparency from gltf extension ?

@@ -68,6 +68,7 @@ int Application::renderLoop() {
     }
 
     if (settings.getOrElse(SHOW_PATHTRACE_OUTPUT, false)) {
+        dirty |= !accumulate;
         if (dirty) {
             textureStore.at(RENDER_TARGET).clear();
             dirty = false;
@@ -253,6 +254,8 @@ void Application::buildImguiControlSideBar() {
     if (ImGui::Button("reset Texture")) {
         textureStore.at(RENDER_TARGET).clear();
     }
+
+    ImGui::Checkbox("Accumulate", &accumulate);
 
     sideBarTabs.push_back(mcIntegrator.get());
     // sideBarTabs.push_back(scene.get());

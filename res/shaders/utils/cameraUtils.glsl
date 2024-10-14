@@ -1,4 +1,5 @@
 #include "res/shaders/utils/RayTypes.glsl"
+#include "res/shaders/utils/rng.glsl"
 
 Ray samplePathStart(vec2 texelCoord, vec2 viewPortSize, inout uint seed) {
     vec2 halfSizes = vec2(viewPortSize / 2);
