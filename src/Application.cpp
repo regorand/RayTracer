@@ -8,7 +8,6 @@
 #include "renderers/Rasterizer.h"
 #include "dataStructures/SettingIndex.h"
 #include "gui/ImGuiSidebarTab.h"
-#include "scene/camera/CameraController.h"
 #include "glWrappers/TextureFactory.h"
 #include "glWrappers/FrameBufferObject.h"
 #include "dataStructures/TextureNames.h"
@@ -311,13 +310,16 @@ void Application::buildImguiControlSideBar() {
     }
     endAndNewIndent();
 
+    rasterizer->buildImguiTab(settings, events);
+    endAndNewIndent();
+
+    scenes[activeSceneIndex]->buildImguiTab(settings, events);
+    endAndNewIndent();
+
     postProcessor->buildImguiTab(settings, events);
     endAndNewIndent();
-
     br->buildImguiTab(settings, events);
-    endAndNewIndent();
 
-    rasterizer->buildImguiTab(settings, events);
 
     endIndent();
 
@@ -352,7 +354,7 @@ void Application::buildImguiMenu() {
     if (ImGui::BeginMainMenuBar()) {
         settings.store(SettingIndex::MENU_BAR_SIZE, ImVec2ToGlmVec2(ImGui::GetWindowSize()));
         if (ImGui::BeginMenu("File")) {
-            if (ImGui::MenuItem("TODO: Load Scene")) {
+            if (ImGui::MenuItem("Load Scene File")) {
                 settings.store(SHOW_FILE_PATH_DIALOG, true);
             }
             if (ImGui::MenuItem("TODO: Save Image"));
@@ -423,6 +425,7 @@ void Application::buildFileOpenDialog() {
 
     ImGui::InputText("##Scene Path", pathInputBuf, PATH_INPUT_BUF_SIZE);
     if (ImGui::Button("Load")) {
+        settings.store(FILE_PATH_SHOW_ERROR, false);
         std::string path_str(pathInputBuf);
         std::filesystem::path path(path_str);
         if (!exists(path)) {

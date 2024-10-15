@@ -13,17 +13,17 @@ class Rasterizer : public ImGuiSidebarTab {
 private:
     ShaderProgram mShader;
     ShaderProgram mGeometryPhaseShader;
+    ShaderProgram mCameraVisShader;
 
     std::shared_ptr<Scene> mScene = nullptr;
+
+    bool renderCamFrustums = false;
 public:
     Rasterizer();
 
     void render(int width, int height);
 
-    void saveToBuffers(Camera &pathTraceCamera);
-
-    void renderPaths();
-    void renderCameraFrustum(CameraVisBuffers &buffers);
+    void renderCameraFrustum(Camera &camera, bool isHovered);
 
     void setScene(std::shared_ptr<Scene> newScene);
     std::shared_ptr<Scene> getScene();

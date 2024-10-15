@@ -5,6 +5,7 @@
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/gtx/quaternion.hpp"
 #include "scene/buffers/import_scene_error.h"
+#include "scene/camera/Camera.h"
 #include <algorithm>
 
 /*
@@ -41,7 +42,7 @@ SceneImporter::SceneImporter(std::string path)
 
 }
 
-bool SceneImporter::import(CPUSceneBuffers &sceneBuffers) {
+bool SceneImporter::import(CPUSceneBuffers &sceneBuffers, std::vector<Camera> &cameraList) {
     tinygltf::Model model;
     bool result = loadModel(scenePath, model);
     if (!result) {
@@ -65,12 +66,25 @@ bool SceneImporter::import(CPUSceneBuffers &sceneBuffers) {
 
     emissives = &sceneBuffers.emissives;
 
+    cameras = &cameraList;
+
     for (auto &gltfMat: model.materials) {
         auto &mat = materials->emplace_back();
         parseMaterial(gltfMat, mat);
     }
     // default material appendend to the end so every other material index still matches
     addDefaultMaterial();
+
+    /* TODO: To import Cameras
+        1. Traverse node tree
+        2. Apply Transforms
+        3. Encounter some camera object at some point
+        4. Figure out how to apply Transform on position (probably on (0, 0, 0))
+        5. Figure out how to apply Transform on orientation (prob build matrix out of quats and apply to default view dir: maybe (0, 0, -1) ?)
+        6. Give Camera Vector from scene class, write cameras into it
+        7. Display list of them in gui for given scene
+        8. Toggle: Render them in raster view
+     */
 
     auto unityMat = glm::mat4(1);
     for (auto &node: model.scenes[model.defaultScene].nodes) {
@@ -104,7 +118,6 @@ void SceneImporter::parseMaterial(tinygltf::Material &source, Material &target) 
 
     bufferMat.metallic = 1.0f; // pbr.metallicFactor;
     bufferMat.roughness = 0.1f; //pbr.roughnessFactor;
-    bufferMat.roughness *= bufferMat.roughness; //pbr.roughnessFactor;
     bufferMat.transparency = 0;
     bufferMat.IOR = 1;
     // TODO target.transparency: transparency from gltf extension ?
@@ -119,8 +132,7 @@ bool SceneImporter::parseNode(tinygltf::Model &model, int nodeId, const glm::mat
     if (node.mesh != -1) {
         return parseMesh(model, node.mesh, prevTransform * transform);
     } else if (node.camera != -1) {
-        // TODO can handle camera here
-        return true;
+        return parseCamera(model, node.camera, prevTransform * transform);
     } else {
         if (node.children.empty()) return true;
 
@@ -133,6 +145,18 @@ bool SceneImporter::parseNode(tinygltf::Model &model, int nodeId, const glm::mat
 
 }
 
+bool SceneImporter::parseCamera(tinygltf::Model &model, int cameraId, const glm::mat4 &transform) {
+    if (model.cameras.size() <= cameraId) return false;
+    tinygltf::Camera &camera = model.cameras[cameraId];
+
+    glm::vec3 camPos = transform * glm::vec4(0, 0, 0, 1);
+    glm::vec3 viewDir = transform * glm::vec4(0, 0, -1, 0);
+
+    cameras->emplace_back(camera.name, camPos, viewDir);
+    (* cameras)[cameras->size() - 1].buildCameraVisBuffers();
+    return true;
+}
+
 void SceneImporter::buildTransform(tinygltf::Node &node, glm::mat4 &target) {
     glm::mat4 transform(1.0f);
 
@@ -143,12 +167,7 @@ void SceneImporter::buildTransform(tinygltf::Node &node, glm::mat4 &target) {
     }
 
     if (node.rotation.size() == 4) {
-        float data[4];
-        for (int i = 0; i < 4; i++) {
-            // shift by one because tinygltf gives quats as xyzw but internally glm uses wxyz
-            data[(i + 1) % 4] = static_cast<float>(node.rotation[i]);
-        }
-        transform *= glm::mat4_cast(glm::make_quat(data));
+        transform *= makeRotationFromGltfQuat(node.rotation);
     }
 
     if (node.scale.size() == 3) {
@@ -350,4 +369,14 @@ void SceneImporter::addDefaultMaterial() {
     auto &bufferMat = mat.bufferMaterial;
     bufferMat.albedo = glm::vec4(0.8, 0.8, 0.8, 1);
     bufferMat.roughness = 0.8f;
+}
+
+glm::mat4 SceneImporter::makeRotationFromGltfQuat(const std::vector<double> &rotation) {
+    float data[4];
+    for (int i = 0; i < 4; i++) {
+        // shift by one because tinygltf gives quats as xyzw but internally glm uses wxyz
+        data[(i + 1) % 4] = static_cast<float>(rotation[i]);
+    }
+    return glm::mat4_cast(glm::make_quat(data));
+
 }

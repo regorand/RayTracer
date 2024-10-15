@@ -5,6 +5,7 @@
 #include "SceneBuffers.h"
 #include "Material.h"
 #include "tiny_gltf.h"
+#include "scene/camera/Camera.h"
 
 constexpr int FLOAT_SIZE  = 4;
 
@@ -30,18 +31,21 @@ private:
     std::vector<Material> *materials;
     std::vector<Triangle> *triangles;
 
+    std::vector<Camera> *cameras;
 
 public:
     SceneImporter(std::string path);
 
-    bool import(CPUSceneBuffers &sceneBuffers);
+    bool import(CPUSceneBuffers &sceneBuffers, std::vector<Camera> &cameraList);
 
 private:
     bool parseNode(tinygltf::Model &model, int nodeId, const glm::mat4 &prevTransform);
     bool parseMesh(tinygltf::Model &model, int meshId, const glm::mat4 &transform);
+    bool parseCamera(tinygltf::Model &model, int cameraId, const glm::mat4 &transform);
+
 
     static void buildTransform(tinygltf::Node &node, glm::mat4 &target);
-
+    static glm::mat4 makeRotationFromGltfQuat(const std::vector<double> &rotation);
 
     void parseMaterial(tinygltf::Material &source, Material &target);
 

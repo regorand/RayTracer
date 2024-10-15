@@ -8,24 +8,27 @@
 #include "SceneImporter.h"
 #include "scene/camera/Camera.h"
 
-void Scene::addCamera(Camera camera) {
-    cameraController.addCamera(camera);
-}
-
 bool Scene::loadFile(std::string path) {
     mPath = path;
     SceneImporter importer(path);
-    importer.import(cpuBuffers);
+    importer.import(cpuBuffers, staticCameras);
 
     buildRasterBuffers();
-
     buildGPUBuffers();
+
+    if (!staticCameras.empty()) {
+        freeCamera.copyValues(staticCameras[0]);
+    }
 
     return true;
 }
 
 Camera &Scene::getActiveCamera() {
-    return cameraController.getCameraByIndex(activeCameraIndex);
+    return freeCamera;
+}
+
+std::vector<Camera> &Scene::getStaticCameras() {
+    return staticCameras;
 }
 
 void Scene::buildMaterialBuffer() {
@@ -43,13 +46,25 @@ Scene::~Scene() {
 }
 
 void Scene::buildImguiTab(DataStore &settings, std::vector<Event> &events) {
-    if (ImGui::CollapsingHeader("Scene")) {
+    if (ImGui::CollapsingHeader("Active Scene")) {
 
         ImVec2 windowSize = ImGui::GetWindowSize();
         ImVec2 buttonSize = ImVec2(windowSize.x * 0.9, 25);
 
         startIndent();
-        ImGui::Text("Scene Stuff");
+        hoveredCameraIndex = -1;
+        if (ImGui::CollapsingHeader("Cameras##Scene")) {
+            for (int i = 0; i < staticCameras.size(); i++) {
+                Camera &camera = staticCameras[i];
+                if (ImGui::Button(camera.getName().c_str(), buttonSize)) {
+                    // freeCamera = camera;
+                    freeCamera.copyValues(camera);
+                }
+                if (ImGui::IsItemHovered()) {
+                    hoveredCameraIndex = i;
+                }
+            }
+        }
         endIndent();
     }
 
@@ -146,4 +161,8 @@ std::string Scene::getName() {
     while (std::getline(ss, segment, '/'));
 
     return segment;
+}
+
+int Scene::getHoveredCameraIndex() {
+    return hoveredCameraIndex;
 }

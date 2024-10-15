@@ -2,8 +2,19 @@
 #include "Camera.h"
 #include "glm/gtc/matrix_transform.hpp"
 
-Camera::Camera(glm::vec3 position, glm::vec3 viewDir, glm::vec3 up) :
-        mName("name"), mPosition(position), mViewDir(glm::normalize(viewDir)), mCameraSpaceUp(up) {
+Camera::Camera()
+    : mName("Camera"), mPosition(0, 0, 3), mViewDir(0, 0, -1), mCameraSpaceUp(UP_ALIGNMENT)
+{
+    mIntrinsics.aspectRatio = 16.0f / 9.0f;
+    mIntrinsics.fovY = glm::pi<float>() / 3;
+
+    mIntrinsics.zNear = 0.1f;
+    mIntrinsics.zFar = 1000.0f;
+    calculateLocalUp();
+}
+
+Camera::Camera(const std::string &name, glm::vec3 position, glm::vec3 viewDir, glm::vec3 up) :
+        mName(name), mPosition(position), mViewDir(glm::normalize(viewDir)), mCameraSpaceUp(up) {
 
     mIntrinsics.aspectRatio = 16.0f / 9.0f;
     mIntrinsics.fovY = glm::pi<float>() / 3;
@@ -38,7 +49,7 @@ glm::vec3 &Camera::getLocation() {
     return mPosition;
 }
 
-void Camera::buildCameraVisBuffers(CameraVisBuffers &buffers) {
+void Camera::buildCameraVisBuffers() {
     std::vector<glm::vec3> vertices;
     std::vector<unsigned int> indices;
 
@@ -65,13 +76,14 @@ void Camera::buildCameraVisBuffers(CameraVisBuffers &buffers) {
     indices.push_back(4);
     indices.push_back(1);
 
-    buffers.vertexArray.bind();
+    visBuffers.vertexArray.bind();
 
-    buffers.arrayBuffer = ArrayBuffer(vertices.data(), sizeof(glm::vec3) * vertices.size(), false);
+    visBuffers.arrayBuffer = ArrayBuffer(vertices.data(), sizeof(glm::vec3) * vertices.size(), false);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr); // pos
     glEnableVertexAttribArray(0);
 
-    buffers.indexBuffer = IndexBuffer(indices.data(), indices.size());
+    visBuffers.indexBuffer = IndexBuffer(indices.data(), indices.size());
+    hasBuffers = true;
 }
 
 glm::mat4 Camera::getProjection() {
@@ -124,6 +136,18 @@ void Camera::setIntrinsics(const Intrinsics intrinsics) {
     mIntrinsics = intrinsics;
 }
 
-Camera Camera::getDefaultCamera() {
-    return {glm::vec3(0, 0, 3), glm::vec3(0, 0, -1)};
+bool Camera::hasCameraVisBuffers() {
+    return hasBuffers;
+}
+
+CameraVisBuffers &Camera::getCameraVisBuffers() {
+    return visBuffers;
+}
+
+void Camera::copyValues(Camera &other) {
+    this->mPosition = other.mPosition;
+    this->mViewDir = other.mViewDir;
+    this->mIntrinsics = other.mIntrinsics;
+
+    calculateLocalUp();
 }

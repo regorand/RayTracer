@@ -66,8 +66,6 @@ Sample GGXSample(vec3 w_o, vec3 N, Material mat, inout uint seed) {
 
     vec3 w_i = reflect(-w_o, m);
 
-    float D = GGX_NDF(m, mat.roughness, mat.roughness);
-
     float G1_o = Smith_Shadowing(w_o, mat.roughness, mat.roughness);
     float G1_i = Smith_Shadowing(w_i, mat.roughness, mat.roughness);
     float G2 = G1_o * G1_i;
@@ -75,15 +73,17 @@ Sample GGXSample(vec3 w_o, vec3 N, Material mat, inout uint seed) {
     vec3 F0 = mat.albedo.xyz; //mix(vec3(0.04f), mat.albedo.xyz, mat.metallic);
     vec3 F = schlickFresnel(w_i, w_o, F0);
 
-    float denom = 4.0f * w_i.z * w_o.z;
+    // Don't need to eval. everything here
+    // Using this with importance sampling in a MC estimator we can directly divide out the pdf from the contribution
+    // Yielding a simpler expression
+    // float D = GGX_NDF(m, mat.roughness, mat.roughness);
+    // smpl.brdf = F * D * G2 / denom;
+    // float dot_m_w_o = dot(m, w_o);
+    // smpl.pdf = (G1_o * max(dot_m_w_o, 0.0f) * D / w_o.z) / (4 * dot_m_w_o);
 
     smpl.newDir = w_i;
-    // smpl.brdf = F * D * G2 / denom;
     smpl.brdf = F * G2 / G1_o;
-
-    float dot_m_w_o = dot(m, w_o);
-    // smpl.pdf = (G1_o * max(dot_m_w_o, 0.0f) * D / w_o.z) / (4 * dot_m_w_o);
-    smpl.pdf = 1.0f; //(G1_o * max(dot_m_w_o, 0.0f) * D / w_o.z) / (4 * dot_m_w_o);
+    smpl.pdf = 1.0f;
     return smpl;
 }
 

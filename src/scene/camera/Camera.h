@@ -37,10 +37,12 @@ private:
 
     Intrinsics mIntrinsics;
 
-public:
-    Camera(glm::vec3 position, glm::vec3 viewDir, glm::vec3 up = glm::vec3(0, 1, 0));
+    CameraVisBuffers visBuffers;
+    bool hasBuffers = false;
 
-    static Camera getDefaultCamera();
+public:
+    Camera();
+    Camera(const std::string &name, glm::vec3 position, glm::vec3 viewDir, glm::vec3 up = glm::vec3(0, 1, 0));
 
     glm::mat4 getTransformation();
     glm::mat4 getProjection();
@@ -68,7 +70,11 @@ public:
 
     [[nodiscard]] Intrinsics getIntrinsics() {return mIntrinsics; };
 
-    void buildCameraVisBuffers(CameraVisBuffers &buffers);
+    void copyValues(Camera &other);
+
+    void buildCameraVisBuffers();
+    bool hasCameraVisBuffers();
+    CameraVisBuffers &getCameraVisBuffers();
 
 private:
     void calculateLocalUp();
