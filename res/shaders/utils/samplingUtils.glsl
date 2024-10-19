@@ -69,7 +69,7 @@ vec3 getNewDirection(inout uint seed, vec3 normal) {
     return normalize(rot * tangentSpaceDir);
 }
 
-vec3 sampleTrianglePos(Triangle triangle, uint seed, inout float pdf) {
+vec3 sampleTrianglePos(Triangle triangle, mat4 transform, uint seed, inout float pdf) {
     float xi1 = randUniform_0_1(seed);
     float xi2 = randUniform_0_1(seed);
 
@@ -78,9 +78,12 @@ vec3 sampleTrianglePos(Triangle triangle, uint seed, inout float pdf) {
         xi2 = 1 - xi2;
     }
 
-    vec3 edge1 = triangle.V1.pos.xyz - triangle.V0.pos.xyz;
-    vec3 edge2 = triangle.V2.pos.xyz - triangle.V0.pos.xyz;
+    vec3 pos0 = (transform * vec4(triangle.V0.pos.xyz, 1)).xyz;
+    vec3 pos1 = (transform * vec4(triangle.V1.pos.xyz, 1)).xyz;
+    vec3 pos2 = (transform * vec4(triangle.V2.pos.xyz, 1)).xyz;
 
+    vec3 edge1 = pos1 - pos0;
+    vec3 edge2 = pos2 - pos0;
     float area = 0.5f * abs(length(cross(edge1, edge2)));
 
     if (area > 0) {
@@ -88,5 +91,5 @@ vec3 sampleTrianglePos(Triangle triangle, uint seed, inout float pdf) {
     }
 
 
-    return triangle.V0.pos.xyz + xi1 * edge1 + xi2 * edge2;
+    return pos0 + xi1 * edge1 + xi2 * edge2;
 }

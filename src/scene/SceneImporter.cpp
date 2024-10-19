@@ -75,17 +75,6 @@ bool SceneImporter::import(CPUSceneBuffers &sceneBuffers, std::vector<Camera> &c
     // default material appendend to the end so every other material index still matches
     addDefaultMaterial();
 
-    /* TODO: To import Cameras
-        1. Traverse node tree
-        2. Apply Transforms
-        3. Encounter some camera object at some point
-        4. Figure out how to apply Transform on position (probably on (0, 0, 0))
-        5. Figure out how to apply Transform on orientation (prob build matrix out of quats and apply to default view dir: maybe (0, 0, -1) ?)
-        6. Give Camera Vector from scene class, write cameras into it
-        7. Display list of them in gui for given scene
-        8. Toggle: Render them in raster view
-     */
-
     auto unityMat = glm::mat4(1);
     for (auto &node: model.scenes[model.defaultScene].nodes) {
         parseNode(model, node, unityMat);
@@ -98,7 +87,12 @@ void SceneImporter::parseMaterial(tinygltf::Material &source, Material &target) 
     target.name = source.name;
     BufferMaterial &bufferMat = target.bufferMaterial;
     auto &pbr = source.pbrMetallicRoughness;
+
     bufferMat.albedo = glm::make_vec4<double>(pbr.baseColorFactor.data());
+    bufferMat.metallic = pbr.metallicFactor;
+    bufferMat.roughness = pbr.roughnessFactor;
+    bufferMat.transparency = 0;
+    bufferMat.IOR = 1.5f;
 
     glm::vec3 emissionColor = glm::make_vec3<double>(source.emissiveFactor.data());
 
@@ -112,14 +106,28 @@ void SceneImporter::parseMaterial(tinygltf::Material &source, Material &target) 
                 }
             }
         }
+
+        if (key_val.first == "KHR_materials_transmission") {
+            if (key_val.second.IsObject()) {
+                auto val = key_val.second.Get("transmissionFactor");
+                if (val.IsNumber()) {
+                    bufferMat.transparency = val.GetNumberAsDouble();
+                }
+            }
+        }
+
+        if (key_val.first == "KHR_materials_ior") {
+            if (key_val.second.IsObject()) {
+                auto val = key_val.second.Get("ior");
+                if (val.IsNumber()) {
+                    bufferMat.IOR = val.GetNumberAsDouble();
+                }
+            }
+        }
     }
 
     bufferMat.emission = factor * glm::vec4(emissionColor, 1);
 
-    bufferMat.metallic = 1.0f; // pbr.metallicFactor;
-    bufferMat.roughness = 0.1f; //pbr.roughnessFactor;
-    bufferMat.transparency = 0;
-    bufferMat.IOR = 1;
     // TODO target.transparency: transparency from gltf extension ?
 }
 
@@ -152,8 +160,19 @@ bool SceneImporter::parseCamera(tinygltf::Model &model, int cameraId, const glm:
     glm::vec3 camPos = transform * glm::vec4(0, 0, 0, 1);
     glm::vec3 viewDir = transform * glm::vec4(0, 0, -1, 0);
 
-    cameras->emplace_back(camera.name, camPos, viewDir);
-    (* cameras)[cameras->size() - 1].buildCameraVisBuffers();
+    Camera &cam = cameras->emplace_back(camera.name, camPos, viewDir);
+   if (camera.type == "perspective") {
+       Intrinsics intrinsics;
+       intrinsics.fovY = camera.perspective.yfov;
+       intrinsics.aspectRatio = camera.perspective.aspectRatio;
+       intrinsics.zNear = camera.perspective.znear;
+       intrinsics.zFar = camera.perspective.zfar;
+
+        cam.setIntrinsics(intrinsics);
+   }
+
+
+    cam.buildCameraVisBuffers();
     return true;
 }
 

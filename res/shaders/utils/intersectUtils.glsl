@@ -30,8 +30,8 @@ bool intersectTriangle(Ray ray, Triangle triangle, out RayHit rayhit) {
         rayhit.matID = triangle.materialIndex;
         rayhit.position = ray.origin + ray.direction * rayhit.dist;
         rayhit.normal = normalize(cross(edge1, edge2)); // TODO replace with interpolated normal for smooth shading ?
+        rayhit.hitBackface = dot(rayhit.normal, (ray.origin - triangle.V0.pos.xyz)) < 0;
         rayhit.normal *= sign(dot(rayhit.normal, (ray.origin - triangle.V0.pos.xyz)));
-        // rayhit.hitBackface = dot(rayhit.normal, (ray.origin - triangle.V0.pos.xyz)) < 0;
 
         return true;
     }

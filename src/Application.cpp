@@ -44,6 +44,8 @@ int Application::init() {
     setupAppTools();
 
     loadScene("res/models/cornell_box_boxes.gltf");
+    loadScene("res/models/cornell_box_glass_pane.gltf", false);
+    loadScene("res/models/glass_test.gltf", false);
     return 0;
 }
 

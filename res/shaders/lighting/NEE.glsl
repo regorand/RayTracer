@@ -36,8 +36,7 @@ void sampleLightsourceNEE(vec3 pos, vec3 N, vec3 inDir, Material material, inout
 
     Triangle triangle = sampleNEETriangle(object, seed, pdf);
 
-    vec3 sampledPosObjectSpace = sampleTrianglePos(triangle, seed, pdf);
-    vec3 sampledPos = (transform * vec4(sampledPosObjectSpace, 1)).xyz;
+    vec3 sampledPos = sampleTrianglePos(triangle, transform, seed, pdf);
 
     vec3 dir = sampledPos - pos;
     float dist = length(dir) + EPS_4;
@@ -68,17 +67,16 @@ void sampleLightsourceNEE(vec3 pos, vec3 N, vec3 inDir, Material material, inout
         return;
     }
 
-    vec3 triNormal = (normalTransform * vec4(triangleNormal(triangle), 0)).xyz;
+    vec3 triNormal = normalize((normalTransform * vec4(triangleNormal(triangle), 0)).xyz);
     triNormal *= sign(dot(triNormal, -dir));
 
     const float lightDotTerm = max(0.0f, dot(-dir, triNormal));
     const float surfaceDotTerm = max(0.0f, dot(dir, N));
 
-    float geometryTerm = lightDotTerm * surfaceDotTerm / (dist * dist);
-
     // TODO read from hit material
     Material mat = materials[triangle.materialIndex];
     const vec3 lightIntensity = mat.emission.xyz;
 
-    contrib = brdf * lightIntensity * geometryTerm / pdf; // * lightIntensity * geometryTerm / pdf;
+    // contrib = brdf * lightIntensity * lightDotTerm * surfaceDotTerm / (pdf * dist * dist);
+    contrib = brdf * lightIntensity * lightDotTerm * surfaceDotTerm / (pdf * dist * dist);
 }

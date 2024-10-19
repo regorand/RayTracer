@@ -1,5 +1,6 @@
 #include "res/shaders/utils/Constants.glsl"
 #include "res/shaders/utils/rng.glsl"
+#include "res/shaders/material/materialUtils.glsl"
 
 float GGX_NDF(vec3 m, float a_x, float a_y) {
     float d1 = m.x / a_x;
@@ -13,13 +14,6 @@ float Smith_Shadowing(vec3 V, float a_x, float a_y) {
     float discr = 1 + (a_x * a_x * V.x * V.x + a_y * a_y * V.y * V.y) / (V.z * V.z);
     float lambda = (-1 + sqrt(discr)) / 2;
     return 1 / (1 + lambda);
-}
-
-vec3 schlickFresnel(vec3 i, vec3 o, vec3 F0) {
-    vec3 m = normalize((i + o) / 2);
-    float cos_theta = max(dot(i, m), 0.0f);
-
-    return F0 + (1 - F0) * pow(1 - cos_theta, 5.0f);
 }
 
 /*
@@ -54,7 +48,7 @@ vec3 sampleGGXVNDF(vec3 Ve, float a_x, float a_y, inout uint seed) {
     return Ne;
 }
 
-Sample GGXSample(vec3 w_o, vec3 N, Material mat, inout uint seed) {
+Sample GGXSample(vec3 w_o, Material mat, inout uint seed) {
     Sample smpl;
     if (w_o.z <= 0.0f) {
         smpl.brdf = vec3(0);
@@ -71,7 +65,7 @@ Sample GGXSample(vec3 w_o, vec3 N, Material mat, inout uint seed) {
     float G2 = G1_o * G1_i;
 
     vec3 F0 = mat.albedo.xyz; //mix(vec3(0.04f), mat.albedo.xyz, mat.metallic);
-    vec3 F = schlickFresnel(w_i, w_o, F0);
+    vec3 F = schlickFresnel(w_i, m, F0);
 
     // Don't need to eval. everything here
     // Using this with importance sampling in a MC estimator we can directly divide out the pdf from the contribution
@@ -87,12 +81,12 @@ Sample GGXSample(vec3 w_o, vec3 N, Material mat, inout uint seed) {
     return smpl;
 }
 
-vec3 GGXEval(vec3 w_o, vec3 w_i, vec3 N, Material mat, inout uint seed) {
+vec3 GGXEval(vec3 w_o, vec3 w_i, Material mat, inout uint seed) {
     if (w_i.z <= 0.0f || w_o.z <= 0) {
         return vec3(0.0f);
     }
 
-    vec3 m = normalize((w_i + w_o) / 2);
+    vec3 m = normalize(w_i + w_o);
     float D = GGX_NDF(m, mat.roughness, mat.roughness);
 
     float G1_o = Smith_Shadowing(w_o, mat.roughness, mat.roughness);
@@ -100,18 +94,18 @@ vec3 GGXEval(vec3 w_o, vec3 w_i, vec3 N, Material mat, inout uint seed) {
     float G2 = G1_o * G1_i;
 
     vec3 F0 = mat.albedo.xyz; //mix(vec3(0.04f), mat.albedo.xyz, mat.metallic);
-    vec3 F = schlickFresnel(w_i, w_o, F0);
+    vec3 F = schlickFresnel(w_i, m, F0);
 
     float denom = 4.0f * w_i.z * w_o.z;
 
     return F * D * G2 / denom;
 }
 
-float GGXPDF(vec3 w_o, vec3 w_i, vec3 N, Material mat, inout uint seed) {
+float GGXPDF(vec3 w_o, vec3 w_i, Material mat, inout uint seed) {
     if (w_i.z <= 0.0f || w_o.z <= 0.0f) {
         return 1.0f; // Don't return 0.0f here to prevent Nans and infinities
     }
-    vec3 m = normalize((w_i + w_o) / 2);
+    vec3 m = normalize(w_i + w_o);
     float D = GGX_NDF(m, mat.roughness, mat.roughness);
 
     float G1_o = Smith_Shadowing(w_o, mat.roughness, mat.roughness);

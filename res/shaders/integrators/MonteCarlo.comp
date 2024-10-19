@@ -76,9 +76,9 @@ void main() {
         vec3 N = rayHit.normal;
 
         vec3 newPos;
-        Sample smpl = BSDF_Sample(ray.direction, N, mat, instanceSeed);
+        Sample smpl = BSDF_Sample(ray.direction, N, mat, rayHit.hitBackface, instanceSeed);
 
-        newPos = rayHit.position + EPS_3 * smpl.newDir;
+        newPos = rayHit.position + EPS_5 * smpl.newDir;
 
         vec3 contribNEE = vec3(0);
         float pdfNEE = 0.0f;
@@ -88,7 +88,6 @@ void main() {
 
         // MIS Balance Heuristic
         neeWeight = doNee ? pdfNEE : 0.0f;
-        // prevBrdfMISWeight = doBrdf || neeWeight < EPS_4 ? pdf : 0.0f;
         prevBrdfMISWeight = doBrdf ? smpl.pdf : 0.0f;
 
         float weightSum = neeWeight + prevBrdfMISWeight;
@@ -99,17 +98,18 @@ void main() {
         }
 
         L += brdfContrib + Lw * neeWeight * contribNEE;
-        // L = contribNEE;
+        // L += contribNEE / 10;
+        // L = contribNEE; //  / 4.5;
         // L = vec3(smpl.pdf.xxx);
-        // L = smpl.brdf;
+        // L = smpl.brdf / 10;
         // break;
 
         // create new ray
         ray.direction = smpl.newDir;
         ray.origin = newPos;
 
-        float newDirLambert = max(0.0f, dot(N, ray.direction));
-        Lw *= newDirLambert * smpl.brdf / (smpl.pdf);
+        float newDirLambert = dot(N, ray.direction);
+        Lw *= newDirLambert * smpl.brdf / smpl.pdf;
 
         if (doRR) {
             doNext = randUniform_0_1(instanceSeed) < alphaRR;
