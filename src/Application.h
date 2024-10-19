@@ -43,6 +43,7 @@ private:
     int mActiveManipulatorIndex;
 
     bool accumulate = true;
+    bool render = true;
     bool dirty = false;
     bool wasResized = false;
 

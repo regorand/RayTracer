@@ -74,7 +74,7 @@ int Application::renderLoop() {
             dirty = false;
         }
 
-        mcIntegrator->renderSample();
+        if (render) mcIntegrator->renderSample();
 
         // Idle waiting not ideal, but with current implementation need to wait for Integrator to finish
         // so single sample image is visible while moving the camera
@@ -260,6 +260,7 @@ void Application::buildImguiControlSideBar() {
     }
 
     ImGui::Checkbox("Accumulate", &accumulate);
+    ImGui::Checkbox("render", &render);
 
     sideBarTabs.push_back(mcIntegrator.get());
     // sideBarTabs.push_back(scene.get());
