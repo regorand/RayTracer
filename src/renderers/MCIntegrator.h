@@ -21,13 +21,11 @@ class MCIntegrator : public ImGuiSidebarTab {
     RandomEngine dist;
 
     bool doBrdf = true;
-    bool doNee = false;
+    bool doNee = true;
 
     int maxBounces = 4;
     bool doRR = false;
     float alphaRR = 0.8;
-
-    bool useMicrofacets = false;
 
 public:
     MCIntegrator();

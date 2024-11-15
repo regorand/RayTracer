@@ -91,10 +91,12 @@ void SceneImporter::parseMaterial(tinygltf::Material &source, Material &target) 
     bufferMat.albedo = glm::make_vec4<double>(pbr.baseColorFactor.data());
     bufferMat.metallic = pbr.metallicFactor;
     bufferMat.roughness = pbr.roughnessFactor;
-    bufferMat.transparency = 0;
+    bufferMat.roughness *= bufferMat.roughness;
     bufferMat.IOR = 1.5f;
 
     glm::vec3 emissionColor = glm::make_vec3<double>(source.emissiveFactor.data());
+    bufferMat.transparency = 0;
+    bufferMat.specular = glm::vec3(1);
 
     float factor = 1;
     for (auto &key_val: source.extensions) {
@@ -124,11 +126,20 @@ void SceneImporter::parseMaterial(tinygltf::Material &source, Material &target) 
                 }
             }
         }
+
+        if (key_val.first == "KHR_materials_specular") {
+            if (key_val.second.IsObject()) {
+                auto val = key_val.second.Get("specularColorFactor");
+                if (val.IsArray()) {
+                    bufferMat.specular = glm::vec3(val.Get(0).GetNumberAsDouble(),
+                                                          val.Get(1).GetNumberAsDouble(),
+                                                          val.Get(2).GetNumberAsDouble());
+                }
+            }
+        }
     }
 
     bufferMat.emission = factor * glm::vec4(emissionColor, 1);
-
-    // TODO target.transparency: transparency from gltf extension ?
 }
 
 bool SceneImporter::parseNode(tinygltf::Model &model, int nodeId, const glm::mat4 &prevTransform) {
@@ -388,6 +399,10 @@ void SceneImporter::addDefaultMaterial() {
     auto &bufferMat = mat.bufferMaterial;
     bufferMat.albedo = glm::vec4(0.8, 0.8, 0.8, 1);
     bufferMat.roughness = 0.8f;
+    bufferMat.metallic = 0.0f;
+    bufferMat.IOR = 1.5;
+    bufferMat.transparency = 0.0f;
+    bufferMat.emission = glm::vec4(0);
 }
 
 glm::mat4 SceneImporter::makeRotationFromGltfQuat(const std::vector<double> &rotation) {

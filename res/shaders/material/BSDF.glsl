@@ -9,6 +9,8 @@ struct Sample {
 #include "res/shaders/material/LambertDiffuse.glsl"
 #include "res/shaders/material/GGX.glsl"
 #include "res/shaders/material/PerfectTransmissive.glsl"
+#include "res/shaders/material/materialUtils.glsl"
+#include "res/shaders/material/CoatedDiffuse.glsl"
 
 /*
 TODO "Principled" BSDF
@@ -47,8 +49,9 @@ For now: no Interpolation between material types, I don't know how I would impor
 
 
 mat3 getArbitraryTangentSpace(vec3 N) {
-    vec3 tangent = vec3(N.y, N.z, -N.x);
+    vec3 tangent = cross(N, vec3(N.y, N.z, -N.x));
     vec3 cotangent = cross(N, tangent);
+    mat3 tangentFrame = mat3(tangent, cotangent, N);
 
     // transform sampled micronormal into world space
     return mat3(tangent, cotangent, N);
@@ -56,9 +59,10 @@ mat3 getArbitraryTangentSpace(vec3 N) {
 
 Sample BSDF_Sample(vec3 w_o, vec3 N, Material mat, bool exiting, inout uint seed) {
     mat3 tangentFrame = getArbitraryTangentSpace(N);
-    mat3 invFrame = transpose(tangentFrame);
 
-    vec3 wt_o = -(invFrame * w_o);
+    mat3 invFrame = inverse(tangentFrame);
+
+    vec3 wt_o = invFrame * -w_o;
 
     Sample smpl;
 
@@ -68,11 +72,12 @@ Sample BSDF_Sample(vec3 w_o, vec3 N, Material mat, bool exiting, inout uint seed
     }
     rand = randUniform_0_1(seed);
     if (rand <= mat.metallic) {
-        smpl = GGXSample(wt_o, mat, seed);
+        vec3 F = schlickFresnel(wt_o, vec3(0, 0, 1), mat.albedo.xyz);
+        smpl = GGXSample(wt_o, mat, F, seed);
         smpl.newDir = tangentFrame * smpl.newDir;
         return smpl;
     }
-    smpl = GGXSample(wt_o, mat, seed);
+    smpl = CoatedDiffuseSample(wt_o, mat, seed);
 
     smpl.newDir = tangentFrame * smpl.newDir;
     return smpl;
@@ -80,13 +85,13 @@ Sample BSDF_Sample(vec3 w_o, vec3 N, Material mat, bool exiting, inout uint seed
 
 vec3 BSDF_Eval(vec3 w_o, vec3 w_i, vec3 N, Material mat, inout uint seed) {
     mat3 tangentFrame = getArbitraryTangentSpace(N);
-    mat3 invFrame = transpose(tangentFrame);
+    mat3 invFrame = inverse(tangentFrame);
 
     // in and out dir in
     vec3 wt_o = invFrame * -w_o;
     vec3 wt_i = invFrame *  w_i;
 
-    /*
+
     float rand = randUniform_0_1(seed);
     if (rand <= mat.transparency) {
         return PerfectTransmissive_Eval(w_o, w_i, mat, seed);
@@ -94,11 +99,12 @@ vec3 BSDF_Eval(vec3 w_o, vec3 w_i, vec3 N, Material mat, inout uint seed) {
     rand = randUniform_0_1(seed);
 
     if (rand <= mat.metallic) {
-        return GGXEval(wt_o, wt_i, mat, seed);
+        vec3 F = schlickFresnel(wt_o, vec3(0, 0, 1), mat.albedo.xyz);
+        return GGXEval(wt_o, wt_i, mat, F, seed);
     }
-    */
 
-    return LambertDiffuseEval(wt_o, wt_i, mat, seed);
+    return CoatedDiffuseEval(wt_o, wt_i, mat, seed);
+    // return LambertDiffuseEval(wt_o, wt_i, mat, seed);
 }
 
 /*
@@ -124,7 +130,8 @@ float BSDF_PDF(vec3 w_o, vec3 w_i, vec3 N, Material mat, inout uint seed) {
         return GGXPDF(wt_o, wt_i, mat, seed);
     }
 
-    return LambertDiffusePDF(wt_o, wt_i, mat, seed);
+    return CoatedDiffusePDF(wt_o, wt_i, mat, seed);
+    // return LambertDiffusePDF(wt_o, wt_i, mat, seed);
 }
 
 /*

@@ -24,8 +24,6 @@ uniform int maxBounces;
 uniform bool doRR;
 uniform float alphaRR;
 
-uniform bool useMicrofacets;
-
 #include "res/shaders/scenes/CPUScene.glsl"
 #include "res/shaders/utils/rayTraceUtils.glsl"
 #include "res/shaders/utils/MeshTypes.glsl"
@@ -86,9 +84,10 @@ void main() {
             sampleLightsourceNEE(newPos, N, ray.direction, mat, instanceSeed, contribNEE, pdfNEE);
         }
 
+        float beta = 3;
         // MIS Balance Heuristic
-        neeWeight = doNee ? pdfNEE : 0.0f;
-        prevBrdfMISWeight = doBrdf ? smpl.pdf : 0.0f;
+        neeWeight = doNee ? pow(pdfNEE, beta) : 0.0f;
+        prevBrdfMISWeight = doBrdf ? pow(smpl.pdf, beta) : 0.0f;
 
         float weightSum = neeWeight + prevBrdfMISWeight;
 
@@ -98,10 +97,10 @@ void main() {
         }
 
         L += brdfContrib + Lw * neeWeight * contribNEE;
-        // L += contribNEE / 10;
         // L = contribNEE; //  / 4.5;
         // L = vec3(smpl.pdf.xxx);
-        // L = smpl.brdf / 10;
+        // L = smpl.newDir - ray.direction;
+        // L = smpl.brdf;
         // break;
 
         // create new ray
@@ -121,7 +120,7 @@ void main() {
 
     // if (any(isnan(L))) L = vec3(10000);
     if (any(isnan(L))) return;
-    if (length(L) > 100) return;
+    if (length(L) > 300) return;
 
     vec4 prevBufferContent = imageLoad(imgOutput, bufferCoords);
     imageStore(imgOutput, bufferCoords, prevBufferContent + vec4(L, 1));
