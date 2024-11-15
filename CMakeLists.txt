@@ -36,7 +36,7 @@ endif ()
 
 
 add_subdirectory(${GLEW_DIR}/build/cmake)
-target_link_libraries(RayTracer PUBLIC glew_s)
+target_link_libraries(RayTracer glew_s)
 
 # TODO
 target_sources(RayTracer PUBLIC
@@ -56,29 +56,22 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
 # Add and link libs
 add_subdirectory(${GLFW_DIR})
-target_link_libraries(RayTracer PUBLIC glfw ${GLFW_LIBRARIES})
+target_link_libraries(RayTracer glfw ${GLFW_LIBRARIES})
 
-target_link_libraries(RayTracer PUBLIC ${OPENGL_LIBRARIES})
+target_link_libraries(RayTracer ${OPENGL_LIBRARIES})
 
 include_directories(${OPENGL_INCLUDE_DIRS} ${GLUT_INCLUDE_DIRS})
 
 add_subdirectory(${GLM_DIR})
-target_link_libraries(RayTracer PUBLIC glm)
-
+target_link_libraries(RayTracer glm)
 
 add_subdirectory(${TINY_GLTF_DIR})
 target_link_libraries(RayTracer tinygltf)
 
 target_include_directories(RayTracer PUBLIC
-        ${PROJECT_ROOT_DIR}/src/ # include so local includes are relative to sources root
+        ${PROJECT_ROOT_DIR}/src # include so local includes are relative to sources root
         ${IMGUI_DIR}
-        ${IMGUI_DIR}backends
+        ${IMGUI_DIR}/backends
         ${OPENGL_INCLUDE_DIR}
-        ${GLEW_DIR}include
-)
-
-
-get_property(dirs TARGET RayTracer PROPERTY INCLUDE_DIRECTORIES)
-foreach(dir ${dirs})
-    message(STATUS "dir='${dir}'")
-endforeach()
+        ${GLEW_DIR}/include
+        )
