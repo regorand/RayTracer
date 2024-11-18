@@ -17,6 +17,8 @@
 #include "scene/camera/manipulators/OrbitManipulator.h"
 #include <imgui.h>
 #include <filesystem>
+#include <algorithm>
+#include <string.h>
 
 
 Application::Application() {
@@ -185,7 +187,7 @@ int Application::initOpenGL() {
 }
 
 int Application::setupAppTools() {
-    strncpy_s(pathInputBuf, DEFAULT_MODEL_DIR.c_str(), std::min(DEFAULT_MODEL_DIR.size(), PATH_INPUT_BUF_SIZE));
+    strncpy(pathInputBuf, DEFAULT_MODEL_DIR.c_str(), std::min(DEFAULT_MODEL_DIR.size(), PATH_INPUT_BUF_SIZE));
     setupTextures();
 
     rasterizer = std::make_shared<Rasterizer>();
@@ -442,7 +444,7 @@ void Application::buildFileOpenDialog() {
         }
 
         if (!settings.getOrElse(FILE_PATH_SHOW_ERROR, false)) {
-            strncpy_s(pathInputBuf, DEFAULT_MODEL_DIR.c_str(), std::min(DEFAULT_MODEL_DIR.size(), PATH_INPUT_BUF_SIZE));
+            strncpy(pathInputBuf, DEFAULT_MODEL_DIR.c_str(), std::min(DEFAULT_MODEL_DIR.size(), PATH_INPUT_BUF_SIZE));
 
             settings.store(SHOW_FILE_PATH_DIALOG, false);
             settings.store(FILE_PATH_SHOW_ERROR, false);
