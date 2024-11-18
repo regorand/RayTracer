@@ -21,7 +21,7 @@ Sample PerfectTransmissive_Sample(vec3 w_o, vec3 N, Material mat, bool exiting, 
         smpl.newDir = reflect(w_o, N);
         // smpl.brdf = vec3(0, 0, 1);
         smpl.brdf = vec3(1) / (max(0.0f, dot(smpl.newDir, N)) + EPS_4);
-        smpl.pdf = 1.0f; // k < 0 ? 1.0f : 1.0f / R;
+        smpl.pdf = k < 0 ? 1.0f : 1.0f / R;
         return smpl;
     }
 
@@ -38,11 +38,6 @@ vec3 PerfectTransmissive_Eval(vec3 w_o, vec3 w_i, Material mat, inout uint seed)
     return vec3(0);
 }
 
-/*
- * w_i: Direction the ray is going to keep being traced
- * w_o: Direction the ray is coming from
- * N:   World Space macro normal of the surface hit
- */
 float PerfectTransmissive_PDF(vec3 w_o, vec3 w_i, Material mat, inout uint seed) {
     return 0;
 }

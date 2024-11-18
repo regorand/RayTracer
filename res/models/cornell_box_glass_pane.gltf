@@ -152,7 +152,7 @@
 					"transmissionFactor":1
 				},
 				"KHR_materials_ior":{
-					"ior":1.899999976158142
+					"ior":1.5
 				}
 			},
 			"name":"Material.002",

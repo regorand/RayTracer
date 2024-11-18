@@ -52,7 +52,6 @@ void MCIntegrator::buildImguiTab(DataStore &settings, std::vector<Event> &events
         if (doRR) {
             ImGui::SliderFloat("alpha rr", &alphaRR, 0.0f, 0.99f);
         }
-        ImGui::Checkbox("Use Microfacets", &useMicrofacets);
     }
 }
 
@@ -121,7 +120,6 @@ void MCIntegrator::bindUniforms() {
 
     mcIntegrator.setUniform1i("doBrdf", doBrdf ? 1 : 0);
     mcIntegrator.setUniform1i("doNee", doNee ? 1 : 0);
-    mcIntegrator.setUniform1i("useMicrofacets", useMicrofacets ? 1 : 0);
 }
 
 void MCIntegrator::setScene(std::shared_ptr<Scene> newScene) {

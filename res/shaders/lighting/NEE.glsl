@@ -77,6 +77,5 @@ void sampleLightsourceNEE(vec3 pos, vec3 N, vec3 inDir, Material material, inout
     Material mat = materials[triangle.materialIndex];
     const vec3 lightIntensity = mat.emission.xyz;
 
-    // contrib = brdf * lightIntensity * lightDotTerm * surfaceDotTerm / (pdf * dist * dist);
     contrib = brdf * lightIntensity * lightDotTerm * surfaceDotTerm / (pdf * dist * dist);
 }
