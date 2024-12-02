@@ -47,7 +47,7 @@ private:
     bool dirty = false;
     bool wasResized = false;
 
-    static constexpr unsigned int PATH_INPUT_BUF_SIZE = 128;
+    static constexpr size_t PATH_INPUT_BUF_SIZE = 128;
     char pathInputBuf[PATH_INPUT_BUF_SIZE]{};
     std::string loadErrorString;
 
