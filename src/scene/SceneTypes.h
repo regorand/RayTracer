@@ -45,10 +45,20 @@ struct BufferMesh {
     alignas(4) unsigned int firstTriangleIndex {};
     alignas(4) unsigned int triangleCount {};
     alignas(4) unsigned int emissive {}; // 1 if emissive, 0 else
-    alignas(4) unsigned int transformIndex {};
+    // alignas(4) unsigned int transformIndex {};
+};
+
+struct Object {
+    int transformID;
+    int meshID;
+    unsigned int emissive;
+    // TransformID
+    // meshID
 };
 
 struct Mesh {
+    // buffer & triangle info
+
     BufferMesh bufferMesh;
     unsigned int indexOffset {};
     unsigned int indexCount {};

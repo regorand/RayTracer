@@ -58,6 +58,7 @@ void MCIntegrator::buildImguiTab(DataStore &settings, std::vector<Event> &events
 void MCIntegrator::bindScene() {
     GPUSceneBuffers &gpuBuffers = mScene->getGPUBuffers();
     gpuBuffers.triangleBuffer.bindToTarget(TRIANGLE_BUFFER_BINDING);
+    gpuBuffers.objectBuffer.bindToTarget(OBJECT_BUFFER_BINDING);
     gpuBuffers.meshBuffer.bindToTarget(MESH_BUFFER_BINDING);
     gpuBuffers.materialBuffer.bindToTarget(MATERIAL_BUFFER_BINDING);
     gpuBuffers.emissiveBuffer.bindToTarget(EMISSIVE_BUFFER_BINDING);

@@ -10,6 +10,12 @@ layout(std430, binding = TRIANGLE_BUFFER_BINDING) buffer triangleList
 };
 
 
+layout(std430, binding = OBJECT_BUFFER_BINDING) buffer objectList
+{
+    Object objects[];
+};
+
+
 layout(std430, binding = MESH_BUFFER_BINDING) buffer meshList
 {
     Mesh meshes[];
