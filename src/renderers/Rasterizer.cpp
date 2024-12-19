@@ -36,9 +36,14 @@ void Rasterizer::render(int width, int height) {
     mScene->getMatBuffer().bindToTarget(3);
 
     mShader.bind();
-    for (auto &mesh: mScene->getMeshes()) {
 
-        glm::mat4 model = transforms[mesh.bufferMesh.transformIndex];
+    auto &meshes = mScene->getMeshes();
+
+    // for (auto &mesh: mScene->getMeshes()) {
+    for (auto &object: mScene->getObjects()) {
+        auto &mesh = meshes[object.meshID];
+
+        glm::mat4 model = transforms[object.transformID];
         glm::mat4 MVP = VP * model;
         glm::mat4 normalTransform = glm::inverseTranspose(model);
 

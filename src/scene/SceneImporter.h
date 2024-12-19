@@ -25,7 +25,10 @@ private:
     std::vector<RasterVertex> *vertices;
     std::vector<unsigned int> *indices;
 
+    std::map<int, int> meshesMap;
+
     std::vector<Mesh> *meshes;
+    std::vector<Object> *objects;
     std::vector<glm::mat4> *transforms;
     std::vector<unsigned int> *emissives;
     std::vector<Material> *materials;
@@ -40,7 +43,7 @@ public:
 
 private:
     bool parseNode(tinygltf::Model &model, int nodeId, const glm::mat4 &prevTransform);
-    bool parseMesh(tinygltf::Model &model, int meshId, const glm::mat4 &transform);
+    bool parseObject(tinygltf::Model &model, int meshId, const glm::mat4 &transform);
     bool parseCamera(tinygltf::Model &model, int cameraId, const glm::mat4 &transform);
 
 

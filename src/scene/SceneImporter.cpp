@@ -59,6 +59,7 @@ bool SceneImporter::import(CPUSceneBuffers &sceneBuffers, std::vector<Camera> &c
     indices = &sceneBuffers.indices;
 
     triangles = &sceneBuffers.triangles;
+    objects = &sceneBuffers.objects;
     meshes = &sceneBuffers.meshes;
     transforms = &sceneBuffers.transforms;
 
@@ -149,7 +150,7 @@ bool SceneImporter::parseNode(tinygltf::Model &model, int nodeId, const glm::mat
     buildTransform(node, transform);
 
     if (node.mesh != -1) {
-        return parseMesh(model, node.mesh, prevTransform * transform);
+        return parseObject(model, node.mesh, prevTransform * transform);
     } else if (node.camera != -1) {
         return parseCamera(model, node.camera, prevTransform * transform);
     } else {
@@ -209,8 +210,27 @@ void SceneImporter::buildTransform(tinygltf::Node &node, glm::mat4 &target) {
     target = transform;
 }
 
-bool SceneImporter::parseMesh(tinygltf::Model &model, int meshId, const glm::mat4 &transform) {
+bool SceneImporter::parseObject(tinygltf::Model &model, int meshId, const glm::mat4 &transform) {
     tinygltf::Mesh gltfMesh = model.meshes[meshId];
+
+    // TODO: Doesn't work like that, since I interpret gltfs mesh primitives as my objects
+    //  Extend meshMap to hold pairs on ints, one for the gltf mesh id and one for its primitve id
+    //  to map onto my own mesh interpretation, then check for mesh existence in those and create objects from that
+    auto& object = objects->emplace_back();
+    auto it = meshesMap.find(meshId);
+
+    object.transformID = transforms->size();
+
+    glm::mat4 objectTransform = transform;
+    transforms->push_back(objectTransform);
+
+    // Check if this object's mesh already exists
+    if (it != meshesMap.end()) {
+        object.meshID = it->second;
+        object.emissive = (*meshes)[it->second].bufferMesh.emissive;
+
+        return true;
+    }
 
     auto &accessors = model.accessors;
     auto &bufferViews = model.bufferViews;
@@ -242,12 +262,6 @@ bool SceneImporter::parseMesh(tinygltf::Model &model, int meshId, const glm::mat
         // Since I build one global vertex buffer, need to offset the indices by the vertices already in global buffer
         int localIndexOffset = vertices->size();
 
-        Mesh mesh;
-        mesh.bufferMesh.transformIndex = transforms->size();
-
-        glm::mat4 meshTransform = transform;
-
-        transforms->push_back(meshTransform);
 
         /* dont technically need those, accessors have min/max fields
             First attempt at using those didn't quite work.
@@ -285,6 +299,8 @@ bool SceneImporter::parseMesh(tinygltf::Model &model, int meshId, const glm::mat
         int indexBufferIndex = bufferViews[primitive.indices].buffer;
         int indexOffset = bufferViews[primitive.indices].byteOffset;
         auto *indexBuffer = &buffers[indexBufferIndex].data;
+
+        Mesh mesh;
 
         mesh.indexOffset = indices->size();
         mesh.bufferMesh.firstTriangleIndex = triangles->size();
@@ -359,25 +375,11 @@ bool SceneImporter::parseMesh(tinygltf::Model &model, int meshId, const glm::mat
             }
         }
 
-
+        // remember that we found and parsed this mesh already, if different objects uses same mesh
+        meshesMap.insert({ meshId, meshes->size() });
+        object.meshID = meshes->size();
         meshes->push_back(mesh);
     }
-    /*
-    int count = 0;
-    for (auto &tri: *triangles) {
-        float d1 = glm::distance(tri.V0.position, tri.V1.position);
-        float d2 = glm::distance(tri.V0.position, tri.V2.position);
-        float d3 = glm::distance(tri.V1.position, tri.V2.position);
-
-        constexpr float EPS = 1e-3;
-        if (d1 < EPS || d2 < EPS || d3 < EPS) {
-            count++;
-        }
-
-
-    }
-    std::cout << "count: " << count << std::endl;
-    */
 
     return true;
 }

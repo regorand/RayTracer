@@ -31,6 +31,7 @@ public:
     std::vector<Camera> &getStaticCameras();
     int getHoveredCameraIndex();
 
+    std::vector<Object> &getObjects();
     std::vector<Mesh> &getMeshes();
 
     CPUSceneBuffers &getCPUBuffers();

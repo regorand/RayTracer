@@ -41,11 +41,16 @@ struct AABB {
     vec4 upper;
 };
 
+struct Object {
+    int transformID;
+    int meshID;
+}
+
 struct Mesh {
     AABB aabb;
 
     uint firstTriangleIndex;
     uint triangleCount;
     uint emissive; // 1 if emissive, 0 else
-    uint transformIndex;
+    // uint transformIndex;
 };

@@ -70,6 +70,10 @@ void Scene::buildImguiTab(DataStore &settings, std::vector<Event> &events) {
 
 }
 
+std::vector<Object> &Scene::getObjects() {
+    return cpuBuffers.objects;
+}
+
 std::vector<Mesh> &Scene::getMeshes() {
     return cpuBuffers.meshes;
 }
@@ -123,6 +127,9 @@ void Scene::buildGPUBuffers() {
 
     buildMeshBuffer();
 
+    gpuBuffers.objectBuffer = { static_cast<unsigned int>(cpuBuffers.objects.size() * sizeof(Object)),
+                                GL_STATIC_DRAW,
+                                cpuBuffers.objects.data() };
 
     gpuBuffers.triangleBuffer = { static_cast<unsigned int>(cpuBuffers.triangles.size() * sizeof(Triangle)),
                                   GL_STATIC_DRAW,
