@@ -82,14 +82,15 @@ bool intersectAABB(Ray ray, AABB aabb, out float t) {
     return true;
 }
 
-bool intersectObject(Ray ray, Mesh mesh, float alreadyClosest, out RayHit rayhit) {
-    uint objectBaseIndex = mesh.firstTriangleIndex;
-
+bool intersectObject(Ray ray, Object object, float alreadyClosest, out RayHit rayhit) {
     float closest = alreadyClosest;
     float dist;
 
-    mat4 transform = transforms[mesh.transformIndex];
+    mat4 transform = transforms[object.transformID];
     mat4 inverseTransform = inverse(transform);
+
+    Mesh mesh = meshes[object.meshID];
+    uint objectBaseIndex = mesh.firstTriangleIndex;
 
     // Transform ray into object space
     Ray objSpaceRay = Ray((inverseTransform * vec4(ray.origin, 1)).xyz, (inverseTransform * vec4(ray.direction, 0)).xyz);
@@ -133,6 +134,6 @@ bool intersectObject(Ray ray, Mesh mesh, float alreadyClosest, out RayHit rayhit
     return anyHit;
 }
 
-bool intersectObject(Ray ray, Mesh mesh, out RayHit rayhit) {
-    return intersectObject(ray, mesh, 10000000, rayhit);
+bool intersectObject(Ray ray, Object object, out RayHit rayhit) {
+    return intersectObject(ray, object, 10000000, rayhit);
 }

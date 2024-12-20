@@ -63,6 +63,9 @@ void MCIntegrator::bindScene() {
     gpuBuffers.materialBuffer.bindToTarget(MATERIAL_BUFFER_BINDING);
     gpuBuffers.emissiveBuffer.bindToTarget(EMISSIVE_BUFFER_BINDING);
     gpuBuffers.transformationBuffer.bindToTarget(TRANSFORM_BUFFER_BINDING);
+
+    GLClearError();
+    GLPrintError();
 }
 
 void MCIntegrator::unbindScene() {
@@ -92,7 +95,7 @@ bool MCIntegrator::currentlyWorking() {
 }
 
 void MCIntegrator::bindUniforms() {
-    mcIntegrator.setUniform1ui("objectCount", mScene->getCPUBuffers().meshes.size());
+    mcIntegrator.setUniform1ui("objectCount", mScene->getCPUBuffers().objects.size());
     mcIntegrator.setUniform1ui("emissiveCount", mScene->getCPUBuffers().emissives.size());
 
     mcIntegrator.setUniform1i("maxBounces", maxBounces);

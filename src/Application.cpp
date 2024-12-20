@@ -46,7 +46,7 @@ int Application::init() {
     setupAppTools();
 
     loadScene("res/models/instancedTest.gltf");
-    loadScene("res/models/cornell_box_boxes.gltf", false);
+    loadScene("res/models/cornell_box_boxes.gltf", true);
     loadScene("res/models/testVeachMIS.gltf", false);
     loadScene("res/models/cornell_box_glass_pane.gltf", false);
     loadScene("res/models/coated_diff_test.gltf", false);

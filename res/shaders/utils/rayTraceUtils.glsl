@@ -9,9 +9,9 @@ bool getClosestHit(Ray ray, out RayHit rayhit) {
 
     RayHit tmp;
     for (int i = 0; i < objectCount; i++) {
-        Mesh mesh = meshes[i];
+        Object object = objects[i];
 
-        bool hit = intersectObject(ray, mesh, closest, tmp);
+        bool hit = intersectObject(ray, object, closest, tmp);
 
         if (hit && tmp.dist < closest) {
             anyHit = true;
@@ -25,13 +25,13 @@ bool getClosestHit(Ray ray, out RayHit rayhit) {
 
 bool anyHit(Ray ray, float maxDist) {
     for (int i = 0; i < objectCount; i++) {
-        Mesh mesh = meshes[i];
+        Object object = objects[i];
 
         // reduce maxDist by eps value, so that if maxDist is given by a known position on geometry,
         // that geometry does not shadow itself
         RayHit dummy;
 
-        if (intersectObject(ray, mesh, maxDist - 1e-3, dummy)) {
+        if (intersectObject(ray, object, maxDist - 1e-3, dummy)) {
             return true;
         }
     }

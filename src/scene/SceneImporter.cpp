@@ -216,27 +216,36 @@ bool SceneImporter::parseObject(tinygltf::Model &model, int meshId, const glm::m
     // TODO: Doesn't work like that, since I interpret gltfs mesh primitives as my objects
     //  Extend meshMap to hold pairs on ints, one for the gltf mesh id and one for its primitve id
     //  to map onto my own mesh interpretation, then check for mesh existence in those and create objects from that
-    auto& object = objects->emplace_back();
-    auto it = meshesMap.find(meshId);
-
-    object.transformID = transforms->size();
-
-    glm::mat4 objectTransform = transform;
-    transforms->push_back(objectTransform);
-
-    // Check if this object's mesh already exists
-    if (it != meshesMap.end()) {
-        object.meshID = it->second;
-        object.emissive = (*meshes)[it->second].bufferMesh.emissive;
-
-        return true;
-    }
 
     auto &accessors = model.accessors;
     auto &bufferViews = model.bufferViews;
     auto &buffers = model.buffers;
 
-    for (auto &primitive: gltfMesh.primitives) {
+    for (int primitiveId = 0; primitiveId < gltfMesh.primitives.size(); primitiveId++) {
+        auto &primitive = gltfMesh.primitives[primitiveId];
+
+        auto& object = objects->emplace_back();
+        auto it = meshesMap.find({meshId, primitiveId});
+
+        object.transformID = transforms->size();
+
+        glm::mat4 objectTransform = transform;
+        transforms->push_back(objectTransform);
+
+        // Check if this object's mesh already exists
+        if (it != meshesMap.end()) {
+            object.meshID = it->second;
+            object.emissive = (*meshes)[it->second].bufferMesh.emissive;
+
+            // If this object is emissive still register it as an emissive object
+            // TODO build a test scene that has multiple lightsources with exactly the same mesh
+            if (object.emissive > 0) {
+                emissives->push_back(objects->size() - 1);
+            }
+
+            continue;
+        }
+
         tinygltf::Accessor position = getAccessor(accessors, primitive, POSITION_ATTRIBUTE_NAME);
         tinygltf::Accessor normal = getAccessor(accessors, primitive, NORMAL_ATTRIBUTE_NAME);
         tinygltf::Accessor texCoord0 = getAccessor(accessors, primitive, TEX_0_ATTRIBUTE_NAME);
@@ -371,12 +380,13 @@ bool SceneImporter::parseObject(tinygltf::Model &model, int meshId, const glm::m
 
             if (emission.x > eps || emission.y > eps || emission.z > eps) {
                 mesh.bufferMesh.emissive = 1;
-                emissives->push_back(meshes->size());
+                object.emissive = 1;
+                emissives->push_back(objects->size() - 1);
             }
         }
 
         // remember that we found and parsed this mesh already, if different objects uses same mesh
-        meshesMap.insert({ meshId, meshes->size() });
+        meshesMap.insert({ {meshId, primitiveId}, meshes->size() });
         object.meshID = meshes->size();
         meshes->push_back(mesh);
     }

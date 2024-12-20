@@ -44,7 +44,8 @@ struct AABB {
 struct Object {
     int transformID;
     int meshID;
-}
+    uint emissive;
+};
 
 struct Mesh {
     AABB aabb;
@@ -52,5 +53,6 @@ struct Mesh {
     uint firstTriangleIndex;
     uint triangleCount;
     uint emissive; // 1 if emissive, 0 else
+    uint dummy;
     // uint transformIndex;
 };

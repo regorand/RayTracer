@@ -37,6 +37,7 @@ uniform float alphaRR;
 
 void main() {
     vec2 texelCoord = vec2(gl_GlobalInvocationID.xy);
+
     ivec2 bufferCoords = ivec2(texelCoord);
     if (bufferCoords.x >= width || bufferCoords.y >= height) return;
 
@@ -60,6 +61,7 @@ void main() {
     while (doNext && bounces <= maxBounces) {
         RayHit rayHit;
         bool hit = getClosestHit(ray, rayHit);
+
         if (!hit) {
             break;
         }
@@ -97,11 +99,9 @@ void main() {
         }
 
         L += brdfContrib + Lw * neeWeight * contribNEE;
-        // L = contribNEE; //  / 4.5;
         // L = vec3(smpl.pdf.xxx);
         // L = smpl.newDir - ray.direction;
         // L = smpl.brdf;
-        // break;
 
         // create new ray
         ray.direction = smpl.newDir;

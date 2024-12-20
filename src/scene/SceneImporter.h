@@ -17,6 +17,27 @@ const std::string POSITION_ATTRIBUTE_NAME = "POSITION";
 const std::string NORMAL_ATTRIBUTE_NAME = "NORMAL";
 const std::string TEX_0_ATTRIBUTE_NAME = "TEXCOORD_0";
 
+typedef struct MeshIdentifier {
+    int meshId {};
+    int primitveId {};
+
+    MeshIdentifier() = default;
+    MeshIdentifier(int meshId, int primitiveId) : meshId(meshId), primitveId(primitiveId) {}
+
+    bool operator== (MeshIdentifier const & other) const {
+        return this->meshId == other.meshId && this->primitveId == other.primitveId;
+    }
+
+    bool operator< (MeshIdentifier const & other) const {
+        if (this->meshId < other.meshId) return true;
+        if (this->meshId > other.meshId) return false;
+
+        if (this->primitveId < other.primitveId) return true;
+        if (this->primitveId > other.primitveId) return false;
+
+        return false;
+    }
+} MeshIdentifier;
 
 class SceneImporter {
 private:
@@ -25,7 +46,7 @@ private:
     std::vector<RasterVertex> *vertices;
     std::vector<unsigned int> *indices;
 
-    std::map<int, int> meshesMap;
+    std::map<MeshIdentifier, int> meshesMap;
 
     std::vector<Mesh> *meshes;
     std::vector<Object> *objects;

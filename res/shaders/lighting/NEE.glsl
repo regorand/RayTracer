@@ -3,7 +3,7 @@
 #include "res/shaders/utils/samplingUtils.glsl"
 #include "res/shaders/material/BSDF.glsl"
 
-Mesh sampleNEEObject(inout uint seed, inout float pdf) {
+Object sampleNEEObject(inout uint seed, inout float pdf) {
     // TODO: this is naive implementation, do some kinf of precompute
 
     // TODO dont uniformly sample light sources
@@ -11,11 +11,12 @@ Mesh sampleNEEObject(inout uint seed, inout float pdf) {
     uint lightSourceIndex = emissiveIndices[randUniform_uint_0_n(seed, emissiveCount)];
     pdf *= 1.0f / float(emissiveCount);
 
-    return meshes[lightSourceIndex];
+    return objects[lightSourceIndex];
 }
 
-Triangle sampleNEETriangle(Mesh mesh, inout uint seed, inout float pdf) {
+Triangle sampleNEETriangle(Object object, inout uint seed, inout float pdf) {
     // TODO also here, dont uniformly sample, improve
+    Mesh mesh = meshes[object.meshID];
 
     uint triangleIndex = mesh.firstTriangleIndex + randUniform_uint_0_n(seed, mesh.triangleCount);
     pdf /= mesh.triangleCount;
@@ -30,8 +31,8 @@ void sampleLightsourceNEE(vec3 pos, vec3 N, vec3 inDir, Material material, inout
     }
 
     pdf = 1.0f;
-    Mesh object = sampleNEEObject(seed, pdf);
-    mat4 transform = transforms[object.transformIndex];
+    Object object = sampleNEEObject(seed, pdf);
+    mat4 transform = transforms[object.transformID];
     mat4 normalTransform = transpose(inverse(transform));
 
     Triangle triangle = sampleNEETriangle(object, seed, pdf);
