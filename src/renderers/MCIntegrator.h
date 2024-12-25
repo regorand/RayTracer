@@ -5,7 +5,17 @@
 #include "scene/Scene.h"
 #include "glWrappers/Texture.h"
 #include "utils/RandomEngine.h"
+#include "RenderStatistics.h"
 
+/* TODO What statistics do I want to track
+    - Sample count in image
+    - last render time
+    - global mean render time
+    - exponential average render time
+    - Mrays/s ? -> How best to do this ?
+        -> Would probably need buffer for each workgroup, have atomic in workgroup where each thread writes its ray count, then read it back
+        -> Not right now
+ */
 
 class MCIntegrator : public ImGuiSidebarTab {
     const unsigned int TARGET_TEXTURE_TARGET = 0;
@@ -27,8 +37,19 @@ class MCIntegrator : public ImGuiSidebarTab {
     bool doRR = false;
     float alphaRR = 0.8;
 
+    bool showStats = true;
+
+    RenderStatistics stats;
+
+    GLuint timerQuery = -1;
+    bool queryResultPending = false;
+    bool disableStats = false;
+
 public:
     MCIntegrator();
+    ~MCIntegrator() {
+        glDeleteQueries(1, &timerQuery);
+    }
 
     void renderSample();
 
@@ -41,6 +62,12 @@ public:
     bool currentlyWorking();
 
     void buildImguiTab(DataStore &settings, std::vector<Event> &events) override;
+
+    RenderStatistics getRenderStatistics();
+
+    void resetRenderStatistics();
+
+    void handleQueryResult();
 private:
 
     void bindScene();
@@ -49,4 +76,9 @@ private:
     void bindUniforms();
 
     void reloadShaders();
+
+    bool queryAvailable();
+    void setupQuery();
+    void startQuery();
+    void endQuery();
 };

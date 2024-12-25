@@ -5,9 +5,12 @@
 
 MCIntegrator::MCIntegrator()
     : mcIntegrator(makeComputeProgram("res/shaders/integrators/MonteCarlo.comp"))
-{ }
+{
+    setupQuery();
+}
 
 void MCIntegrator::renderSample() {
+    // TODO can maybe already queue one more sample here ?
     if (currentlyWorking()) return;
     if (mCurrentTarget == nullptr) return;
 
@@ -20,16 +23,18 @@ void MCIntegrator::renderSample() {
     int numWorkGroupsX = mCurrentTarget->getWidth() / WORK_GROUP_SIZE_1_DIM + 1;
     int numWorkGroupsY = mCurrentTarget->getHeight() / WORK_GROUP_SIZE_1_DIM + 1;
 
-    GLClearError();
+    startQuery();
+
     glDispatchCompute(numWorkGroupsX, numWorkGroupsY, 1);
-    GLPrintError();
+
+    endQuery();
+    stats.sampleCount++;
 
     mcIntegrator.unbind();
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_BUFFER_UPDATE_BARRIER_BIT);
 
 
     fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-
     // unbindScene();
 }
 
@@ -46,12 +51,40 @@ void MCIntegrator::buildImguiTab(DataStore &settings, std::vector<Event> &events
             reloadShaders();
         }
 
-        ImGui::SliderInt("max bounces", &maxBounces, 0, 16);
+        ImGui::Checkbox("Show statistics", &showStats);
 
-        ImGui::Checkbox("do RR", &doRR);
-        if (doRR) {
-            ImGui::SliderFloat("alpha rr", &alphaRR, 0.0f, 0.99f);
+        if (ImGui::CollapsingHeader("More##mcIntegrator_more")) {
+            if (ImGui::Checkbox("disable stats", &disableStats)) {
+                stats.resetTimings();
+            }
+            if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+            {
+                ImGui::SetTooltip("might slightly increase performance");
+            }
+
+            ImGui::SliderInt("max bounces", &maxBounces, 0, 16);
+
+            ImGui::Checkbox("do RR", &doRR);
+            if (doRR) {
+                ImGui::SliderFloat("alpha rr", &alphaRR, 0.0f, 0.99f);
+            }
         }
+    }
+
+    if (showStats) {
+
+        ImGui::Begin("Render Statistics", &showStats,  ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse
+                                          | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoTitleBar);
+        ImGui::Text("spp: %d", stats.sampleCount);
+        ImGui::Text("last: %.3f ms", stats.lastMsTime);
+        ImGui::Text("FPS: %.3f",  1000.0 / stats.lastMsTime);
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+        {
+            ImGui::SetTooltip("Might not be actual fps, as currently rendering speed tied to VSync if enabled");
+        }
+        ImGui::Text("glob. avg: %.3f ms", stats.summedTime / stats.timingSamplesCollected);
+        ImGui::Text("mov. avg: %.3f ms \n\t(alpha = %.2f)", stats.movingAverage, stats.alpha);
+        ImGui::End();
     }
 }
 
@@ -144,4 +177,48 @@ Texture *MCIntegrator::getTarget() {
 
 void MCIntegrator::reloadShaders() {
     mcIntegrator.reloadShader();
+}
+
+RenderStatistics MCIntegrator::getRenderStatistics() {
+    return stats;
+}
+
+void MCIntegrator::resetRenderStatistics() {
+    stats.reset();
+}
+
+void MCIntegrator::setupQuery() {
+    glGenQueries(1, &timerQuery);
+}
+
+void MCIntegrator::handleQueryResult() {
+    if (!queryResultPending || disableStats) return;
+    GLint64 result;
+    glGetQueryObjecti64v(timerQuery, GL_QUERY_RESULT, &result);
+    double msResult = (double) result / 1e6;
+    stats.lastMsTime = msResult;
+    stats.summedTime += msResult;
+    stats.movingAverage = stats.alpha * msResult + (1 - stats.alpha) * stats.movingAverage;
+    stats.timingSamplesCollected++;
+    queryResultPending = false;
+}
+
+void MCIntegrator::startQuery() {
+    if (disableStats) return;
+    glFlush();
+    glBeginQuery(GL_TIME_ELAPSED, timerQuery);
+}
+
+void MCIntegrator::endQuery() {
+    if (disableStats) return;
+    glFlush();
+    glEndQuery(GL_TIME_ELAPSED);
+    queryResultPending = true;
+}
+
+bool MCIntegrator::queryAvailable() {
+    if (disableStats) return false;
+    GLint64 result;
+    glGetQueryObjecti64v(timerQuery, GL_QUERY_RESULT_AVAILABLE, &result);
+    return result == GL_TRUE;
 }

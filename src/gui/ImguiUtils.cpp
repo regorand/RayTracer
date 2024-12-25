@@ -2,6 +2,7 @@
 #include "ImguiUtils.h"
 #include "imgui.h"
 #include "dataStructures/SettingIndex.h"
+#include "renderers/RenderStatistics.h"
 
 void buildImguiMenu(DataStore &settings) {
     if (ImGui::BeginMainMenuBar()) {

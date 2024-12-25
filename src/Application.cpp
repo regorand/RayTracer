@@ -77,6 +77,7 @@ int Application::renderLoop() {
         dirty |= !accumulate && render;
         if (dirty) {
             textureStore.at(RENDER_TARGET).clear();
+            mcIntegrator->resetRenderStatistics();
             dirty = false;
         }
 
@@ -85,6 +86,7 @@ int Application::renderLoop() {
         // Idle waiting not ideal, but with current implementation need to wait for Integrator to finish
         // so single sample image is visible while moving the camera
         while (mcIntegrator->currentlyWorking()) {}
+        mcIntegrator->handleQueryResult();
 
         postProcessor->applyGammaAndTonemap(textureStore.at(RENDER_TARGET), textureStore.at(DISPLAY_BUFFER), settings);
         br->render(&textureStore.at(DISPLAY_BUFFER));
@@ -186,7 +188,8 @@ int Application::initOpenGL() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, major);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, minor);
 
-    registerGLCallBack();
+    printf("%s\n", glGetString(GL_VERSION));
+
     return 0;
 }
 
