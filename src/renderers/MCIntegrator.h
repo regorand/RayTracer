@@ -21,7 +21,10 @@ class MCIntegrator : public ImGuiSidebarTab {
     const unsigned int TARGET_TEXTURE_TARGET = 0;
     constexpr static int WORK_GROUP_SIZE_1_DIM = 8; // Is set in shader, hardcoded here
 
-    ShaderProgram mcIntegrator;
+    // ShaderProgram mcIntegrator;
+
+    std::vector<ShaderProgram> shaders;
+    int activeShader = 0;
 
     std::shared_ptr<Scene> mScene;
     Texture *mCurrentTarget;
@@ -29,6 +32,8 @@ class MCIntegrator : public ImGuiSidebarTab {
     GLsync fence = nullptr;
 
     RandomEngine dist;
+
+    bool dirty = false;
 
     bool doBrdf = true;
     bool doNee = true;
@@ -68,6 +73,8 @@ public:
     void resetRenderStatistics();
 
     void handleQueryResult();
+
+    bool collectDirty();
 private:
 
     void bindScene();

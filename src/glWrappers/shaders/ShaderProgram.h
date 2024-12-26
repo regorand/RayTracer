@@ -9,7 +9,7 @@
 
 class ShaderProgram {
     unsigned int mGlId;
-    std::string mName;
+    std::string mName = "_shader";
 
     std::vector<ShaderDefinition> mShaderDefs;
     std::vector<Shader> mShaders;
@@ -25,6 +25,7 @@ public:
     void unbind();
 
     void setName(const std::string& name);
+    std::string &getName();
     void reloadShader();
 
     bool isValid();

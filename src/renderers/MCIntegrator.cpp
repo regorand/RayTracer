@@ -4,9 +4,16 @@
 #include "imgui.h"
 
 MCIntegrator::MCIntegrator()
-    : mcIntegrator(makeComputeProgram("res/shaders/integrators/MonteCarlo.comp"))
+    // : mcIntegrator(makeComputeProgram("res/shaders/integrators/MonteCarlo.comp"))
 {
     setupQuery();
+    ShaderProgram mcIntegrator = makeComputeProgram("res/shaders/integrators/MonteCarlo.comp");
+    mcIntegrator.setName("Pathtracer");
+    shaders.push_back(mcIntegrator);
+
+    ShaderProgram normal = makeComputeProgram("res/shaders/misc/displayNormals.comp");
+    normal.setName("Normals");
+    shaders.push_back(normal);
 }
 
 void MCIntegrator::renderSample() {
@@ -14,7 +21,8 @@ void MCIntegrator::renderSample() {
     if (currentlyWorking()) return;
     if (mCurrentTarget == nullptr) return;
 
-    mcIntegrator.bind();
+    // mcIntegrator.bind();
+    shaders[activeShader].bind();
     mCurrentTarget->bind(TARGET_TEXTURE_TARGET);
 
     bindUniforms();
@@ -30,7 +38,9 @@ void MCIntegrator::renderSample() {
     endQuery();
     stats.sampleCount++;
 
-    mcIntegrator.unbind();
+
+    shaders[activeShader].unbind();
+    // mcIntegrator.unbind();
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_BUFFER_UPDATE_BARRIER_BIT);
 
 
@@ -54,6 +64,23 @@ void MCIntegrator::buildImguiTab(DataStore &settings, std::vector<Event> &events
         ImGui::Checkbox("Show statistics", &showStats);
 
         if (ImGui::CollapsingHeader("More##mcIntegrator_more")) {
+            ImGui::Text("Camera Manipulator");
+            if (ImGui::BeginCombo("##chooseShader_mcIntegrator", shaders[activeShader].getName().c_str())) {
+                for (int i = 0; i < shaders.size(); i++) {
+                    bool is_selected = activeShader == i; // You can store your selection however you want, outside or inside your objects
+                    if (ImGui::Selectable(shaders[i].getName().c_str(), is_selected)) {
+                        activeShader = i;
+                        dirty = true;
+                    }
+                    if (is_selected)
+                        ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
+
+                }
+
+                ImGui::EndCombo();
+            }
+
+
             if (ImGui::Checkbox("disable stats", &disableStats)) {
                 stats.resetTimings();
             }
@@ -128,6 +155,7 @@ bool MCIntegrator::currentlyWorking() {
 }
 
 void MCIntegrator::bindUniforms() {
+    ShaderProgram &mcIntegrator = shaders[activeShader];
     mcIntegrator.setUniform1ui("objectCount", mScene->getCPUBuffers().objects.size());
     mcIntegrator.setUniform1ui("emissiveCount", mScene->getCPUBuffers().emissives.size());
 
@@ -176,7 +204,10 @@ Texture *MCIntegrator::getTarget() {
 }
 
 void MCIntegrator::reloadShaders() {
-    mcIntegrator.reloadShader();
+    for (auto &shader: shaders) {
+        shader.reloadShader();
+    }
+    dirty = true;
 }
 
 RenderStatistics MCIntegrator::getRenderStatistics() {
@@ -221,4 +252,10 @@ bool MCIntegrator::queryAvailable() {
     GLint64 result;
     glGetQueryObjecti64v(timerQuery, GL_QUERY_RESULT_AVAILABLE, &result);
     return result == GL_TRUE;
+}
+
+bool MCIntegrator::collectDirty() {
+    bool tmp = dirty;
+    dirty = false;
+    return tmp;
 }

@@ -75,6 +75,7 @@ int Application::renderLoop() {
 
     if (settings.getOrElse(SHOW_PATHTRACE_OUTPUT, false)) {
         dirty |= !accumulate && render;
+        dirty |= mcIntegrator->collectDirty();
         if (dirty) {
             textureStore.at(RENDER_TARGET).clear();
             mcIntegrator->resetRenderStatistics();

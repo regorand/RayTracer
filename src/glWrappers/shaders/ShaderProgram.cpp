@@ -197,3 +197,7 @@ bool ShaderProgram::setUniform3fv(const std::string &name, unsigned int count, c
     return res;
 }
 
+std::string &ShaderProgram::getName() {
+    return mName;
+}
+
