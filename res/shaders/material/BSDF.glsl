@@ -79,6 +79,9 @@ Sample BSDF_Sample(vec3 w_o, vec3 N, Material mat, bool exiting, inout uint seed
     }
     smpl = CoatedDiffuseSample(wt_o, mat, seed);
 
+    // this will break transmissive materials if we don't return them earlier, as this makes sure we can't see through surfaces
+    smpl.brdf *= max(0, sign(smpl.newDir.z));
+
     smpl.newDir = tangentFrame * smpl.newDir;
     return smpl;
 }
