@@ -7,21 +7,10 @@
 #include "utils/RandomEngine.h"
 #include "RenderStatistics.h"
 
-/* TODO What statistics do I want to track
-    - Sample count in image
-    - last render time
-    - global mean render time
-    - exponential average render time
-    - Mrays/s ? -> How best to do this ?
-        -> Would probably need buffer for each workgroup, have atomic in workgroup where each thread writes its ray count, then read it back
-        -> Not right now
- */
 
 class MCIntegrator : public ImGuiSidebarTab {
     const unsigned int TARGET_TEXTURE_TARGET = 0;
     constexpr static int WORK_GROUP_SIZE_1_DIM = 8; // Is set in shader, hardcoded here
-
-    // ShaderProgram mcIntegrator;
 
     std::vector<ShaderProgram> shaders;
     int activeShader = 0;

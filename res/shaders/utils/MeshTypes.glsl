@@ -10,6 +10,7 @@ struct Triangle {
     Vertex V0;
     Vertex V1;
     Vertex V2;
+    vec3 center;
 
     int materialIndex;
 };

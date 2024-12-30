@@ -4,7 +4,6 @@
 #include "imgui.h"
 
 MCIntegrator::MCIntegrator()
-    // : mcIntegrator(makeComputeProgram("res/shaders/integrators/MonteCarlo.comp"))
 {
     setupQuery();
     ShaderProgram mcIntegrator = makeComputeProgram("res/shaders/integrators/MonteCarlo.comp");
@@ -21,7 +20,6 @@ void MCIntegrator::renderSample() {
     if (currentlyWorking()) return;
     if (mCurrentTarget == nullptr) return;
 
-    // mcIntegrator.bind();
     shaders[activeShader].bind();
     mCurrentTarget->bind(TARGET_TEXTURE_TARGET);
 
@@ -40,7 +38,6 @@ void MCIntegrator::renderSample() {
 
 
     shaders[activeShader].unbind();
-    // mcIntegrator.unbind();
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_BUFFER_UPDATE_BARRIER_BIT);
 
 

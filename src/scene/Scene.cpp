@@ -7,11 +7,16 @@
 #include "gui/ImguiUtils.h"
 #include "SceneImporter.h"
 #include "scene/camera/Camera.h"
+#include "BVHBuilder.h"
 
 bool Scene::loadFile(std::string path) {
     mPath = path;
     SceneImporter importer(path);
     importer.import(cpuBuffers, staticCameras);
+
+    BVHBuilder builder(cpuBuffers.meshes, cpuBuffers.triangles);
+
+    builder.build();
 
     buildRasterBuffers();
     buildGPUBuffers();

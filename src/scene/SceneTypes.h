@@ -31,6 +31,7 @@ typedef struct Triangle {
     Vertex V0;
     Vertex V1;
     Vertex V2;
+    glm::vec3 center;
 
     int materialIndex;
 } Triangle;
@@ -45,7 +46,7 @@ struct BufferMesh {
     alignas(4) unsigned int firstTriangleIndex {};
     alignas(4) unsigned int triangleCount {};
     alignas(4) unsigned int emissive {}; // 1 if emissive, 0 else
-    alignas(4) unsigned int dummy {};
+    alignas(4) unsigned int bvhRoot {};
     // alignas(4) unsigned int transformIndex {};
 };
 

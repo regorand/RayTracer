@@ -6,6 +6,7 @@
 #include "glm/gtx/quaternion.hpp"
 #include "scene/buffers/import_scene_error.h"
 #include "scene/camera/Camera.h"
+#include "BVHBuilder.h"
 #include <algorithm>
 
 /*
@@ -340,16 +341,7 @@ bool SceneImporter::parseObject(tinygltf::Model &model, int meshId, const glm::m
             triangle.V1 = (*vertices)[index1].toBufferVertex();
             triangle.V2 = (*vertices)[index2].toBufferVertex();
 
-            /*
-            float d1 = glm::distance(triangle.V0.position, triangle.V1.position);
-            float d2 = glm::distance(triangle.V0.position, triangle.V2.position);
-            float d3 = glm::distance(triangle.V1.position, triangle.V2.position);
-
-            constexpr float EPS = 1e-3;
-            if (d1 < EPS || d2 < EPS || d3 < EPS) {
-                int x = 4;
-            }
-             */
+            triangle.center = (triangle.V0.position + triangle.V1.position + triangle.V2.position) / glm::vec3(3);
 
             lower = glm::min(lower, triangle.V0.position);
             lower = glm::min(lower, triangle.V1.position);
