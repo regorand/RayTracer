@@ -9,11 +9,8 @@
 #include "dataStructures/SettingIndex.h"
 #include "gui/ImGuiSidebarTab.h"
 #include "glWrappers/TextureFactory.h"
-#include "glWrappers/FrameBufferObject.h"
 #include "dataStructures/TextureNames.h"
-#include "scene/scene_loading/ModelLoader.h"
 #include "scene/Scene.h"
-#include "renderers/MCIntegrator.h"
 #include "scene/camera/manipulators/OrbitManipulator.h"
 #include <imgui.h>
 #include <filesystem>
@@ -204,6 +201,7 @@ int Application::setupAppTools() {
     br = std::make_shared<BufferRenderer>();
     postProcessor = std::make_shared<PostProcessor>(displayWidth, displayHeight);
 
+    // mcIntegrator = std::make_shared<MCIntegrator>();
     mcIntegrator = std::make_shared<MCIntegrator>();
     mcIntegrator->setTarget(&textureStore.at(RENDER_TARGET));
 
@@ -268,6 +266,7 @@ void Application::buildImguiControlSideBar() {
 
     if (ImGui::Button("reset Texture")) {
         textureStore.at(RENDER_TARGET).clear();
+        mcIntegrator->resetRenderStatistics();
     }
 
     ImGui::Checkbox("Accumulate", &accumulate);

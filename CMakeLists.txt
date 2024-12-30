@@ -14,10 +14,12 @@ add_executable(RayTracer
         src/scene/SceneImporter.cpp
         src/scene/SceneImporter.h
         src/scene/SceneTypes.h
-        src/renderers/MCIntegrator.cpp
-        src/renderers/MCIntegrator.h
         src/scene/camera/manipulators/OrbitManipulator.cpp src/scene/camera/manipulators/OrbitManipulator.h src/scene/BVHBuilder.cpp src/scene/BVHBuilder.h
         src/renderers/RenderStatistics.h
+        src/renderers/OfflineRenderer.cpp
+        src/renderers/OfflineRenderer.h
+        src/renderers/MCIntegrator.cpp
+        src/renderers/MCIntegrator.h
 )
 
 set(PROJECT_ROOT_DIR ${PROJECT_SOURCE_DIR})

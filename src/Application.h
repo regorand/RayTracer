@@ -36,7 +36,11 @@ private:
     std::shared_ptr<Rasterizer> rasterizer;
     std::shared_ptr<BufferRenderer> br;
     std::shared_ptr<PostProcessor> postProcessor;
+
+
+    // std::shared_ptr<MCIntegrator> mcIntegrator;
     std::shared_ptr<MCIntegrator> mcIntegrator;
+
     std::vector<ImGuiSidebarTab *> sideBarTabs;
 
     std::vector<std::shared_ptr<CameraManipulator>> cameraManipulators;

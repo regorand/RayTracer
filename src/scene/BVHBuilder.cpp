@@ -15,7 +15,7 @@ void BVHBuilder::build() {
         triIndices[i] = i;
     }
 
-    for (int i = 0; i < meshes; i++) {
+    for (int i = 0; i < meshes.size(); i++) {
         buildMeshBVH(i);
     }
 }

@@ -1,11 +1,8 @@
 #include "MCIntegrator.h"
 #include "glWrappers/shaders/ShaderUtils.hpp"
-#include "deviceShared/BufferBindings.h"
 #include "imgui.h"
 
-MCIntegrator::MCIntegrator()
-{
-    setupQuery();
+MCIntegrator::MCIntegrator() {
     ShaderProgram mcIntegrator = makeComputeProgram("res/shaders/integrators/MonteCarlo.comp");
     mcIntegrator.setName("Pathtracer");
     shaders.push_back(mcIntegrator);
@@ -43,6 +40,7 @@ void MCIntegrator::renderSample() {
 
     fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
     // unbindScene();
+
 }
 
 void MCIntegrator::buildImguiTab(DataStore &settings, std::vector<Event> &events) {
@@ -98,7 +96,7 @@ void MCIntegrator::buildImguiTab(DataStore &settings, std::vector<Event> &events
     if (showStats) {
 
         ImGui::Begin("Render Statistics", &showStats,  ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse
-                                          | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoTitleBar);
+                                                       | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoTitleBar);
         ImGui::Text("spp: %d", stats.sampleCount);
         ImGui::Text("last: %.3f ms", stats.lastMsTime);
         ImGui::Text("FPS: %.3f",  1000.0 / stats.lastMsTime);
@@ -110,45 +108,7 @@ void MCIntegrator::buildImguiTab(DataStore &settings, std::vector<Event> &events
         ImGui::Text("mov. avg: %.3f ms \n\t(alpha = %.2f)", stats.movingAverage, stats.alpha);
         ImGui::End();
     }
-}
 
-void MCIntegrator::bindScene() {
-    GPUSceneBuffers &gpuBuffers = mScene->getGPUBuffers();
-    gpuBuffers.triangleBuffer.bindToTarget(TRIANGLE_BUFFER_BINDING);
-    gpuBuffers.objectBuffer.bindToTarget(OBJECT_BUFFER_BINDING);
-    gpuBuffers.meshBuffer.bindToTarget(MESH_BUFFER_BINDING);
-    gpuBuffers.materialBuffer.bindToTarget(MATERIAL_BUFFER_BINDING);
-    gpuBuffers.emissiveBuffer.bindToTarget(EMISSIVE_BUFFER_BINDING);
-    gpuBuffers.transformationBuffer.bindToTarget(TRANSFORM_BUFFER_BINDING);
-
-    GLClearError();
-    GLPrintError();
-}
-
-void MCIntegrator::unbindScene() {
-    GPUSceneBuffers &gpuBuffers = mScene->getGPUBuffers();
-    gpuBuffers.triangleBuffer.unbind();
-    gpuBuffers.meshBuffer.unbind();
-    gpuBuffers.materialBuffer.unbind();
-    gpuBuffers.emissiveBuffer.unbind();
-    gpuBuffers.transformationBuffer.unbind();
-}
-
-bool MCIntegrator::currentlyWorking() {
-    if (fence == nullptr) {
-        return false;
-    }
-
-    GLint signal = 0;
-    glGetSynciv(fence, GL_SYNC_STATUS, 1, nullptr, &signal);
-
-    if (signal == GL_SIGNALED) {
-        glDeleteSync(fence);
-        fence = nullptr;
-        return false;
-    }
-
-    return true;
 }
 
 void MCIntegrator::bindUniforms() {
@@ -182,77 +142,5 @@ void MCIntegrator::bindUniforms() {
 
     mcIntegrator.setUniform1i("doBrdf", doBrdf ? 1 : 0);
     mcIntegrator.setUniform1i("doNee", doNee ? 1 : 0);
-}
 
-void MCIntegrator::setScene(std::shared_ptr<Scene> newScene) {
-    mScene = newScene;
-}
-
-std::shared_ptr<Scene> MCIntegrator::getScene() {
-    return mScene;
-}
-
-void MCIntegrator::setTarget(Texture *target) {
-    mCurrentTarget = target;
-}
-
-Texture *MCIntegrator::getTarget() {
-    return mCurrentTarget;
-}
-
-void MCIntegrator::reloadShaders() {
-    for (auto &shader: shaders) {
-        shader.reloadShader();
-    }
-    dirty = true;
-}
-
-RenderStatistics MCIntegrator::getRenderStatistics() {
-    return stats;
-}
-
-void MCIntegrator::resetRenderStatistics() {
-    stats.reset();
-}
-
-void MCIntegrator::setupQuery() {
-    glGenQueries(1, &timerQuery);
-}
-
-void MCIntegrator::handleQueryResult() {
-    if (!queryResultPending || disableStats) return;
-    GLint64 result;
-    glGetQueryObjecti64v(timerQuery, GL_QUERY_RESULT, &result);
-    double msResult = (double) result / 1e6;
-    stats.lastMsTime = msResult;
-    stats.summedTime += msResult;
-    stats.movingAverage = stats.alpha * msResult + (1 - stats.alpha) * stats.movingAverage;
-    stats.timingSamplesCollected++;
-    queryResultPending = false;
-}
-
-void MCIntegrator::startQuery() {
-    if (disableStats) return;
-    glFlush();
-    glBeginQuery(GL_TIME_ELAPSED, timerQuery);
-}
-
-void MCIntegrator::endQuery() {
-    if (disableStats) return;
-    glFlush();
-    glEndQuery(GL_TIME_ELAPSED);
-    queryResultPending = true;
-}
-
-bool MCIntegrator::queryAvailable() {
-    if (disableStats) return false;
-    GLint64 result;
-    glGetQueryObjecti64v(timerQuery, GL_QUERY_RESULT_AVAILABLE, &result);
-    return result == GL_TRUE;
-}
-
-bool MCIntegrator::collectDirty() {
-    bool tmp = dirty;
-    dirty = false;
-    return tmp;
 }
