@@ -37,3 +37,8 @@ layout(std430, binding = TRANSFORM_BUFFER_BINDING) buffer transformList
 {
     mat4 transforms[];
 };
+
+layout(std430, binding = BVH_NODES_BUFFER_BINDING) buffer bvhNodeList
+{
+    BVHNode bvhNodes[];
+};

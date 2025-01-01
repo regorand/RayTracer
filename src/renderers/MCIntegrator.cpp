@@ -56,7 +56,7 @@ void MCIntegrator::buildImguiTab(DataStore &settings, std::vector<Event> &events
             reloadShaders();
         }
 
-        ImGui::Checkbox("Show statistics", &showStats);
+        ImGui::Checkbox("Show statistics##MCIntegrator", &showStats);
 
         if (ImGui::CollapsingHeader("More##mcIntegrator_more")) {
             ImGui::Text("Camera Manipulator");

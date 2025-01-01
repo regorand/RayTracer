@@ -54,6 +54,14 @@ struct Mesh {
     uint firstTriangleIndex;
     uint triangleCount;
     uint emissive; // 1 if emissive, 0 else
-    uint dummy;
+    uint bvhRootIndex;
     // uint transformIndex;
+};
+
+struct BVHNode {
+    vec3 lower;
+    uint leftFirst;
+
+    vec3 upper;
+    uint triCount;
 };

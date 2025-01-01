@@ -50,6 +50,7 @@ int Application::init() {
     loadScene("res/models/coated_diff_test.gltf", false);
     loadScene("res/models/test.gltf", false);
     loadScene("res/models/glass_test.gltf", false);
+    loadScene("res/models/cornell_box_monkey.gltf", false);
     return 0;
 }
 
@@ -73,19 +74,38 @@ int Application::renderLoop() {
 
     if (settings.getOrElse(SHOW_PATHTRACE_OUTPUT, false)) {
         dirty |= !accumulate && render;
-        dirty |= mcIntegrator->collectDirty();
-        if (dirty) {
-            textureStore.at(RENDER_TARGET).clear();
-            mcIntegrator->resetRenderStatistics();
-            dirty = false;
+
+        if (!visBVH) {
+            dirty |= mcIntegrator->collectDirty();
+            if (dirty) {
+                textureStore.at(RENDER_TARGET).clear();
+                mcIntegrator->resetRenderStatistics();
+                dirty = false;
+            }
+
+            if (render) mcIntegrator->renderSample();
+
+            // Idle waiting not ideal, but with current implementation need to wait for Integrator to finish
+            // so single sample image is visible while moving the camera
+            while (mcIntegrator->currentlyWorking()) {}
+            mcIntegrator->handleQueryResult();
+        } else {
+
+            dirty |= bvhRenderer->collectDirty();
+            if (dirty) {
+                textureStore.at(RENDER_TARGET).clear();
+                bvhRenderer->resetRenderStatistics();
+                dirty = false;
+
+                if (render) bvhRenderer->renderSample();
+
+                while (bvhRenderer->currentlyWorking()) {}
+                bvhRenderer->handleQueryResult();
+            }
+
+            // Idle waiting not ideal, but with current implementation need to wait for Integrator to finish
+            // so single sample image is visible while moving the camera
         }
-
-        if (render) mcIntegrator->renderSample();
-
-        // Idle waiting not ideal, but with current implementation need to wait for Integrator to finish
-        // so single sample image is visible while moving the camera
-        while (mcIntegrator->currentlyWorking()) {}
-        mcIntegrator->handleQueryResult();
 
         postProcessor->applyGammaAndTonemap(textureStore.at(RENDER_TARGET), textureStore.at(DISPLAY_BUFFER), settings);
         br->render(&textureStore.at(DISPLAY_BUFFER));
@@ -205,6 +225,9 @@ int Application::setupAppTools() {
     mcIntegrator = std::make_shared<MCIntegrator>();
     mcIntegrator->setTarget(&textureStore.at(RENDER_TARGET));
 
+    bvhRenderer = std::make_shared<BVHRenderer>();
+    bvhRenderer->setTarget(&textureStore.at(RENDER_TARGET));
+
     /*
     textureStore.insert({POS_BUFFER, createPathTraceBuffer(displayWidth, displayHeight)});
     textureStore.insert({NORMAL_BUFFER, createPathTraceBuffer(displayWidth, displayHeight)});
@@ -225,13 +248,6 @@ int Application::setupAppTools() {
     cameraManipulators.push_back(std::make_shared<OrbitManipulator>());
     cameraManipulators.push_back(std::make_shared<FlightManipulator>());
     mActiveManipulatorIndex = 0;
-
-    sideBarTabs.push_back(mcIntegrator.get());
-    // sideBarTabs.push_back(scene.get());
-    sideBarTabs.push_back(rasterizer.get());
-    // sideBarTabs.push_back(&cameraController);
-    sideBarTabs.push_back(postProcessor.get());
-    sideBarTabs.push_back(br.get());
 
     return 0;
 }
@@ -271,17 +287,17 @@ void Application::buildImguiControlSideBar() {
 
     ImGui::Checkbox("Accumulate", &accumulate);
     ImGui::Checkbox("render", &render);
-
-    sideBarTabs.push_back(mcIntegrator.get());
-    // sideBarTabs.push_back(scene.get());
-    sideBarTabs.push_back(rasterizer.get());
-    // sideBarTabs.push_back(&cameraController);
-    sideBarTabs.push_back(postProcessor.get());
-    sideBarTabs.push_back(br.get());
+    if (ImGui::Checkbox("vis BVH", &visBVH)) {
+        dirty = true;
+    }
 
     startIndent();
 
-    mcIntegrator->buildImguiTab(settings, events);
+    if (!visBVH) {
+        mcIntegrator->buildImguiTab(settings, events);
+    } else {
+        bvhRenderer->buildImguiTab(settings, events);
+    }
     endAndNewIndent();
 
     if (ImGui::CollapsingHeader("Scenes")) {
@@ -344,6 +360,7 @@ void Application::buildImguiControlSideBar() {
 void Application::updateActiveScene() {
     auto &activeScene = scenes[activeSceneIndex];
     mcIntegrator->setScene(activeScene);
+    bvhRenderer->setScene(activeScene);
     rasterizer->setScene(activeScene);
 }
 

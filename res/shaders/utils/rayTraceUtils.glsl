@@ -2,6 +2,8 @@
 #include "src/deviceShared/BufferBindings.h"
 #include "src/deviceShared/MaterialFlags.h"
 #include "res/shaders/utils/FlagUtils.glsl"
+#include "res/shaders/scenes/CPUScene.glsl"
+#include "res/shaders/utils/Stack.glsl"
 
 bool getClosestHit(Ray ray, out RayHit rayhit) {
     bool anyHit = false;
@@ -38,38 +40,54 @@ bool anyHit(Ray ray, float maxDist) {
     return false;
 }
 
-/*
-vec3 getTransmittedDir(float oldIOR, float newIOR, vec3 N, vec3 dir) {
-    float R_0 = pow((oldIOR - newIOR) / (oldIOR + newIOR), 2.0f);
+int countObjectBVHHits(Ray ray, int objectId) {
+    Object object = objects[objectId];
 
-    float r = oldIOR / newIOR;
-    float c = dot(-N, dir);
+    uint bvhRoot = meshes[object.meshID].bvhRootIndex;
 
-    float fresnel = R_0 + (1 - R_0) * pow(1.0f - c, 5.0f); // Schlick's Approximation for the Fresnel effect;
+    mat4 transform = transforms[object.transformID];
+    mat4 inverseTransform = inverse(transform);
 
-    if (rand(frameSeed) < fresnel) {
-        return reflect(dir, N);
+    // note, this doesn't take length scaling effects into account because as of right now it doesn't need to
+    Ray objSpaceRay = Ray((inverseTransform * vec4(ray.origin, 1)).xyz, (inverseTransform * vec4(ray.direction, 0)).xyz);
+
+    Stack stack;
+    stack.currentSize = 0;
+
+    push(stack, bvhRoot);
+    uint count = 0;
+
+    while (stack.currentSize > 0) {
+        uint nodeIdx = ptop(stack);
+
+        BVHNode node = bvhNodes[nodeIdx];
+
+        AABB aabb;
+        aabb.lower = vec4(node.lower, 1);
+        aabb.upper = vec4(node.upper, 1);
+
+        AABBHitRes hitRes = intersectAABB(objSpaceRay, aabb);
+
+
+        if (hitRes.hit && node.triCount == 0) {
+            push(stack, node.leftFirst);
+            push(stack, node.leftFirst + 1);
+        }
+
+        count += int(hitRes.hit);
     }
 
-    // refraction calculation from https://stackoverflow.com/questions/29758545/how-to-find-refraction-vector-from-incoming-vector-and-surface-normal#:~:text=Let%20n%20be%20the%20normalized,c%20%3D%20%2Dn%20dot%20V_incedence.
+    return int(count);
+}
 
-    float cos_theta_2_sqr = 1.0f - pow(r, 2.0f) * (1.0f - c * c);
-    if (cos_theta_2_sqr < 0) {
-        return reflect(dir, N);
-    } else {
-        return normalize(r * dir + N * (r * c - sqrt(cos_theta_2_sqr)));
+int countBVHHits(Ray ray, int objectId) {
+    return countObjectBVHHits(ray, objectId);
+}
+
+int countBVHHits(Ray ray) {
+    int intersections = 0;
+    for (int i = 0; i < objectCount; i++) {
+        intersections += countObjectBVHHits(ray, i);
     }
+    return intersections;
 }
-*/
-
-/*
-vec3 sampleNEETarget(vec2 seed, out Triangle triangle) {
-    // terrible name, but it indexes into the array of indices
-    int sampledIndexIndex = int(max(rand(seed) * LIGHT_SOURCE_COUNT - 1e-5, 0.0f)); // complicated to make 100% sure index can not be the same as LIGHT_SOURCE_COUNT
-
-    int primitiveIndex = LIHGT_INDICES[sampledIndexIndex];
-
-    triangle = triangles[primitiveIndex];
-    return sampleTrianglePos(triangle, seed);
-}
-*/

@@ -20,6 +20,9 @@ add_executable(RayTracer
         src/renderers/OfflineRenderer.h
         src/renderers/MCIntegrator.cpp
         src/renderers/MCIntegrator.h
+        src/renderers/BVHRenderer.cpp
+        src/renderers/BVHRenderer.h
+        src/scene/BVHTypes.h
 )
 
 set(PROJECT_ROOT_DIR ${PROJECT_SOURCE_DIR})

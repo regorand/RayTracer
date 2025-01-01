@@ -3,37 +3,31 @@
 #include <vector>
 #include "glm/glm.hpp"
 #include "SceneTypes.h"
-
-typedef struct BVHNode {
-    glm::vec3 aabbLower;
-    glm::vec3 aabbUpper;
-    unsigned int leftFirst; // index of left child node or index of first triangle depending on triCount
-    unsigned int triCount;
-} BVHNode;
-
-typedef struct BVH {
-    unsigned int rootNodeIndex;
-} BVH;
+#include "BVHTypes.h"
 
 
 class BVHBuilder {
 private:
     // Absolute max depth, enforced because in shader I will need a stack for traversing recursive structure, need some max to preallocate it
-    constexpr static unsigned int DEPTH_LIMIT = 32;
+    constexpr static unsigned int DEPTH_LIMIT = 30;
 
     std::vector<unsigned int> triIndices;
-
-    std::vector<BVHNode> bvhNodes;
 
     std::vector<Mesh> &meshes;
     std::vector<Triangle> &triangles;
 
+    std::vector<BVHNode> &bvhNodes;
+
+    int currentMeshTriOffset;
+
     int maxDepth;
 
 public:
-    BVHBuilder(std::vector<Mesh> &meshes, std::vector<Triangle> &triangles);
+    BVHBuilder(std::vector<Mesh> &meshes, std::vector<Triangle> &triangles, std::vector<BVHNode> &nodesTarget);
 
     void build();
+
+
 
 private:
     void buildMeshBVH(int meshIndex);

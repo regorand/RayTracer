@@ -19,6 +19,7 @@ using uint = unsigned int;
 #define MATERIAL_BUFFER_BINDING (3)
 #define EMISSIVE_BUFFER_BINDING (4)
 #define TRANSFORM_BUFFER_BINDING (5)
+#define BVH_NODES_BUFFER_BINDING (6)
 #define POS_BUFFER_TARGET (5)
 #define DIR_BUFFER_TARGET (6)
 #define MULT_BUFFER_TARGET (7)

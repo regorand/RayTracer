@@ -4,6 +4,7 @@
 #include "SceneTypes.h"
 #include "Material.h"
 #include "glm/mat4x4.hpp"
+#include "BVHTypes.h"
 
 typedef struct CPUSceneBuffers {
     // General Buffers
@@ -12,6 +13,7 @@ typedef struct CPUSceneBuffers {
     std::vector<glm::mat4> transforms;
     std::vector<Material> materials;
 
+    std::vector<BVHNode> bvhNodes;
 
     // Rasterizing dataStructures
     std::vector<RasterVertex> vertices;
@@ -26,6 +28,7 @@ typedef struct {
     ShaderStorageBuffer triangleBuffer;
     ShaderStorageBuffer objectBuffer;
     ShaderStorageBuffer meshBuffer;
+    ShaderStorageBuffer bvhBuffer;
     ShaderStorageBuffer materialBuffer;
     ShaderStorageBuffer transformationBuffer;
     ShaderStorageBuffer emissiveBuffer;

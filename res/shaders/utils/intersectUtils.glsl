@@ -2,6 +2,7 @@
 #include "res/shaders/utils/RayTypes.glsl"
 #include "res/shaders/scenes/CPUScene.glsl"
 #include "res/shaders/utils/Constants.glsl"
+#include "res/shaders/utils/Stack.glsl"
 
 bool intersectTriangle(Ray ray, Triangle triangle, out RayHit rayhit) {
     // algorithm modified from C++ example on https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
@@ -39,7 +40,14 @@ bool intersectTriangle(Ray ray, Triangle triangle, out RayHit rayhit) {
     return false;
 }
 
-bool intersectAABB(Ray ray, AABB aabb, out float t) {
+struct AABBHitRes {
+    bool hit;
+    bool inside;
+    float t_min;
+    float t_max;
+};
+
+AABBHitRes intersectAABB(Ray ray, AABB aabb) {
     // AABB intersection code taken from
     // https://gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms/18459#18459
 
@@ -61,9 +69,16 @@ bool intersectAABB(Ray ray, AABB aabb, out float t) {
     float t5 = (lb.z - ray.origin.z)*dirfrac.z;
     float t6 = (rt.z - ray.origin.z)*dirfrac.z;
 
-    float tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
-    float tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
+    AABBHitRes hitRes;
+    hitRes.t_min = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
+    hitRes.t_max = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
 
+    hitRes.hit = hitRes.t_min < hitRes.t_max;
+    hitRes.inside = hitRes.hit && hitRes.t_min < 0 && hitRes.t_max > 0;
+
+    return hitRes;
+
+    /*
     // if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
     if (tmax < 0)
     {
@@ -80,11 +95,59 @@ bool intersectAABB(Ray ray, AABB aabb, out float t) {
 
     t = tmin;
     return true;
+*/
+}
+
+// assum e
+bool intersectBVH(Ray ray, uint rootIdx, float closest, out RayHit rayhit) {
+    Stack stack;
+    stack.currentSize = 0;
+
+    push(stack, rootIdx);
+    uint count = 0;
+
+    bool anyHit = false;
+    RayHit tmp;
+    while (stack.currentSize > 0) {
+        uint nodeIdx = ptop(stack);
+
+        BVHNode node = bvhNodes[nodeIdx];
+
+        AABB aabb;
+        aabb.lower = vec4(node.lower, 1);
+        aabb.upper = vec4(node.upper, 1);
+
+        AABBHitRes hitRes = intersectAABB(ray, aabb);
+
+        if (hitRes.hit) {
+            if (node.triCount == 0) {
+                push(stack, node.leftFirst);
+                push(stack, node.leftFirst + 1);
+            } else {
+                for (int i = 0; i < node.triCount; i++) {
+                    Triangle tri = triangles[node.leftFirst + i];
+
+                    bool hit = intersectTriangle(ray, tri, tmp);
+
+                    if (hit && tmp.dist > 0) {
+                        // tmp.dist /= lengthScaling;
+                        if (tmp.dist < closest) {
+                            anyHit = true;
+                            closest = tmp.dist;
+                            rayhit = tmp;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    return anyHit;
 }
 
 bool intersectObject(Ray ray, Object object, float alreadyClosest, out RayHit rayhit) {
     float closest = alreadyClosest;
-    float dist;
 
     mat4 transform = transforms[object.transformID];
     mat4 inverseTransform = inverse(transform);
@@ -99,10 +162,11 @@ bool intersectObject(Ray ray, Object object, float alreadyClosest, out RayHit ra
     float lengthScaling = length(objSpaceRay.direction);
     objSpaceRay.direction = normalize(objSpaceRay.direction);
 
-    bool aabbHit = intersectAABB(objSpaceRay, mesh.aabb, dist);
+    AABBHitRes hitRes = intersectAABB(objSpaceRay, mesh.aabb);
+    float dist = hitRes.inside ? hitRes.t_max : hitRes.t_min;
     dist /= lengthScaling;
 
-    if (!aabbHit || dist > closest) {
+    if (!hitRes.hit || dist > closest) {
         return false;
     }
 

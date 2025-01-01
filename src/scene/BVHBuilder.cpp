@@ -3,13 +3,14 @@
 #include <iostream>
 #include "BVHBuilder.h"
 
-BVHBuilder::BVHBuilder(std::vector<Mesh> &meshes, std::vector<Triangle> &triangles)
-    : meshes(meshes), triangles(triangles)
+BVHBuilder::BVHBuilder(std::vector<Mesh> &meshes, std::vector<Triangle> &triangles, std::vector<BVHNode> &bvhNodes)
+    : meshes(meshes), triangles(triangles), bvhNodes(bvhNodes)
 { }
 
 // TODO might be useful to add an offset from outside to it, so multiple meshes can store their bvhs in same buffer without extra offset
 void BVHBuilder::build() {
     triIndices.resize(triangles.size());
+    maxDepth = 1;
 
     for (int i = 0; i < triIndices.size(); i++) {
         triIndices[i] = i;
@@ -32,6 +33,7 @@ void BVHBuilder::build() {
 
 void BVHBuilder::buildMeshBVH(int meshIndex) {
     Mesh &mesh = meshes[meshIndex];
+    currentMeshTriOffset = mesh.bufferMesh.firstTriangleIndex;
 
     mesh.bufferMesh.bvhRoot = bvhNodes.size();
     auto& root = bvhNodes.emplace_back();
@@ -40,47 +42,16 @@ void BVHBuilder::buildMeshBVH(int meshIndex) {
     root.aabbLower = mesh.bufferMesh.aabb.lower;
     root.aabbUpper = mesh.bufferMesh.aabb.upper;
 
-    root.leftFirst = 0;
+    root.leftFirst = mesh.bufferMesh.firstTriangleIndex;
     root.triCount = mesh.bufferMesh.triangleCount;
 
-    maxDepth = 1;
     subdivide(mesh.bufferMesh.bvhRoot, 2);
-
-    /*
-    struct stackStruct {
-        unsigned int index;
-        unsigned int depth;
-    };
-    std::stack<stackStruct> stack;
-
-    stack.push({ bvh.rootNodeIndex, 0} );
-    int totalPrims = 0;
-    int depth = 0;
-
-    while(!stack.empty()) {
-        stackStruct sStruct = stack.top();
-        BVHNode &node = bvhNodes[sStruct.index];
-        stack.pop();
-
-        bool isLeaf = node.triCount > 0;
-
-        for (int i = 0; i < sStruct.depth; i++) std::cout << "\t";
-        if (isLeaf) {
-            std::cout << "Found Leaf with index " << sStruct.index << " and " << node.triCount << " primitives" << std::endl;
-            totalPrims += node.triCount;
-        } else {
-            std::cout << "Found inner with index " << sStruct.index << std::endl;
-            stack.push({ node.leftFirst, sStruct.depth + 1});
-            stack.push({ node.leftFirst + 1, sStruct.depth + 1 });
-        }
-    }
-    std::cout << "Total Prims: " << totalPrims << std::endl;
-     */
 }
+
 
 void BVHBuilder::subdivide(int nodeIdx, int depth) {
     assertNodeIdx(nodeIdx);
-    BVHNode &node = bvhNodes[nodeIdx];
+    BVHNode node = bvhNodes[nodeIdx];
 
     if (node.triCount <= 2 || depth > DEPTH_LIMIT) return;
 
@@ -91,7 +62,7 @@ void BVHBuilder::subdivide(int nodeIdx, int depth) {
     int axis = 0;
     if (extents.y > extents[axis]) axis = 1;
     if (extents.z > extents[axis]) axis = 2;
-    */
+     */
 
     float splitPos = node.aabbLower[axis] + extents[axis] * 0.5f;
 

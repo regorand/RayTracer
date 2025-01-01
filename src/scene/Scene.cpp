@@ -14,7 +14,7 @@ bool Scene::loadFile(std::string path) {
     SceneImporter importer(path);
     importer.import(cpuBuffers, staticCameras);
 
-    BVHBuilder builder(cpuBuffers.meshes, cpuBuffers.triangles);
+    BVHBuilder builder(cpuBuffers.meshes, cpuBuffers.triangles, cpuBuffers.bvhNodes);
 
     builder.build();
 
@@ -150,6 +150,9 @@ void Scene::buildGPUBuffers() {
                                         GL_STATIC_DRAW,
                                         cpuBuffers.transforms.data() };
 
+    gpuBuffers.bvhBuffer = { static_cast<unsigned int>(cpuBuffers.bvhNodes.size() * sizeof(BVHNode)),
+                             GL_STATIC_DRAW,
+                             cpuBuffers.bvhNodes.data() };
 }
 
 void Scene::buildMeshBuffer() {

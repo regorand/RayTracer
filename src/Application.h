@@ -11,6 +11,7 @@
 #include "dataStructures/DataStore.h"
 #include "dataStructures/Events.h"
 #include "renderers/MCIntegrator.h"
+#include "renderers/BVHRenderer.h"
 #include <GLFW/glfw3.h>
 
 #define DEFAULT_WINDOW_WIDTH 800
@@ -38,13 +39,15 @@ private:
     std::shared_ptr<PostProcessor> postProcessor;
 
 
-    // std::shared_ptr<MCIntegrator> mcIntegrator;
     std::shared_ptr<MCIntegrator> mcIntegrator;
-
-    std::vector<ImGuiSidebarTab *> sideBarTabs;
+    std::shared_ptr<BVHRenderer> bvhRenderer;
 
     std::vector<std::shared_ptr<CameraManipulator>> cameraManipulators;
     int mActiveManipulatorIndex;
+
+
+    // TODO better to use a dropdown or something once I am done testing
+    bool visBVH = false;
 
     bool accumulate = true;
     bool render = true;
