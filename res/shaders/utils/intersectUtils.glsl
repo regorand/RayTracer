@@ -62,12 +62,12 @@ AABBHitRes intersectAABB(Ray ray, AABB aabb) {
     vec3 lb = aabb.lower.xyz;
     vec3 rt = aabb.upper.xyz;
 
-    float t1 = (lb.x - ray.origin.x)*dirfrac.x;
-    float t2 = (rt.x - ray.origin.x)*dirfrac.x;
-    float t3 = (lb.y - ray.origin.y)*dirfrac.y;
-    float t4 = (rt.y - ray.origin.y)*dirfrac.y;
-    float t5 = (lb.z - ray.origin.z)*dirfrac.z;
-    float t6 = (rt.z - ray.origin.z)*dirfrac.z;
+    float t1 = (lb.x - ray.origin.x) * dirfrac.x;
+    float t2 = (rt.x - ray.origin.x) * dirfrac.x;
+    float t3 = (lb.y - ray.origin.y) * dirfrac.y;
+    float t4 = (rt.y - ray.origin.y) * dirfrac.y;
+    float t5 = (lb.z - ray.origin.z) * dirfrac.z;
+    float t6 = (rt.z - ray.origin.z) * dirfrac.z;
 
     AABBHitRes hitRes;
     hitRes.t_min = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
@@ -78,7 +78,7 @@ AABBHitRes intersectAABB(Ray ray, AABB aabb) {
 
     return hitRes;
 
-    /*
+/*
     // if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
     if (tmax < 0)
     {
@@ -119,23 +119,41 @@ bool intersectBVH(Ray ray, uint rootIdx, float closest, out RayHit rayhit) {
 
         AABBHitRes hitRes = intersectAABB(ray, aabb);
 
-        if (hitRes.hit) {
-            if (node.triCount == 0) {
-                push(stack, node.leftFirst);
-                push(stack, node.leftFirst + 1);
-            } else {
-                for (int i = 0; i < node.triCount; i++) {
-                    Triangle tri = triangles[node.leftFirst + i];
+    /*
+         TODO what to check in what order
+            1. if not hit -> done
+            3. check_t = max(t_min, 0)
+            4. if check_t >= closest -> done
+            5. else ->  if triCount > 0 -> intersect, store new nearset
+                        else add child nodes
 
-                    bool hit = intersectTriangle(ray, tri, tmp);
+        -> Should work like this
 
-                    if (hit && tmp.dist > 0) {
-                        // tmp.dist /= lengthScaling;
-                        if (tmp.dist < closest) {
-                            anyHit = true;
-                            closest = tmp.dist;
-                            rayhit = tmp;
-                        }
+        Important to note
+        External call must scale distances before passing them here
+        */
+        // Don't hit aabb, no need to check its children and primitives
+        if (!hitRes.hit) continue;
+
+        float check_t = max(hitRes.t_min, 0);
+
+        // Have a surface hit already, that is closer than the first point in aabb along ray, no need to check
+        if (check_t >= closest) continue;
+
+        if (node.triCount == 0) {
+            push(stack, node.leftFirst);
+            push(stack, node.leftFirst + 1);
+        } else {
+            for (int i = 0; i < node.triCount; i++) {
+                Triangle tri = triangles[node.leftFirst + i];
+
+                bool hit = intersectTriangle(ray, tri, tmp);
+
+                if (hit && tmp.dist > 0) {
+                    if (tmp.dist < closest) {
+                        anyHit = true;
+                        closest = tmp.dist;
+                        rayhit = tmp;
                     }
                 }
             }
@@ -162,40 +180,49 @@ bool intersectObject(Ray ray, Object object, float alreadyClosest, out RayHit ra
     float lengthScaling = length(objSpaceRay.direction);
     objSpaceRay.direction = normalize(objSpaceRay.direction);
 
-    AABBHitRes hitRes = intersectAABB(objSpaceRay, mesh.aabb);
-    float dist = hitRes.inside ? hitRes.t_max : hitRes.t_min;
-    dist /= lengthScaling;
+    const bool doBVH = false;
 
-    if (!hitRes.hit || dist > closest) {
-        return false;
-    }
+    if (doBVH) {
+        // TODO I think this is correct ??
+        closest *= lengthScaling;
 
-    bool anyHit = false;
+        return intersectBVH(objSpaceRay, mesh.bvhRootIndex, closest, rayhit);
+    } else {
+        AABBHitRes hitRes = intersectAABB(objSpaceRay, mesh.aabb);
+        float dist = hitRes.inside ? hitRes.t_max : hitRes.t_min;
+        dist /= lengthScaling;
 
-    RayHit tmp;
-    for (int i = 0; i < mesh.triangleCount; i++) {
-        Triangle triangle = triangles[objectBaseIndex + i];
+        if (!hitRes.hit || dist > closest) {
+            return false;
+        }
 
-        bool hit = intersectTriangle(objSpaceRay, triangle, tmp);
+        bool anyHit = false;
 
-        if (hit && tmp.dist > 0) {
-            tmp.dist /= lengthScaling;
-            if (tmp.dist < closest) {
-                anyHit = true;
-                closest = tmp.dist;
-                rayhit = tmp;
+        RayHit tmp;
+        for (int i = 0; i < mesh.triangleCount; i++) {
+            Triangle triangle = triangles[objectBaseIndex + i];
+
+            bool hit = intersectTriangle(objSpaceRay, triangle, tmp);
+
+            if (hit && tmp.dist > 0) {
+                tmp.dist /= lengthScaling;
+                if (tmp.dist < closest) {
+                    anyHit = true;
+                    closest = tmp.dist;
+                    rayhit = tmp;
+                }
             }
         }
-    }
 
-    if (anyHit) {
-        vec4 tmp = transform * vec4(rayhit.position, 1);
-        rayhit.position = tmp.xyz / tmp.w;
-        mat4 normalMat = transpose(inverseTransform);
-        rayhit.normal = normalize((normalMat * vec4(rayhit.normal, 0)).xyz);
-    }
+        if (anyHit) {
+            vec4 tmp = transform * vec4(rayhit.position, 1);
+            rayhit.position = tmp.xyz / tmp.w;
+            mat4 normalMat = transpose(inverseTransform);
+            rayhit.normal = normalize((normalMat * vec4(rayhit.normal, 0)).xyz);
+        }
 
-    return anyHit;
+        return anyHit;
+    }
 }
 
 bool intersectObject(Ray ray, Object object, out RayHit rayhit) {

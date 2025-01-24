@@ -41,10 +41,9 @@ void BVHRenderer::buildImguiTab(DataStore &settings, std::vector<Event> &events)
         if (ImGui::Button("reload shaders")) {
             reloadShaders();
         }
-        // ImGui::Checkbox("Show statistics##BVHRenderer", &showStats);
+        ImGui::Checkbox("Show statistics##BVHRenderer", &showStats);
 
     }
-    /*
     if (showStats) {
         ImGui::Begin("Render Statistics", &showStats,  ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse
                                                        | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoTitleBar);
@@ -59,7 +58,6 @@ void BVHRenderer::buildImguiTab(DataStore &settings, std::vector<Event> &events)
         ImGui::Text("mov. avg: %.3f ms \n\t(alpha = %.2f)", stats.movingAverage, stats.alpha);
         ImGui::End();
     }
-     */
 }
 
 void BVHRenderer::bindUniforms() {
