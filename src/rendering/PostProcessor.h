@@ -4,8 +4,8 @@
 #include "dataStructures//DataStore.h"
 #include "gui/ImGuiSidebarTab.h"
 #include "TmpBuffers.h"
-#include "renderers/denoise/Denoiser.h"
-#include "renderers/denoise/AtrousDenoiser.h"
+#include "rendering/denoise/Denoiser.h"
+#include "rendering/denoise/AtrousDenoiser.h"
 #include "glWrappers/shaders/ShaderProgram.h"
 
 typedef struct PostProcSettings_s {

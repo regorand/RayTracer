@@ -5,12 +5,12 @@ typedef struct BVHNode {
     // I think this should work according to glsl spec now
     // Dont want to introduce dummy elements to make sure node is 32 byte
     glm::vec3 aabbLower;
-    unsigned int leftFirst; // index of left child node or index of first triangle depending on triCount
+    uint32_t leftFirst; // index of left child node or index of first triangle depending on triCount
 
     glm::vec3 aabbUpper;
-    unsigned int triCount;
+    uint32_t triCount;
 } BVHNode;
 
 typedef struct BVH {
-    unsigned int rootNodeIndex;
+    uint32_t  rootNodeIndex;
 } BVH;

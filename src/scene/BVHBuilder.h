@@ -11,7 +11,7 @@ private:
     // Absolute max depth, enforced because in shader I will need a stack for traversing recursive structure, need some max to preallocate it
     constexpr static unsigned int DEPTH_LIMIT = 30;
 
-    std::vector<unsigned int> triIndices;
+    std::vector<unsigned int> &triIndices;
 
     std::vector<Mesh> &meshes;
     std::vector<Triangle> &triangles;
@@ -23,10 +23,11 @@ private:
     int maxDepth;
 
 public:
-    BVHBuilder(std::vector<Mesh> &meshes, std::vector<Triangle> &triangles, std::vector<BVHNode> &nodesTarget);
+    BVHBuilder(std::vector<Mesh> &meshes, std::vector<Triangle> &triangles, std::vector<BVHNode> &nodesTarget, std::vector<unsigned int> &indicesTarget);
 
     void build();
 
+    void debugPringBVH();
 
 
 private:
@@ -39,4 +40,6 @@ private:
     void swapIndices(int i, int j);
 
     void assertNodeIdx(int index);
+
+    void _printBVH(int nodeIdx, int depth, AABB parentAABB);
 };

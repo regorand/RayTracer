@@ -22,10 +22,13 @@ typedef struct CPUSceneBuffers {
     // Path Tracing Buffers
     std::vector<unsigned int> emissives;
     std::vector<Triangle> triangles;
+    std::vector<unsigned int> triangleIndices;
 } CPUSceneBuffers;
 
 typedef struct {
     ShaderStorageBuffer triangleBuffer;
+    ShaderStorageBuffer triangleIndicesBuffer; // indirect indexing from bvh building
+
     ShaderStorageBuffer objectBuffer;
     ShaderStorageBuffer meshBuffer;
     ShaderStorageBuffer bvhBuffer;

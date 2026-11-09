@@ -2,16 +2,16 @@
 #define RAYTRACER_APPLICATION_H
 
 #include "utils/glewIncludeUtils.h"
-#include "renderers/BufferRenderer.h"
+#include "rendering/BufferRenderer.h"
 #include "gui/ImguiUtils.h"
-#include "renderers/PostProcessor.h"
+#include "rendering/PostProcessor.h"
 #include "userInput/KeyStateManager.h"
-#include "renderers/Rasterizer.h"
+#include "rendering/Rasterizer.h"
 #include "scene/camera/manipulators/FlightManipulator.h"
 #include "dataStructures/DataStore.h"
 #include "dataStructures/Events.h"
-#include "renderers/MCIntegrator.h"
-#include "renderers/BVHRenderer.h"
+#include "rendering/MCIntegrator.h"
+#include "rendering/BVHRenderer.h"
 #include <GLFW/glfw3.h>
 
 #define DEFAULT_WINDOW_WIDTH 800

@@ -1,10 +1,12 @@
 #include <stdexcept>
 #include <stack>
 #include <iostream>
+#include <iomanip>
 #include "BVHBuilder.h"
+#include "glm/gtx/string_cast.hpp"
 
-BVHBuilder::BVHBuilder(std::vector<Mesh> &meshes, std::vector<Triangle> &triangles, std::vector<BVHNode> &bvhNodes)
-    : meshes(meshes), triangles(triangles), bvhNodes(bvhNodes)
+BVHBuilder::BVHBuilder(std::vector<Mesh> &meshes, std::vector<Triangle> &triangles, std::vector<BVHNode> &bvhNodes, std::vector<unsigned int> &indicesTarget)
+    : meshes(meshes), triangles(triangles), bvhNodes(bvhNodes), triIndices(indicesTarget)
 { }
 
 // TODO might be useful to add an offset from outside to it, so multiple meshes can store their bvhs in same buffer without extra offset
@@ -132,6 +134,9 @@ void BVHBuilder::updateNodeBounds(int nodeIdx) {
         node.aabbUpper = glm::max(node.aabbUpper, triangles[triIndices[node.leftFirst + i]].V1.position);
         node.aabbUpper = glm::max(node.aabbUpper, triangles[triIndices[node.leftFirst + i]].V2.position);
     }
+
+    node.aabbLower -= glm::vec3(1e-2);
+    node.aabbUpper += glm::vec3(1e-2);
 }
 
 void BVHBuilder::swapIndices(int i, int j) {
@@ -143,5 +148,63 @@ void BVHBuilder::swapIndices(int i, int j) {
 void BVHBuilder::assertNodeIdx(int index) {
     if (index >= bvhNodes.size()) {
         throw std::runtime_error("Invalid node Index");
+    }
+}
+
+void BVHBuilder::debugPringBVH() {
+
+    AABB bigAABB;
+    bigAABB.lower = glm::vec4(-1e30);
+    bigAABB.upper = glm::vec4(1e30);
+    for (auto& mesh: meshes) {
+        _printBVH(mesh.bufferMesh.bvhRoot, 0, bigAABB);
+    }
+    std::cout << std::flush;
+}
+
+void BVHBuilder::_printBVH(int nodeIdx, int depth, AABB parentAABB) {
+    BVHNode &node = bvhNodes[nodeIdx];
+
+    bool aabbError = false;
+    if (glm::any(glm::greaterThan(node.aabbUpper, glm::vec3(parentAABB.upper)))
+            || glm::any(glm::lessThan(node.aabbLower, glm::vec3(parentAABB.lower)))) {
+        aabbError = true;
+    }
+
+    std::string indent = std::string().append(depth, ' ');
+    if (node.triCount == 0) {
+        std::cout << indent << "Inner Node: " << nodeIdx << " at depth: " << depth << "\n"
+                  << indent << "AABB lower: " << glm::to_string(node.aabbLower) << "\n"
+                  << indent << "AABB upper: " << glm::to_string(node.aabbUpper) << "\n";
+
+        if (aabbError) {
+            std::cout << "ERROR: AABB mismatch with parent!\n";
+        }
+
+        AABB nodeAABB;
+        nodeAABB.lower = glm::vec4(node.aabbLower, 0);
+        nodeAABB.upper = glm::vec4(node.aabbUpper, 0);
+        _printBVH(node.leftFirst, depth + 1, nodeAABB);
+        _printBVH(node.leftFirst + 1, depth + 1, nodeAABB);
+
+        return;
+    }
+
+
+    std::cout << indent << "Leaf Node: " << nodeIdx << "\n"
+              << indent << "AABB lower: " << glm::to_string(node.aabbLower) << "\n"
+              << indent << "AABB upper: " << glm::to_string(node.aabbUpper) << "\n";
+
+    std::string indent1 = std::string().append(depth + 1, ' ');
+    std::string indent2 = std::string().append(depth + 2, ' ');
+    for (int i = 0; i < node.triCount; i++) {
+        Triangle &tri = triangles[triIndices[node.leftFirst + i]];
+
+        // TODO Triangle in AABB function
+
+        std::cout << indent1 << "Tri " << i << ": " << "\n"
+                << indent2 << glm::to_string(tri.V0.position) << "\n"
+                << indent2 << glm::to_string(tri.V1.position) << "\n"
+                << indent2 << glm::to_string(tri.V2.position) << "\n";
     }
 }

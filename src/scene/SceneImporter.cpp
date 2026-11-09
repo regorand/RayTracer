@@ -378,7 +378,7 @@ bool SceneImporter::parseObject(tinygltf::Model &model, int meshId, const glm::m
         }
 
         // remember that we found and parsed this mesh already, if different objects uses same mesh
-        meshesMap.insert({ {meshId, primitiveId}, meshes->size() });
+        meshesMap.insert({ {meshId, primitiveId}, static_cast<int>(meshes->size()) });
         object.meshID = meshes->size();
         meshes->push_back(mesh);
     }

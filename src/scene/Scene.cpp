@@ -14,9 +14,12 @@ bool Scene::loadFile(std::string path) {
     SceneImporter importer(path);
     importer.import(cpuBuffers, staticCameras);
 
-    BVHBuilder builder(cpuBuffers.meshes, cpuBuffers.triangles, cpuBuffers.bvhNodes);
+    BVHBuilder builder(cpuBuffers.meshes, cpuBuffers.triangles, cpuBuffers.bvhNodes, cpuBuffers.triangleIndices);
 
     builder.build();
+
+    std::cout << "\n-----\nBVH of " << path << ":\n" << std::endl;
+    // builder.debugPringBVH();
 
     buildRasterBuffers();
     buildGPUBuffers();
@@ -139,6 +142,10 @@ void Scene::buildGPUBuffers() {
     gpuBuffers.triangleBuffer = { static_cast<unsigned int>(cpuBuffers.triangles.size() * sizeof(Triangle)),
                                   GL_STATIC_DRAW,
                                   cpuBuffers.triangles.data() };
+
+    gpuBuffers.triangleIndicesBuffer = { static_cast<unsigned int>(cpuBuffers.triangleIndices.size() * sizeof(unsigned int)),
+                                  GL_STATIC_DRAW,
+                                  cpuBuffers.triangleIndices.data() };
 
 
     gpuBuffers.emissiveBuffer = { static_cast<unsigned int>(cpuBuffers.emissives.size() * sizeof(unsigned int)),

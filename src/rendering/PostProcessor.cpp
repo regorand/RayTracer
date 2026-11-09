@@ -5,10 +5,11 @@
 #include "deviceShared/BufferBindings.h"
 #include "imgui.h"
 #include "dataStructures/SettingIndex.h"
-#include "renderers/denoise/GaussDenoiser.h"
-#include "renderers/denoise/BoxDenoiser.h"
+#include "rendering/denoise/GaussDenoiser.h"
+#include "rendering/denoise/BoxDenoiser.h"
 #include "glm/common.hpp"
 #include "glWrappers/shaders/ShaderUtils.hpp"
+#include "rendering/denoise/AtrousDenoiser.h"
 
 PostProcessor::PostProcessor(int textureWidth, int textureHeight)
         :

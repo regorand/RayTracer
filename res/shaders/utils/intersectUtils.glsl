@@ -135,7 +135,7 @@ bool intersectBVH(Ray ray, uint rootIdx, float closest, out RayHit rayhit) {
         // Don't hit aabb, no need to check its children and primitives
         if (!hitRes.hit) continue;
 
-        float check_t = max(hitRes.t_min, 0);
+        float check_t = max(hitRes.inside ? hitRes.t_max : hitRes.t_min, 0);
 
         // Have a surface hit already, that is closer than the first point in aabb along ray, no need to check
         if (check_t >= closest) continue;
@@ -145,7 +145,7 @@ bool intersectBVH(Ray ray, uint rootIdx, float closest, out RayHit rayhit) {
             push(stack, node.leftFirst + 1);
         } else {
             for (int i = 0; i < node.triCount; i++) {
-                Triangle tri = triangles[node.leftFirst + i];
+                Triangle tri = triangles[triIndices[node.leftFirst + i]];
 
                 bool hit = intersectTriangle(ray, tri, tmp);
 
@@ -186,7 +186,18 @@ bool intersectObject(Ray ray, Object object, float alreadyClosest, out RayHit ra
         // TODO I think this is correct ??
         closest *= lengthScaling;
 
-        return intersectBVH(objSpaceRay, mesh.bvhRootIndex, closest, rayhit);
+        bool hit = intersectBVH(objSpaceRay, mesh.bvhRootIndex, closest, rayhit);
+
+        if (!hit) return false;
+
+        rayhit.dist /= lengthScaling;
+
+        vec4 tmp = transform * vec4(rayhit.position, 1);
+        rayhit.position = tmp.xyz / tmp.w;
+        mat4 normalMat = transpose(inverseTransform);
+        rayhit.normal = normalize((normalMat * vec4(rayhit.normal, 0)).xyz);
+
+        return true;
     } else {
         AABBHitRes hitRes = intersectAABB(objSpaceRay, mesh.aabb);
         float dist = hitRes.inside ? hitRes.t_max : hitRes.t_min;

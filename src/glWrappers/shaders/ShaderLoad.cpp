@@ -4,6 +4,7 @@
 #include <iostream>
 #include <algorithm>
 #include <string>
+#include <vector>
 
 #include "ShaderLoad.h"
 

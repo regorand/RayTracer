@@ -3,7 +3,7 @@ project(RayTracer)
 
 set(CMAKE_CXX_STANDARD 17)
 add_executable(RayTracer
-        src/main.cpp src/Application.cpp src/Application.h src/scene/camera/Camera.cpp src/scene/camera/Camera.h src/utils/fileUtils.hpp src/renderers/BufferRenderer.cpp src/renderers/BufferRenderer.h src/glWrappers/rasterization/VertexArray.cpp src/glWrappers/rasterization/VertexArray.h src/glWrappers/rasterization/ArrayBuffer.cpp src/glWrappers/rasterization/ArrayBuffer.h src/glWrappers/TextureBuffer.cpp src/glWrappers/TextureBuffer.h src/utils/glewIncludeUtils.h src/glWrappers/Texture.cpp src/glWrappers/Texture.h src/glWrappers/shaders/ShaderUtils.hpp src/glWrappers/shaders/ShaderLoad.cpp src/glWrappers/shaders/ShaderLoad.h src/gui/ImguiUtils.cpp src/gui/ImguiUtils.h src/utils/RandomEngine.cpp src/utils/RandomEngine.h src/deviceShared/BufferBindings.h src/deviceShared/PostProcessFlags.h src/renderers/PostProcessor.cpp src/renderers/PostProcessor.h src/deviceShared/MaterialFlags.h src/renderers/Rasterizer.cpp src/renderers/Rasterizer.h src/glWrappers/rasterization/IndexBuffer.cpp src/glWrappers/rasterization/IndexBuffer.h src/glWrappers/ShaderStorageBuffer.h src/glWrappers/ShaderStorageBuffer.cpp src/userInput/KeyStateManager.cpp src/userInput/KeyStateManager.h src/scene/camera/manipulators/FlightManipulator.cpp src/scene/camera/manipulators/FlightManipulator.h src/dataStructures/DataStore.cpp src/dataStructures/DataStore.h src/dataStructures/SettingIndex.h src/gui/ImGuiSidebarTab.h src/dataStructures/Events.h src/renderers/denoise/Denoiser.h src/renderers/TmpBuffers.h src/renderers/denoise/GaussDenoiser.cpp src/renderers/denoise/GaussDenoiser.h src/renderers/denoise/BoxDenoiser.cpp src/renderers/denoise/BoxDenoiser.h src/renderers/denoise/Denoiser.cpp src/glWrappers/FrameBufferObject.cpp src/glWrappers/FrameBufferObject.h src/glWrappers/TextureFactory.cpp src/glWrappers/TextureFactory.h src/renderers/denoise/AtrousDenoiser.cpp src/renderers/denoise/AtrousDenoiser.h src/dataStructures/TextureNames.h src/scene/scene_loading/ModelLoader.cpp src/scene/scene_loading/ModelLoader.h src/scene/Scene.cpp src/scene/Scene.h src/scene/camera/manipulators/CameraManipulator.h src/scene/buffers/import_scene_error.h src/scene/Material.h src/scene/buffers/RasterizeBuffers.h
+        src/main.cpp src/Application.cpp src/Application.h src/scene/camera/Camera.cpp src/scene/camera/Camera.h src/utils/fileUtils.hpp src/rendering/BufferRenderer.cpp src/rendering/BufferRenderer.h src/glWrappers/rasterization/VertexArray.cpp src/glWrappers/rasterization/VertexArray.h src/glWrappers/rasterization/ArrayBuffer.cpp src/glWrappers/rasterization/ArrayBuffer.h src/glWrappers/TextureBuffer.cpp src/glWrappers/TextureBuffer.h src/utils/glewIncludeUtils.h src/glWrappers/Texture.cpp src/glWrappers/Texture.h src/glWrappers/shaders/ShaderUtils.hpp src/glWrappers/shaders/ShaderLoad.cpp src/glWrappers/shaders/ShaderLoad.h src/gui/ImguiUtils.cpp src/gui/ImguiUtils.h src/utils/RandomEngine.cpp src/utils/RandomEngine.h src/deviceShared/BufferBindings.h src/deviceShared/PostProcessFlags.h src/rendering/PostProcessor.cpp src/rendering/PostProcessor.h src/deviceShared/MaterialFlags.h src/rendering/Rasterizer.cpp src/rendering/Rasterizer.h src/glWrappers/rasterization/IndexBuffer.cpp src/glWrappers/rasterization/IndexBuffer.h src/glWrappers/ShaderStorageBuffer.h src/glWrappers/ShaderStorageBuffer.cpp src/userInput/KeyStateManager.cpp src/userInput/KeyStateManager.h src/scene/camera/manipulators/FlightManipulator.cpp src/scene/camera/manipulators/FlightManipulator.h src/dataStructures/DataStore.cpp src/dataStructures/DataStore.h src/dataStructures/SettingIndex.h src/gui/ImGuiSidebarTab.h src/dataStructures/Events.h src/rendering/denoise/Denoiser.h src/rendering/TmpBuffers.h src/rendering/denoise/GaussDenoiser.cpp src/rendering/denoise/GaussDenoiser.h src/rendering/denoise/BoxDenoiser.cpp src/rendering/denoise/BoxDenoiser.h src/rendering/denoise/Denoiser.cpp src/glWrappers/FrameBufferObject.cpp src/glWrappers/FrameBufferObject.h src/glWrappers/TextureFactory.cpp src/glWrappers/TextureFactory.h src/rendering/denoise/AtrousDenoiser.cpp src/rendering/denoise/AtrousDenoiser.h src/dataStructures/TextureNames.h src/scene/scene_loading/ModelLoader.cpp src/scene/scene_loading/ModelLoader.h src/scene/Scene.cpp src/scene/Scene.h src/scene/camera/manipulators/CameraManipulator.h src/scene/buffers/import_scene_error.h src/scene/Material.h src/scene/buffers/RasterizeBuffers.h
         src/glWrappers/GLBuffer.cpp
         src/glWrappers/GLBuffer.h
         src/glWrappers/shaders/Shader.cpp
@@ -15,15 +15,15 @@ add_executable(RayTracer
         src/scene/SceneImporter.h
         src/scene/SceneTypes.h
         src/scene/camera/manipulators/OrbitManipulator.cpp src/scene/camera/manipulators/OrbitManipulator.h src/scene/BVHBuilder.cpp src/scene/BVHBuilder.h
-        src/renderers/RenderStatistics.h
-        src/renderers/OfflineRenderer.cpp
-        src/renderers/OfflineRenderer.h
-        src/renderers/MCIntegrator.cpp
-        src/renderers/MCIntegrator.h
-        src/renderers/BVHRenderer.cpp
-        src/renderers/BVHRenderer.h
+        src/rendering/RenderStatistics.h
+        src/rendering/OfflineRenderer.cpp
+        src/rendering/OfflineRenderer.h
+        src/rendering/MCIntegrator.cpp
+        src/rendering/MCIntegrator.h
+        src/rendering/BVHRenderer.cpp
+        src/rendering/BVHRenderer.h
         src/scene/BVHTypes.h
-)
+        src/rendering/Pipeline.cpp src/rendering/Pipeline.h)
 
 set(PROJECT_ROOT_DIR ${PROJECT_SOURCE_DIR})
 

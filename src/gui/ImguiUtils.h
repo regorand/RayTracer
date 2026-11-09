@@ -2,7 +2,7 @@
 
 #include "imgui.h"
 #include "dataStructures//DataStore.h"
-#include "renderers/RenderStatistics.h"
+#include "rendering/RenderStatistics.h"
 
 const float INDENT_DEPTH = 8.0;
 

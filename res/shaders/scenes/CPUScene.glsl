@@ -42,3 +42,8 @@ layout(std430, binding = BVH_NODES_BUFFER_BINDING) buffer bvhNodeList
 {
     BVHNode bvhNodes[];
 };
+
+layout(std430, binding = TRIANGLE_INDICES_BUFFER_BINDING) buffer triIndexList
+{
+    uint triIndices[];
+};

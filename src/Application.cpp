@@ -2,10 +2,10 @@
 #include "Application.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
-#include "renderers/BufferRenderer.h"
+#include "rendering/BufferRenderer.h"
 #include "gui/ImguiUtils.h"
-#include "renderers/PostProcessor.h"
-#include "renderers/Rasterizer.h"
+#include "rendering/PostProcessor.h"
+#include "rendering/Rasterizer.h"
 #include "dataStructures/SettingIndex.h"
 #include "gui/ImGuiSidebarTab.h"
 #include "glWrappers/TextureFactory.h"
@@ -42,8 +42,8 @@ int Application::init() {
 
     setupAppTools();
 
-    loadScene("res/models/testBuildBVH.gltf");
-    loadScene("res/models/instancedTest.gltf");
+    // loadScene("res/models/testBuildBVH.gltf");
+    // loadScene("res/models/instancedTest.gltf");
     loadScene("res/models/cornell_box_boxes.gltf", true);
     loadScene("res/models/testVeachMIS.gltf", false);
     loadScene("res/models/cornell_box_glass_pane.gltf", false);

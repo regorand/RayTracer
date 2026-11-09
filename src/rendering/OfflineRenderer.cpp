@@ -35,6 +35,7 @@ void OfflineRenderer::bindScene() {
     gpuBuffers.emissiveBuffer.bindToTarget(EMISSIVE_BUFFER_BINDING);
     gpuBuffers.transformationBuffer.bindToTarget(TRANSFORM_BUFFER_BINDING);
     gpuBuffers.bvhBuffer.bindToTarget(BVH_NODES_BUFFER_BINDING);
+    gpuBuffers.triangleIndicesBuffer.bindToTarget(TRIANGLE_INDICES_BUFFER_BINDING);
 }
 
 void OfflineRenderer::unbindScene() {
@@ -46,6 +47,7 @@ void OfflineRenderer::unbindScene() {
     gpuBuffers.emissiveBuffer.unbind();
     gpuBuffers.transformationBuffer.unbind();
     gpuBuffers.bvhBuffer.unbind();
+    gpuBuffers.triangleIndicesBuffer.unbind();
 }
 
 void OfflineRenderer::setTarget(Texture *target) {
